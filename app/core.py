@@ -1172,13 +1172,15 @@ class EdgeSmartSync:
         checkpoint = self._checkpoint_load(paths)
         checkpoint.setdefault("audio", {})
         checkpoint.setdefault("video", {})
-        provider = "edge_tts"
+        provider = "gemini" if self.voice.startswith("gemini:") else "edge_tts"    # gemini_tts.py: one narrator
+        tts_label = "Gemini TTS" if provider == "gemini" else "Edge TTS"
         checkpoint["engine"] = provider
         checkpoint["voice"] = self.voice
 
         self.log(f"📁 Job: {self.job_dir}")
         self.log(f"🧩 Timestamp segments: {len(segments)}")
-        self.log(f"🎙️ TTS: Edge TTS | Voice: {self.voice}")
+        self.log(f"🎙️ TTS: {tts_label} | Voice: {self.voice}"
+                 + (" · one narrator for the whole video" if provider == "gemini" else ""))
         self.log(f"🎞️ Smart Sync: Exact Recap timing — distributed freeze fallback={'ON' if self.smooth_freeze_fallback else 'OFF'}")
         try:
             source_w, source_h = probe_video_size(self.ffprobe, source)
@@ -1191,9 +1193,16 @@ class EdgeSmartSync:
                  f"{layout['cw']}x{layout['ch']} ({layout['fill']}) from {source_w}x{source_h} | Zoom={self.zoom_factor:.3f}x"
                  f" | Quality={self.video_quality}p")
 
-        engine = EdgeTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "edge_tts_temp",
-                               rate=self.edge_tts_rate, pitch=self.edge_tts_pitch, log=self.log)
-        fingerprint_voice = self.voice + "|edge-tts-v1|rate=" + self.edge_tts_rate + "|pitch=" + self.edge_tts_pitch
+        if provider == "gemini":
+            from gemini_tts import GeminiTTSEngine
+            engine = GeminiTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "gemini_tts_temp",
+                                     rate=self.edge_tts_rate, env_file=getattr(self, "gemini_env_path", ""),
+                                     direction=getattr(self, "gemini_direction", ""), log=self.log)
+            fingerprint_voice = engine.fingerprint(self.voice)
+        else:
+            engine = EdgeTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "edge_tts_temp",
+                                   rate=self.edge_tts_rate, pitch=self.edge_tts_pitch, log=self.log)
+            fingerprint_voice = self.voice + "|edge-tts-v1|rate=" + self.edge_tts_rate + "|pitch=" + self.edge_tts_pitch
         checkpoint["tts_provider"] = provider
 
         timing: list[dict[str, Any]] = []
@@ -1216,15 +1225,15 @@ class EdgeSmartSync:
                 duration = probe_duration(self.ffprobe, dst)
                 self.log(f"♻️ [{idx}/{len(segments)}] {base}.wav reuse ({duration:.2f}s)")
             else:
-                self.progress(idx - 1, len(segments), f"Edge TTS {idx}/{len(segments)}")
-                self.log(f"🗣️ [{idx}/{len(segments)}] {base} generate via Edge TTS")
+                self.progress(idx - 1, len(segments), f"{tts_label} {idx}/{len(segments)}")
+                self.log(f"🗣️ [{idx}/{len(segments)}] {base} generate via {tts_label}")
                 speak = spoken_text(seg["narration"])
                 try:
                     try:
                         produced = engine.generate_channel99_voice(speak, self.voice)
                     except Exception as first:
                         plain = without_english(speak)
-                        if is_edge_refused(first) or plain == speak or not any(ch.isalpha() for ch in plain):
+                        if provider == "gemini" or is_edge_refused(first) or plain == speak or not any(ch.isalpha() for ch in plain):
                             raise
                         # A line mixing English and Burmese sometimes gets no audio at all (2026-10-12).
                         self.log(f"⚠️ [{idx}/{len(segments)}] no audio — trying again without the English words "
@@ -1236,11 +1245,14 @@ class EdgeSmartSync:
                     if is_edge_refused(exc):            # the network, not the text: no Edit Text offer
                         raise RuntimeError(f"Edge TTS stopped at line {idx}/{len(segments)}.\n\n{exc}") from exc
                     # "FAILED at segment N" lets the app open Edit Text on that line.
+                    if provider == "gemini":
+                        raise RuntimeError(f"Gemini TTS stopped at line {idx}/{len(segments)} ({base}).\n\n{exc}") from exc
                     raise RuntimeError(f"Edge TTS FAILED at segment {idx} ({base}): {exc}\n\n"
                                        f"Text: {seg['narration'][:200]}") from exc
                 produced_path = Path(produced).resolve()
                 shutil.copy2(produced_path, dst)
-                produced_path.unlink(missing_ok=True)
+                if provider == "edge_tts":           # Gemini clips stay in the job's cache (a stopped run goes on)
+                    produced_path.unlink(missing_ok=True)
                 duration = probe_duration(self.ffprobe, dst)
                 if duration <= 0.05:
                     raise RuntimeError(f"Generated audio duration invalid: {dst}")
@@ -1441,7 +1453,7 @@ class EdgeSmartSync:
                 render_overlays, encoder, paths.work, self.log, frame_size=(layout["cw"], layout["ch"]),
                 quality=self.video_quality,
             )
-        self.log(f"🎧 Edge TTS audio mux...")
+        self.log(f"🎧 {tts_label} audio mux...")
         volume_percent = int(getattr(self, "voice_volume_percent", 100) or 100)
         if volume_percent != 100:
             self.log(f"🔊 Voice volume {volume_percent}% applied at final mux (limiter on)")

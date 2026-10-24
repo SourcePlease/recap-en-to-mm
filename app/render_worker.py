@@ -70,6 +70,8 @@ def main() -> int:
         )
         runner.voice_volume_percent = int(cfg.get("voice_volume_percent", 100) or 100)
         runner.short_pauses = bool(cfg.get("short_pauses", False))
+        runner.gemini_env_path = str(cfg.get("gemini_env_path") or "")        # Gemini TTS keys (the same .env)
+        runner.gemini_direction = str(cfg.get("gemini_direction") or "")
         result = runner.run()
         emit("result", result=result)
         return 0

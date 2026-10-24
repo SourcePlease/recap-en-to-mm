@@ -21,6 +21,7 @@ from core import (FRAME_FILLS, OUTPUT_RATIOS, QUALITY_LABELS, normalize_segments
 from preview_tools import probe_duration as preview_probe_duration, extract_preview_frame, scale_logo_preview
 from narration_editor import NarrationEditor, failed_segment_from_error
 from splitter_tab import SplitterTab
+from gemini_tts import GEMINI_VOICES
 from recap_planner import SOURCE_LANGUAGES
 from recap_subtitles import SubtitleControls
 from subtitle_png import geometry as subtitle_geometry, sample as subtitle_sample
@@ -47,6 +48,7 @@ PREVIEW_W = 640
 PREVIEW_H = 360
 
 EDGE_VOICES = ("my-MM-ThihaNeural", "my-MM-NilarNeural")
+NARRATOR_VOICES = EDGE_VOICES + GEMINI_VOICES        # gemini_tts.py: one narrator voice for the whole video
 FILL_LABELS = {"blur": "Blur background", "black": "Black bars", "crop": "Crop to fill"}
 # Source language (2026-10-17): any language → Myanmar; Auto-detect asks Whisper which language the video speaks.
 LANGUAGE_LABELS = {"auto": "Auto-detect", **SOURCE_LANGUAGES}
@@ -152,8 +154,10 @@ class App(tk.Tk):
         saved_language = str(self.cfg.get("source_language") or "auto")
         self.source_language = tk.StringVar(value=LANGUAGE_LABELS.get(saved_language, LANGUAGE_LABELS["auto"]))
         self.final_folder = tk.StringVar(value=str(self.cfg.get("final_output_folder") or ""))
-        saved_voice = str(self.cfg.get("edge_tts_voice_mm") or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
-        self.edge_voice = tk.StringVar(value=saved_voice if saved_voice in EDGE_VOICES else EDGE_VOICES[0])
+        saved_voice = str(self.cfg.get("narrator_voice") or self.cfg.get("edge_tts_voice_mm")
+                          or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
+        self.edge_voice = tk.StringVar(value=saved_voice if saved_voice in NARRATOR_VOICES else EDGE_VOICES[0])
+        self.gemini_direction = tk.StringVar(value=str(self.cfg.get("gemini_direction") or ""))
         self._subtitle_preview_key = None
         self._subtitle_preview_path = None
         self._subtitle_busy = False
@@ -329,16 +333,16 @@ class App(tk.Tk):
                      values=tuple(LANGUAGE_LABELS.values())).grid(row=1, column=1, sticky="ew", pady=3)
         hint(1, "ဗီဒီယိုထဲက ပြောတဲ့ ဘာသာ။ Auto-detect = Whisper က နားထောင်ပြီး သိအောင်လုပ်မယ်")
         ttk.Label(source_box, text="Output").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=3)
-        ttk.Label(source_box, text="Myanmar  ·  Narrator only  ·  Edge TTS").grid(
+        ttk.Label(source_box, text="Myanmar  ·  Narrator only  ·  Edge / Gemini TTS").grid(
             row=2, column=1, columnspan=2, sticky="w", pady=3)
 
-        self.edge_voice_label = ttk.Label(source_box, text="Edge TTS Voice")
+        self.edge_voice_label = ttk.Label(source_box, text="Narrator Voice")
         self.edge_voice_label.grid(row=11, column=0, sticky="w", padx=(0, 8), pady=3)
-        self.edge_voice_combo = ttk.Combobox(source_box, textvariable=self.edge_voice, state="readonly", values=EDGE_VOICES)
+        self.edge_voice_combo = ttk.Combobox(source_box, textvariable=self.edge_voice, state="readonly", values=NARRATOR_VOICES)
         self.edge_voice_combo.grid(row=11, column=1, sticky="ew", pady=3)
-        self.edge_voice_hint = hint(11, "Local Edge TTS")
+        self.edge_voice_hint = hint(11, "my-MM = Edge TTS · gemini: = Gemini TTS (.env keys) — one voice all through")
 
-        self.edge_speed_label = ttk.Label(source_box, text="Edge TTS Speed")
+        self.edge_speed_label = ttk.Label(source_box, text="Narrator Speed")
         self.edge_speed_label.grid(row=12, column=0, sticky="w", padx=(0, 8), pady=3)
         self.edge_speed_frame = ttk.Frame(source_box)
         self.edge_speed_frame.grid(row=12, column=1, sticky="ew", pady=3)
@@ -351,6 +355,10 @@ class App(tk.Tk):
         self.edge_speed_value = ttk.Label(self.edge_speed_frame, text=_format_edge_rate(self.edge_rate_percent.get()), width=7)
         self.edge_speed_value.grid(row=0, column=1, padx=(8, 0))
         self.edge_speed_hint = hint(12, "-50% slower · 0% normal · +100% faster")
+
+        ttk.Label(source_box, text="Gemini voice style").grid(row=13, column=0, sticky="w", padx=(0, 8), pady=3)
+        ttk.Entry(source_box, textvariable=self.gemini_direction).grid(row=13, column=1, sticky="ew", pady=3)
+        hint(13, "Gemini only, e.g. calm storyteller — the voice itself never changes")
 
         self._bind_wheel_recursive(source_box, settings_canvas)
         self._settings_canvas = settings_canvas
@@ -1147,6 +1155,8 @@ class App(tk.Tk):
         self.cfg["final_output_folder"] = settings["final_output_folder"]
         self.cfg["reuse_transcript_and_plan"] = settings["reuse_transcript_and_plan"]
         self.cfg["edge_tts_voice_mm"] = settings["edge_tts_voice"]
+        self.cfg["narrator_voice"] = settings["voice"]
+        self.cfg["gemini_direction"] = settings["gemini_direction"]
         self.cfg["subtitles"] = settings["overlays"]["subtitles"]
         self.cfg["edge_tts_rate"] = settings["edge_tts_rate"]
         # Engine settings stay fixed/hidden; only user-facing production values persist.
@@ -1179,8 +1189,8 @@ class App(tk.Tk):
             raise ValueError("Source video ကိုရွေးပါ။")
         if gemini_env is not None and not gemini_env.is_file():
             raise ValueError("Gemini .env path မမှန်ပါ။ Gemini .env မှာ Browse နှိပ်ပြီး GEMINI_API_KEY ပါတဲ့ .env ဖိုင်ကိုရွေးပါ။")
-        if voice not in EDGE_VOICES:
-            raise ValueError("Edge TTS Voice ကိုရွေးပါ။")
+        if voice not in NARRATOR_VOICES:
+            raise ValueError("Narrator Voice ကိုရွေးပါ။")
         for tool in ("ffmpeg", "ffprobe"):
             if not Path(_tool_path(self.cfg, tool)).is_file():  # otherwise the job dies with "[WinError 2]"
                 raise ValueError(
@@ -1234,6 +1244,7 @@ class App(tk.Tk):
             "edge_tts_pitch": str(self.cfg.get("edge_tts_pitch", "+0Hz")),
             "gemini_env_path": str(gemini_env) if gemini_env is not None else "",
             "voice": voice,
+            "gemini_direction": self.gemini_direction.get().strip(),
             # V0.3 behavior, hidden from UI.
             "max_video_speed": float(self.cfg.get("max_video_speed", 1.25)),
             "max_video_slow": float(self.cfg.get("max_video_slow", 1.35)),
@@ -1479,7 +1490,7 @@ class App(tk.Tk):
             raise InterruptedError("Stopped after planner stage. START / RESUME ပြန်နှိပ်လို့ရပါတယ်။")
 
         self._log("✅ Transcript/translation complete.")
-        self._log(f"🎙️ Edge TTS — voice={settings['voice']}")
+        self._log(f"🎙️ Narrator TTS — voice={settings['voice']}")
         time.sleep(0.2)
 
         render_cfg = job_dir / "_render_worker.json"
@@ -1506,9 +1517,10 @@ class App(tk.Tk):
             "video_quality": settings.get("video_quality", "1080"),
             "frame_fill": settings.get("frame_fill", "blur"),
             "gemini_env_path": settings.get("gemini_env_path", ""),
+            "gemini_direction": settings.get("gemini_direction", ""),
             "stop_file": str(stop_file),
         })
-        result = self._run_child("render_worker.py", render_cfg, "STEP 2 — Edge TTS + Smart Sync").get("result") or {}
+        result = self._run_child("render_worker.py", render_cfg, "STEP 2 — Narrator TTS + Smart Sync").get("result") or {}
         final = result.get("final") or result.get("audio") or str(job_dir)
         folder = str(settings.get("final_output_folder") or "").strip()
         if folder and Path(final).is_file():

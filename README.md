@@ -99,6 +99,17 @@ Window ထိပ်က **Splitter** tab ကို နှိပ်ပါ။ ရ�
 
 အပိုင်းတိုင်းကို ပြန် encode လုပ်လို့ ဖြတ်တဲ့နေရာ အတိအကျ ဖြစ်ပါတယ် (NVIDIA GPU ရှိရင် NVENC နဲ့ မြန်ပါတယ် — 31 မိနစ် video ကို 9:16 + စာ + Part နံပါတ်နဲ့ 10 ပိုင်း ~4 မိနစ်)။
 
+## Gemini TTS အသံ
+
+**Narrator Voice** မှာ Edge (my-MM-Thiha / Nilar) အပြင် `gemini:Charon`, `gemini:Kore` … (ယောက်ျားသံ ၅ မျိုး၊ မိန်းမသံ ၅ မျိုး)
+ရွေးလို့ရပါတယ်။ ဘာသာပြန်တဲ့ `.env` ထဲက key တွေကိုပဲ သုံးပါတယ်။
+- စာကြောင်းတိုင်းကို တစ်ခါစီ မေးရတာမို့ request တိုင်းမှာ "narrator တစ်ယောက်တည်း — အသံ၊ အသက်၊ pitch၊ အမြန်နှုန်း
+  တစ်ကားလုံး မပြောင်းရ၊ dialogue လည်း အဲ့ narrator ပဲ ဖတ်" ဆိုတဲ့ ညွှန်ကြားချက် အတူတူကို ထည့်ပေးပါတယ် (တစ်ကားလုံး
+  အသံမပြောင်းအောင်)။
+- **Gemini voice style** အကွက်မှာ ပြောပုံ (ဥပမာ calm storyteller) ရေးလို့ရပါတယ် — အသံကိုယ်တိုင်တော့ မပြောင်းပါ။
+- Key တစ်ခုရဲ့ ဒီနေ့ quota ကုန်ရင် နောက် key ကို ပြောင်းသုံးပါတယ်။ အကုန်ကုန်ရင် ရပ်ပြီး ပြီးသားစာကြောင်းတွေ သိမ်းထားလို့
+  မနက် START/RESUME နှိပ်ရင် ကျန်တာပဲ ဆက်လုပ်ပါတယ်။ VPN လိုပါတယ် (Gemini က မြန်မာကနေ တိုက်ရိုက် မရ)။
+
 ## စာတန်း (Narration Subtitle) နဲ့ Video quality
 
 **Narration Subtitle** (ညာဘက် Production Tools အောက်ဆုံး) — အသံပြောနေတဲ့ မြန်မာစာကို video ပေါ်မှာ စာတန်းအဖြစ် ထည့်ပေးပါတယ်။
@@ -217,6 +228,7 @@ app/
   subtitle_png.py          Narration subtitle: Chromium နဲ့ စာတန်းပုံ (PNG) ထုတ်၊ အချိန်ကိုက်၊ SRT
   subtitle_fonts.py        စက်ထဲက မြန်မာ font စာရင်း
   recap_subtitles.py       Narration Subtitle UI (font / အရောင် / box …)
+  gemini_tts.py            Gemini TTS narrator (တစ်ကားလုံး narrator တစ်ယောက်တည်း)
   launch.ps1               Python ရှာပြီး UI ဖွင့်တာ
 recap_runtime/services/
   whisper_service.py       faster-whisper (GPU / CPU)
@@ -340,6 +352,14 @@ Double-click **`RUN.bat`**:
 
 Result: `jobs\<name>_<code>\edge_tts_smart_sync\final_edge_tts_smart_sync.mp4`
 (plus `whisper_transcript.txt`, `timestamp_translations.json`, `smart_sync_plan.json`, `run.log`).
+
+### Gemini TTS voice
+**Narrator Voice** also lists `gemini:Charon`, `gemini:Kore`, … (5 male, 5 female) next to the Edge voices; they use the
+keys of the same `.env`. Every line is its own request, so each one carries the same "one continuous narrator"
+direction (same voice, age, pitch and pace for the whole video; dialogue read by that narrator). **Gemini voice
+style** adds a delivery preference (e.g. calm storyteller) without changing the voice. A key whose daily quota is
+used up is skipped; when all are, the run stops and finished lines are kept for START/RESUME. Needs a VPN in
+Myanmar.
 
 ### Narration subtitles and video quality
 **Narration Subtitle** (bottom of Production Tools): the spoken Burmese is burned in as subtitles — installed

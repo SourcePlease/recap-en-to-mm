@@ -14,7 +14,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable
 
 import splitter as sp
-from core import OUTPUT_RATIOS, output_canvas, probe_video_size
+from core import OUTPUT_RATIOS, QUALITY_LABELS, output_canvas, probe_video_size, video_quality
 from preview_tools import extract_preview_frame, probe_duration as preview_probe_duration
 
 BG, PANEL, FIELD, BORDER = "#0d0f14", "#151922", "#0a0c10", "#303744"
@@ -27,7 +27,7 @@ DEFAULTS: dict[str, Any] = {
     "minutes": 3.0, "smart_cut": True, "max_extra": 20.0, "ratio": "Original", "fill": "blur",
     "text": "", "text_size": 46, "text_pos": [0.5, 0.86], "text_opacity": 1.0, "text_box": True,
     "label_on": True, "label_template": "Part {n}", "label_size": 56, "label_pos": [0.5, 0.10],
-    "label_opacity": 1.0, "label_box": True, "output_root": "",
+    "label_opacity": 1.0, "label_box": True, "output_root": "", "quality": "1080",
 }
 CUT_WORDS = {"pause": "pause", "breath": "short pause", "quietest": "quietest", "exact": "exact", "end": "end"}
 
@@ -65,6 +65,7 @@ class SplitterTab(ttk.Frame):
         self.max_extra = tk.StringVar(value=f"{float(saved['max_extra']):g}")
         self.ratio = tk.StringVar(value=saved["ratio"] if saved["ratio"] in RATIOS else "Original")
         self.fill = tk.StringVar(value=FILL_LABELS.get(saved["fill"], FILL_LABELS["blur"]))
+        self.quality = tk.StringVar(value=QUALITY_LABELS[video_quality(saved.get("quality"))])
         self.text = tk.StringVar(value=str(saved["text"]))
         self.text_size = tk.DoubleVar(value=float(saved["text_size"]))
         self.text_opacity = tk.DoubleVar(value=float(saved["text_opacity"]))
@@ -194,6 +195,13 @@ class SplitterTab(ttk.Frame):
         self.fill_combo.pack(side="left")
         for combo in (ratio, self.fill_combo):
             combo.bind("<<ComboboxSelected>>", lambda _e: self._frame_changed())
+        quality_row = ttk.Frame(box)            # 720p / 480p: smaller and faster on low-end PCs
+        quality_row.grid(row=15, column=0, sticky="ew", pady=(2, 2))
+        ttk.Label(quality_row, text="Quality", width=9).pack(side="left")
+        quality = ttk.Combobox(quality_row, textvariable=self.quality, values=tuple(QUALITY_LABELS.values()),
+                               state="readonly", width=34)
+        quality.pack(side="left")
+        quality.bind("<<ComboboxSelected>>", lambda _e: self._frame_changed())
         hint(14, "Original = မူရင်းအတိုင်း။ 16:9 / 9:16 / 1:1 ဆိုရင် ကွက်လပ်ကို Fill အတိုင်း ဖြည့်မယ် (Blur = နောက်ခံ ဝါးမယ်)။")
 
         title(16, "Text Box")
@@ -326,6 +334,7 @@ class SplitterTab(ttk.Frame):
             "label_opacity": round(float(self.label_opacity.get()), 2),
             "label_box": bool(self.label_box.get()),
             "output_root": self.output_root.get().strip(),
+            "quality": next((k for k, v in QUALITY_LABELS.items() if v == self.quality.get()), "1080"),
         }
 
     def _changed(self) -> None:

@@ -17,7 +17,8 @@ from typing import Any, Callable
 
 import numpy as np
 
-from core import _visual_filters, ffmpeg_encoders, frame_layout, output_canvas, probe_video_size
+from core import _visual_filters, ffmpeg_encoders, frame_layout, output_canvas, probe_video_size, quality_scale, \
+    video_quality
 
 LogFn = Callable[[str], None]
 
@@ -155,7 +156,11 @@ def _has_audio(ffprobe: str, source: str | Path) -> bool:
     return bool(p.stdout.strip())
 
 
-def encoder_args(encoder: str) -> list[str]:
+def encoder_args(encoder: str, quality: str = "1080") -> list[str]:
+    """1080 / 720 = as before (Splitter was already fast); 480 = the fastest settings for low-end PCs."""
+    if video_quality(quality) == "480":
+        return (["-c:v", "h264_nvenc", "-preset", "p3", "-rc", "vbr", "-cq", "24", "-b:v", "0"]
+                if encoder == "h264_nvenc" else ["-c:v", "libx264", "-preset", "superfast", "-crf", "23"])
     if encoder == "h264_nvenc":
         return ["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "21", "-b:v", "0"]
     return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20"]
@@ -187,6 +192,7 @@ def render_text_png(text: str, output: Path, font_size: int, max_width: int, box
 
 def render_part(ffmpeg: str, source: str | Path, start: float, end: float, output: Path, *,
                 layout: dict[str, Any], overlays: list[dict[str, Any]], encoder: str, has_audio: bool,
+                quality: str = "1080",
                 on_time: Callable[[float], None] | None = None, stop: threading.Event | None = None,
                 procs: list | None = None) -> None:
     """One part: exact start/end, frame layout, PNG overlays at their 0..1 centre positions, AAC sound."""
@@ -235,9 +241,9 @@ def render_part(ffmpeg: str, source: str | Path, start: float, end: float, outpu
             procs.remove(proc)
         return code, "".join(err)
 
-    code, err = run(encoder_args(encoder))
+    code, err = run(encoder_args(encoder, quality))
     if code != 0 and encoder != "libx264" and not (stop is not None and stop.is_set()):
-        code, err = run(encoder_args("libx264"))       # NVENC busy / missing on this PC: CPU encoder
+        code, err = run(encoder_args("libx264", quality))       # NVENC busy / missing on this PC: CPU encoder
     if stop is not None and stop.is_set():
         temp.unlink(missing_ok=True)
         raise InterruptedError("Stopped")
@@ -258,7 +264,10 @@ def _fingerprint(source: Path, part: dict[str, Any], settings: dict[str, Any], l
             "start": part["start"], "end": part["end"], "label": label,
             **{k: settings.get(k) for k in ("ratio", "fill", "text", "text_size", "text_pos", "text_opacity",
                                             "text_box", "label_on", "label_size", "label_pos", "label_opacity",
-                                            "label_box")}}
+                                            "label_box")},
+            # only a smaller quality is part of the key: parts made before the setting are kept
+            **({"quality": video_quality(settings.get("quality"))}
+               if video_quality(settings.get("quality")) != "1080" else {})}
     return hashlib.sha1(json.dumps(data, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
 
 
@@ -295,18 +304,22 @@ def split_video(source: str | Path, settings: dict[str, Any], *, ffmpeg: str, ff
         on_plan(parts)
 
     ratio, fill = str(settings.get("ratio") or "Original"), str(settings.get("fill") or "blur")
-    layout = frame_layout(ratio, fill, sw, sh, canvas=output_canvas(ratio, sw, sh))
+    quality = video_quality(settings.get("quality"))
+    k = quality_scale(quality)              # text sizes are set on the 1080 frame (the preview's)
+    layout = frame_layout(ratio, fill, sw, sh, canvas=output_canvas(ratio, sw, sh, quality))
     cw = int(layout["cw"])
     encoders = ffmpeg_encoders(ffmpeg)
     encoder = "h264_nvenc" if "h264_nvenc" in encoders else "libx264"
-    log(f"🎬 Frame {ratio} ({layout['cw']}x{layout['ch']}){' · ' + fill if ratio != 'Original' else ''} · encoder {encoder}")
+    log(f"🎬 Frame {ratio} ({layout['cw']}x{layout['ch']}){' · ' + fill if ratio != 'Original' else ''} · encoder {encoder}"
+        f" · quality {quality}p")
 
     work = folder / ".overlays"
     work.mkdir(exist_ok=True)
     fixed: list[dict[str, Any]] = []
     text = str(settings.get("text") or "").strip()
     if text:
-        png = render_text_png(text, work / "text_box.png", int(settings.get("text_size", 42)), int(cw * 0.86),
+        png = render_text_png(text, work / "text_box.png", max(10, round(int(settings.get("text_size", 42)) * k)),
+                              int(cw * 0.86),
                               bool(settings.get("text_box", True)))
         fixed.append({"png": png, "pos": settings.get("text_pos") or [0.5, 0.86],
                       "opacity": settings.get("text_opacity", 1.0)})
@@ -333,7 +346,8 @@ def split_video(source: str | Path, settings: dict[str, Any], *, ffmpeg: str, ff
             continue
         overlays = list(fixed)
         if label:
-            png = render_text_png(label, work / f"label_{p['n']:02d}.png", int(settings.get("label_size", 48)),
+            png = render_text_png(label, work / f"label_{p['n']:02d}.png",
+                                  max(10, round(int(settings.get("label_size", 48)) * k)),
                                   int(cw * 0.6), bool(settings.get("label_box", True)))
             overlays.append({"png": png, "pos": settings.get("label_pos") or [0.5, 0.1],
                              "opacity": settings.get("label_opacity", 1.0)})
@@ -344,7 +358,7 @@ def split_video(source: str | Path, settings: dict[str, Any], *, ffmpeg: str, ff
                 progress(min(1.0, (base + min(sec, length)) / max(0.1, duration)), f"Part {n}/{total}")
 
         render_part(ffmpeg, source, p["start"], p["end"], out, layout=layout, overlays=overlays, encoder=encoder,
-                    has_audio=has_audio, on_time=on_time, stop=stop, procs=procs)
+                    has_audio=has_audio, on_time=on_time, stop=stop, procs=procs, quality=quality)
         state[out.name] = key
         state_file.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
         done.append(out)

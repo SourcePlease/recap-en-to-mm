@@ -526,17 +526,43 @@ def probe_video_size(ffprobe: str, path: Path | str) -> tuple[int, int]:
     return width, height
 
 
-def output_canvas(ratio: str, source_w: int = 0, source_h: int = 0) -> tuple[int, int]:
-    """Final frame size: 16:9 = 1920x1080, 9:16 = 1080x1920, 1:1 = 1080x1080, Original = the
-    source shape (long side at most 1920)."""
+# Video quality (2026-10-24, user: "low-end PCs take very long"). Measured on 4 CPU threads, 20 s of a real
+# video, 9:16 blur: 1080p medium crf18 52.5 s, 720p veryfast crf20 9.3 s, 480p superfast crf23 3.6 s.
+# The layout (title / logo / text / subtitle sizes, preview) stays designed on the 1080 frame; only the
+# rendered frame and the encoder settings change, and pixel sizes are scaled by the same factor.
+VIDEO_QUALITIES = {"1080": 1.0, "720": 720 / 1080, "480": 480 / 1080}
+QUALITY_LABELS = {"1080": "1080p — best (slow on PCs without NVIDIA)", "720": "720p — faster",
+                  "480": "480p — fastest (low-end PCs)"}
+_X264_ARGS = {"1080": ["-preset", "medium", "-crf", "18"], "720": ["-preset", "veryfast", "-crf", "20"],
+              "480": ["-preset", "superfast", "-crf", "23"]}
+_NVENC_ARGS = {"1080": ["-preset", "p5", "-rc", "vbr", "-cq", "19", "-b:v", "0"],
+               "720": ["-preset", "p4", "-rc", "vbr", "-cq", "21", "-b:v", "0"],
+               "480": ["-preset", "p3", "-rc", "vbr", "-cq", "24", "-b:v", "0"]}
+
+
+def video_quality(value: Any) -> str:
+    text = str(value or "").strip().lower().removesuffix("p")
+    return text if text in VIDEO_QUALITIES else "1080"
+
+
+def quality_scale(value: Any) -> float:
+    return VIDEO_QUALITIES[video_quality(value)]
+
+
+def output_canvas(ratio: str, source_w: int = 0, source_h: int = 0, quality: str = "1080") -> tuple[int, int]:
+    """Final frame size at 1080 quality: 16:9 = 1920x1080, 9:16 = 1080x1920, 1:1 = 1080x1080, Original = the
+    source shape (long side at most 1920); 720 / 480 quality = the same shape smaller."""
     if ratio == "9:16":
-        return 1080, 1920
-    if ratio == "1:1":
-        return 1080, 1080
-    if ratio == "Original" and source_w > 0 and source_h > 0:
+        cw, ch = 1080, 1920
+    elif ratio == "1:1":
+        cw, ch = 1080, 1080
+    elif ratio == "Original" and source_w > 0 and source_h > 0:
         scale = min(1.0, OUTPUT_LONG_SIDE / max(source_w, source_h))
-        return _even(source_w * scale), _even(source_h * scale)
-    return 1920, 1080
+        cw, ch = _even(source_w * scale), _even(source_h * scale)
+    else:
+        cw, ch = 1920, 1080
+    k = quality_scale(quality)
+    return (cw, ch) if k == 1.0 else (_even(cw * k), _even(ch * k))
 
 
 def frame_layout(ratio: str, fill: str, source_w: int, source_h: int,
@@ -672,6 +698,7 @@ def render_video_part(
     max_freeze_hold: float = 0.75,
     frame_count: int | None = None,
     layout: dict[str, Any] | None = None,
+    quality: str = "1080",
 ) -> dict[str, float]:
     """frame_count (when given) locks the part to exactly that many 30 fps frames.
     layout (frame_layout) is the output ratio / fill; None = the original 16:9 fill.
@@ -713,7 +740,7 @@ def render_video_part(
             "-filter_complex", graph,
             "-map", out_label,
             *frame_lock,
-            *_encoder_args(encoder),
+            *_encoder_args(encoder, quality),
             "-movflags", "+faststart", str(output),
         ]
     else:
@@ -729,7 +756,7 @@ def render_video_part(
             *common_input,
             "-vf", vf,
             *frame_lock,
-            *_encoder_args(encoder),
+            *_encoder_args(encoder, quality),
             "-movflags", "+faststart", str(output),
         ]
 
@@ -770,7 +797,8 @@ def _clamp01(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def _render_title_png(text: str, output: Path, font_path: str, font_size: int, max_width: int = 1500) -> Path:
+def _render_title_png(text: str, output: Path, font_path: str, font_size: int, max_width: int = 1500,
+                      scale: float = 1.0) -> Path:
     """Render Myanmar title through shared Python Chromium renderer."""
     import sys
     project_root = Path(__file__).resolve().parents[1]
@@ -793,6 +821,11 @@ def _render_title_png(text: str, output: Path, font_path: str, font_size: int, m
         "font_size": int(font_size),
         "max_width": int(max_width),
     }
+    if scale < 0.999:   # 720p / 480p quality: the renderer's own pixel sizes, made for the 1080 frame, shrink too
+        cfg.update({"panel_width": round(980 * scale), "video_title_panel_height": round(170 * scale),
+                    "min_title_font_size": max(10, round(34 * scale)), "panel_radius": round(30 * scale),
+                    "title_horizontal_padding": round(44 * scale), "title_vertical_padding": round(18 * scale),
+                    "stroke_px": round(1.6 * scale, 2)})
     try:
         return make_video_title_png(text, output, cfg)
     except Exception as exc:
@@ -805,6 +838,7 @@ def _render_extra_text_png(
     font_size: int,
     background_alpha: float = 0.18,
     max_width: int = 1500,
+    scale: float = 1.0,
 ) -> Path:
     """Render the draggable extra-text overlay with Unicode-safe Myanmar shaping.
 
@@ -829,18 +863,19 @@ def _render_extra_text_png(
     if not text:
         raise ValueError("Empty extra text")
 
-    size = max(18, min(int(font_size), 84))
+    k = min(1.0, max(0.2, float(scale)))           # 720p / 480p quality: every pixel size of the panel shrinks
+    size = max(round(18 * k), min(int(font_size), 84))
     cfg = {
         "font_size": size,
-        "min_title_font_size": max(16, min(size, int(round(size * 0.62)))),
-        "panel_width": max(320, min(int(max_width), 1800)),
-        "video_title_panel_height": max(110, min(360, int(round(size * 4.2)))),
+        "min_title_font_size": max(round(16 * k), min(size, int(round(size * 0.62)))),
+        "panel_width": max(round(320 * k), min(int(max_width), 1800)),
+        "video_title_panel_height": max(round(110 * k), min(round(360 * k), int(round(size * 4.2)))),
         "max_title_lines": 3,
         "panel_bg_alpha": max(0.0, min(1.0, float(background_alpha))),
-        "panel_radius": 22,
-        "title_horizontal_padding": 34,
-        "title_vertical_padding": 14,
-        "stroke_px": 1.4,
+        "panel_radius": round(22 * k),
+        "title_horizontal_padding": round(34 * k),
+        "title_vertical_padding": round(14 * k),
+        "stroke_px": round(1.4 * k, 2),
         "font_weight": 700,
     }
     try:
@@ -848,10 +883,11 @@ def _render_extra_text_png(
     except Exception as exc:
         raise RuntimeError(f"Myanmar Chromium extra-text render failed: {exc}") from exc
 
-def _encoder_args(encoder: str) -> list[str]:
+def _encoder_args(encoder: str, quality: str = "1080") -> list[str]:
+    q = video_quality(quality)
     if encoder == "h264_nvenc":
-        return ["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "19", "-b:v", "0"]
-    return ["-c:v", "libx264", "-preset", "medium", "-crf", "18"]
+        return ["-c:v", "h264_nvenc", *_NVENC_ARGS[q]]
+    return ["-c:v", "libx264", *_X264_ARGS[q]]
 
 
 def apply_production_overlays(
@@ -863,8 +899,10 @@ def apply_production_overlays(
     work_dir: Path,
     log: LogFn = _noop,
     frame_size: tuple[int, int] = (1920, 1080),
+    quality: str = "1080",
 ) -> Path:
     overlays = dict(overlays or {})
+    k = quality_scale(quality)                 # text sizes are set on the 1080 frame
     fw, fh = int(frame_size[0]), int(frame_size[1])
     text_width = int(fw * 0.78)  # 1500 px on the 1920 frame
     boxes = [x for x in (overlays.get("blur_boxes") or []) if isinstance(x, dict)]
@@ -875,7 +913,8 @@ def apply_production_overlays(
     logo_path = str(overlays.get("logo_path") or "").strip() if logo_enabled else ""
     logo_file = Path(logo_path) if logo_path else None
     extra_text = str(overlays.get("extra_text") or "").strip()
-    if not boxes and not title_text and not extra_text and not (logo_file and logo_file.is_file()):
+    subtitle_track = overlays.get("_subtitle_png_track") or {}
+    if not boxes and not title_text and not extra_text and not subtitle_track and not (logo_file and logo_file.is_file()):
         return input_video
 
     cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(input_video)]
@@ -885,11 +924,12 @@ def apply_production_overlays(
     logo_idx: int | None = None
     extra_file: Path | None = None
     extra_idx: int | None = None
+    subtitle_idx: int | None = None
     if title_text:
         title_file = _render_title_png(
             title_text, work_dir / "title_overlay.png",
-            str(overlays.get("title_font_path") or ""), int(overlays.get("title_font_size", 54)),
-            max_width=text_width,
+            str(overlays.get("title_font_path") or ""), max(10, round(int(overlays.get("title_font_size", 54)) * k)),
+            max_width=text_width, scale=k,
         )
         title_idx = input_index
         cmd += ["-i", str(title_file)]
@@ -902,12 +942,17 @@ def apply_production_overlays(
         extra_file = _render_extra_text_png(
             extra_text,
             work_dir / "extra_text_overlay.png",
-            int(overlays.get("extra_text_font_size", 42)),
+            max(10, round(int(overlays.get("extra_text_font_size", 42)) * k)),
             0.18,
-            max_width=text_width,
+            max_width=text_width, scale=k,
         )
         extra_idx = input_index
         cmd += ["-i", str(extra_file)]
+        input_index += 1
+
+    if subtitle_track:
+        subtitle_idx = input_index
+        cmd += ["-f", "concat", "-safe", "0", "-i", str(subtitle_track["timeline"])]
         input_index += 1
 
     graph: list[str] = []
@@ -969,8 +1014,12 @@ def apply_production_overlays(
         graph.append(f"{current}[etxt]overlay=x='W*{ex:.6f}-w/2':y='H*{ey:.6f}-h/2':eof_action=repeat[{out}]")
         current = f"[{out}]"
 
+    if subtitle_idx is not None:
+        graph.append(f"{current}[{subtitle_idx}:v]overlay=x={subtitle_track['x']}:y={subtitle_track['y']}:"
+                     "eof_action=repeat:format=auto[vsubtitle]")
+        current = "[vsubtitle]"
     graph.append(f"{current}format=yuv420p[vout]")
-    cmd += ["-filter_complex", ";".join(graph), "-map", "[vout]", "-an"] + _encoder_args(encoder) + ["-movflags", "+faststart", str(output_video)]
+    cmd += ["-filter_complex", ";".join(graph), "-map", "[vout]", "-an"] + _encoder_args(encoder, quality) + ["-movflags", "+faststart", str(output_video)]
     p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if p.returncode != 0 and encoder == "h264_nvenc":
         log("⚠️ Overlay NVENC failed — libx264 fallback")
@@ -978,7 +1027,7 @@ def apply_production_overlays(
         # Rebuild tail safely rather than trying to mutate codec options in-place.
         map_pos = cmd2.index("-map")
         prefix = cmd2[:map_pos] + ["-map", "[vout]", "-an"]
-        cmd2 = prefix + _encoder_args("libx264") + ["-movflags", "+faststart", str(output_video)]
+        cmd2 = prefix + _encoder_args("libx264", quality) + ["-movflags", "+faststart", str(output_video)]
         p = subprocess.run(cmd2, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if p.returncode != 0 or not output_video.is_file() or output_video.stat().st_size < 5000:
         raise RuntimeError("Production overlay render failed: " + p.stderr[-3000:])
@@ -1041,6 +1090,7 @@ class EdgeSmartSync:
         render_final_video: bool = True,
         output_ratio: str = "16:9",
         frame_fill: str = "blur",
+        video_quality: str = "1080",
         overlays: dict[str, Any] | None = None,
         log: LogFn = _noop,
         progress: Callable[[int, int, str], None] | None = None,
@@ -1062,6 +1112,7 @@ class EdgeSmartSync:
         self.zoom_factor = max(1.0, min(float(zoom_factor), 1.25))
         self.output_ratio = output_ratio if output_ratio in OUTPUT_RATIOS else "16:9"
         self.frame_fill = frame_fill if frame_fill in FRAME_FILLS else "blur"
+        self.video_quality = globals()["video_quality"](video_quality)
         self.smooth_freeze_fallback = bool(smooth_freeze_fallback)
         self.max_freeze_hold = max(0.15, min(float(max_freeze_hold), 1.50))
         self.render_final_video = bool(render_final_video)
@@ -1121,7 +1172,8 @@ class EdgeSmartSync:
         checkpoint = self._checkpoint_load(paths)
         checkpoint.setdefault("audio", {})
         checkpoint.setdefault("video", {})
-        checkpoint["engine"] = "edge_tts"
+        provider = "edge_tts"
+        checkpoint["engine"] = provider
         checkpoint["voice"] = self.voice
 
         self.log(f"📁 Job: {self.job_dir}")
@@ -1133,21 +1185,16 @@ class EdgeSmartSync:
         except Exception as exc:  # only the frame shape depends on it: Original falls back to 16:9
             source_w, source_h = 0, 0
             self.log(f"⚠️ Video size not readable ({exc}); Original ratio falls back to 16:9")
-        layout = frame_layout(self.output_ratio, self.frame_fill, source_w, source_h)
+        layout = frame_layout(self.output_ratio, self.frame_fill, source_w, source_h,
+                              canvas=output_canvas(self.output_ratio, source_w, source_h, self.video_quality))
         self.log(f"🪞 Mirror={'ON' if self.mirror_video else 'OFF'} | Ratio={layout['ratio']} "
-                 f"{layout['cw']}x{layout['ch']} ({layout['fill']}) from {source_w}x{source_h} | Zoom={self.zoom_factor:.3f}x")
+                 f"{layout['cw']}x{layout['ch']} ({layout['fill']}) from {source_w}x{source_h} | Zoom={self.zoom_factor:.3f}x"
+                 f" | Quality={self.video_quality}p")
 
-        engine = EdgeTTSEngine(
-            ffmpeg=self.ffmpeg,
-            work_dir=paths.work / "edge_tts_temp",
-            rate=self.edge_tts_rate,
-            pitch=self.edge_tts_pitch,
-            log=self.log,
-        )
-        fingerprint_voice = (
-            self.voice + "|edge-tts-v1|rate=" + self.edge_tts_rate + "|pitch=" + self.edge_tts_pitch
-        )
-        checkpoint["tts_provider"] = "edge_tts"
+        engine = EdgeTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "edge_tts_temp",
+                               rate=self.edge_tts_rate, pitch=self.edge_tts_pitch, log=self.log)
+        fingerprint_voice = self.voice + "|edge-tts-v1|rate=" + self.edge_tts_rate + "|pitch=" + self.edge_tts_pitch
+        checkpoint["tts_provider"] = provider
 
         timing: list[dict[str, Any]] = []
         audio_parts: list[Path] = []
@@ -1250,7 +1297,7 @@ class EdgeSmartSync:
         ]
         out_plan = dict(plan)
         out_plan["segments"] = [dict(seg) for seg in plan.get("segments", [])]
-        out_plan["tts_provider"] = "edge_tts"
+        out_plan["tts_provider"] = provider
         out_plan["tts_voice"] = self.voice
         out_plan["actual_audio_duration"] = round(final_audio_duration, 3)
         out_plan["tts_timing_segments"] = timing
@@ -1301,6 +1348,8 @@ class EdgeSmartSync:
                 "smooth_freeze": self.smooth_freeze_fallback, "max_freeze_hold": self.max_freeze_hold,
                 "mirror": self.mirror_video, "zoom": self.zoom_factor, "encoder": encoder,
                 "frame": [layout["ratio"], layout["fill"], layout["cw"], layout["ch"]],
+                # only a non-1080 quality is part of the key: parts made before the setting are reused
+                **({"quality": self.video_quality} if self.video_quality != "1080" else {}),
             }, sort_keys=True).encode()
             vfp = hashlib.sha256(vfp_raw).hexdigest()
             rec = checkpoint["video"].get(base, {})
@@ -1316,7 +1365,7 @@ class EdgeSmartSync:
                         self.mirror_video, self.zoom_factor,
                         self.max_video_speed, self.max_video_slow,
                         self.smooth_freeze_fallback, self.max_freeze_hold,
-                        frame_count=frame_count, layout=layout,
+                        frame_count=frame_count, layout=layout, quality=self.video_quality,
                     )
                 except Exception:
                     # Only on the first non-reused part, allow global NVENC -> CPU fallback.
@@ -1332,7 +1381,7 @@ class EdgeSmartSync:
                             self.mirror_video, self.zoom_factor,
                             self.max_video_speed, self.max_video_slow,
                             self.smooth_freeze_fallback, self.max_freeze_hold,
-                            frame_count=frame_count, layout=layout,
+                            frame_count=frame_count, layout=layout, quality=self.video_quality,
                         )
                         # Recompute fingerprint with CPU encoder.
                         vfp_raw = json.dumps({
@@ -1345,6 +1394,7 @@ class EdgeSmartSync:
                             "smooth_freeze": self.smooth_freeze_fallback, "max_freeze_hold": self.max_freeze_hold,
                             "mirror": self.mirror_video, "zoom": self.zoom_factor, "encoder": encoder,
                             "frame": [layout["ratio"], layout["fill"], layout["cw"], layout["ch"]],
+                            **({"quality": self.video_quality} if self.video_quality != "1080" else {}),
                         }, sort_keys=True).encode()
                         vfp = hashlib.sha256(vfp_raw).hexdigest()
                     else:
@@ -1371,13 +1421,27 @@ class EdgeSmartSync:
         concat_video_parts(self.ffmpeg, video_parts, paths.synced_video_noaudio, paths.work)
         self._log_sync_check(paths, segments, checkpoint)
         video_for_mux = paths.synced_video_noaudio
-        if self.overlays.get("blur_boxes") or str(self.overlays.get("title_text") or "").strip() or str(self.overlays.get("logo_path") or "").strip() or str(self.overlays.get("extra_text") or "").strip():
+        render_overlays = dict(self.overlays)
+        subtitle_style = render_overlays.get("subtitles") or {}
+        if subtitle_style.get("enabled", False):
+            from subtitle_png import prepare
+            self.log("📝 Narration subtitles — Chromium PNG rendering")
+            from subtitle_png import scaled
+            track = prepare(out_plan["subtitle_segments"], scaled(subtitle_style, quality_scale(self.video_quality)),
+                            (layout["cw"], layout["ch"]),
+                            paths.work / "subtitle_png", final_audio_duration, should_stop=self.should_stop, log=self.log)
+            render_overlays["_subtitle_png_track"] = track
+            out_plan["subtitle_cues"] = [{k: c[k] for k in ("start", "end", "text")} for c in track["cues"]]
+            out_plan["subtitle_srt"] = track["srt"]
+            atomic_write_json(paths.plan, out_plan)
+        if render_overlays.get("_subtitle_png_track") or self.overlays.get("blur_boxes") or str(self.overlays.get("title_text") or "").strip() or str(self.overlays.get("logo_path") or "").strip() or str(self.overlays.get("extra_text") or "").strip():
             self.log("🎨 Production overlay pass — Blur / Title PNG / Logo...")
             video_for_mux = apply_production_overlays(
                 self.ffmpeg, paths.synced_video_noaudio, paths.decorated_video_noaudio,
-                self.overlays, encoder, paths.work, self.log, frame_size=(layout["cw"], layout["ch"]),
+                render_overlays, encoder, paths.work, self.log, frame_size=(layout["cw"], layout["ch"]),
+                quality=self.video_quality,
             )
-        self.log("🎧 Edge TTS audio mux...")
+        self.log(f"🎧 Edge TTS audio mux...")
         volume_percent = int(getattr(self, "voice_volume_percent", 100) or 100)
         if volume_percent != 100:
             self.log(f"🔊 Voice volume {volume_percent}% applied at final mux (limiter on)")
@@ -1385,10 +1449,18 @@ class EdgeSmartSync:
         final_duration = probe_duration(self.ffprobe, paths.final)
         self.log(f"✅ FINAL READY: {paths.final}")
         self.log(f"⏱️ Final duration: {final_duration:.2f}s")
+        srt = ""
+        try:
+            from subtitle_png import upload_srt
+            srt = str(upload_srt(paths.final, out_plan["subtitle_segments"], out_plan.get("subtitle_srt")))
+            self.log(f"📝 SRT for upload: {srt}")
+        except Exception as exc:  # the video itself is finished
+            self.log(f"⚠️ SRT for upload not written: {exc}")
         return {
             "audio": str(paths.voice),
             "plan": str(paths.plan),
             "final": str(paths.final),
+            "srt": srt,
             "segments": len(timing),
             "duration": final_duration,
         }

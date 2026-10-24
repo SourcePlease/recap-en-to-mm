@@ -99,6 +99,26 @@ Window ထိပ်က **Splitter** tab ကို နှိပ်ပါ။ ရ�
 
 အပိုင်းတိုင်းကို ပြန် encode လုပ်လို့ ဖြတ်တဲ့နေရာ အတိအကျ ဖြစ်ပါတယ် (NVIDIA GPU ရှိရင် NVENC နဲ့ မြန်ပါတယ် — 31 မိနစ် video ကို 9:16 + စာ + Part နံပါတ်နဲ့ 10 ပိုင်း ~4 မိနစ်)။
 
+## စာတန်း (Narration Subtitle) နဲ့ Video quality
+
+**Narration Subtitle** (ညာဘက် Production Tools အောက်ဆုံး) — အသံပြောနေတဲ့ မြန်မာစာကို video ပေါ်မှာ စာတန်းအဖြစ် ထည့်ပေးပါတယ်။
+- Font (စက်ထဲမှာ ရှိတဲ့ မြန်မာ font တွေ)၊ အရွယ်၊ Bold၊ စာလုံးအရောင်၊ အနားကွပ် (Outline)၊ အရိပ်၊ နောက်ခံ box အရောင် / opacity၊ အကျယ်
+  ရွေးလို့ရပါတယ်။ Preview ပေါ်မှာ ဆွဲရွှေ့ပြီး နေရာ ချထားပါ။
+- စာကြောင်းရှည်ရင် ၂ ကြောင်းစီ ကတ်တွေ ခွဲပြီး အသံနဲ့ အချိန်ကိုက် ပြပါတယ်။ ကွင်းထဲက English (ဥပမာ "(Zombie)") ကို မပြပါ။
+- SRT ဖိုင်ကိုလည်း ထုတ်ပေးပါတယ် — `SRT_for_upload\` folder ထဲမှာ (video ဘေးမှာ မထားပါ၊ နာမည်တူ .srt ရှိရင် VLC / PotPlayer က
+  စာတန်း ၂ ထပ် ပြလို့ပါ)။ Subtitle ပိတ်ထားလည်း SRT ထုတ်ပေးပါတယ် (upload လုပ်ဖို့)။
+
+**Quality** (Ratio အောက်) — စက်နိမ့်ရင် video ထုတ်တာ အရမ်းကြာတဲ့ ပြဿနာအတွက်:
+
+| Quality | ဘာလဲ | 20 စက္ကန့် video (CPU, NVIDIA မပါ) |
+|---|---|---|
+| 1080p — best | အရင်အတိုင်း | ~52 စက္ကန့် |
+| 720p — faster | Facebook Reel / TikTok အတွက် လုံလောက် | ~9 စက္ကန့် (~၅.၆ ဆ မြန်) |
+| 480p — fastest | စက်နိမ့်အတွက် (ဖုန်းမှာ နည်းနည်း ဝါး) | ~3.6 စက္ကန့် (~၁၄ ဆ မြန်) |
+
+Title / Logo / စာ / စာတန်း အရွယ်တွေကို frame နဲ့ အချိုးကျ လျှော့ပေးလို့ ဘယ် quality မှာမဆို ပုံစံတူပါတယ်။ Quality ပြောင်းရင် video
+အပိုင်းတွေပဲ ပြန်လုပ်ပြီး ဘာသာပြန်တာ / အသံ ပြန်မလုပ်ပါ။ Splitter tab မှာလည်း Quality ရွေးလို့ရပါတယ်။
+
 ## Smart Sync ဘယ်လိုအလုပ်လုပ်လဲ
 
 - **ရုပ်ကို အပိုင်းခွဲ** — စာပိုင်းတိုင်းက မူရင်း video ရဲ့ ရုပ်တစ်ပိုင်းကို ပိုင်တယ်။ စာပိုင်း ၂ ခုကြားက အသံတိတ်နေရာကို အလယ်ကနေ ခွဲပြီး ဘေးက စာပိုင်း ၂ ခုကို ဝေပေးတယ်။ Video ရဲ့ ပထမ frame ကနေ နောက်ဆုံး frame အထိ ဘာမှ မကျန်ပါဘူး (V2 full coverage)။
@@ -194,6 +214,9 @@ app/
   preview_tools.py         Preview frame / logo
   splitter.py              Splitter: ဘယ်မှာ ဖြတ်မလဲ (smart cut)၊ အပိုင်း render
   splitter_tab.py          Splitter tab UI
+  subtitle_png.py          Narration subtitle: Chromium နဲ့ စာတန်းပုံ (PNG) ထုတ်၊ အချိန်ကိုက်၊ SRT
+  subtitle_fonts.py        စက်ထဲက မြန်မာ font စာရင်း
+  recap_subtitles.py       Narration Subtitle UI (font / အရောင် / box …)
   launch.ps1               Python ရှာပြီး UI ဖွင့်တာ
 recap_runtime/services/
   whisper_service.py       faster-whisper (GPU / CPU)
@@ -317,6 +340,16 @@ Double-click **`RUN.bat`**:
 
 Result: `jobs\<name>_<code>\edge_tts_smart_sync\final_edge_tts_smart_sync.mp4`
 (plus `whisper_transcript.txt`, `timestamp_translations.json`, `smart_sync_plan.json`, `run.log`).
+
+### Narration subtitles and video quality
+**Narration Subtitle** (bottom of Production Tools): the spoken Burmese is burned in as subtitles — installed
+Myanmar font, size, bold, text / outline colour, outline width, shadow, box colour and opacity, width; drag it on
+the preview. Long lines become two-line cards timed on the voice; English glosses in ( ) are not shown. An SRT is
+always written to `SRT_for_upload\` (not next to the video, where players would show it twice).
+
+**Quality** (under Ratio): 1080p (as before) / 720p / 480p. Measured on 4 CPU threads without an NVIDIA card,
+20 s of video: 1080p 52 s, 720p 9 s, 480p 3.6 s. Title, logo, text and subtitle sizes are scaled so the look is
+the same; changing it re-renders only the video parts (translation and voice are kept). Splitter has it too.
 
 ### Advanced (`config.json`, created on the first START)
 `ffmpeg_path`, `ffprobe_path`, `python_path`, `max_video_speed` (1.25),

@@ -17,3 +17,4 @@ numpy==2.2.6                # Short pauses + audio helpers
 pillow==12.3.0              # overlays, preview
 requests==2.32.3
 playwright==1.62.0          # Myanmar text renderer (Chromium)
+fonttools==4.63.0           # installed Myanmar fonts for the narration subtitles

@@ -62,6 +62,7 @@ def main() -> int:
             render_final_video=bool(cfg.get("render_final_video", True)),
             output_ratio=str(cfg.get("output_ratio", "16:9")),
             frame_fill=str(cfg.get("frame_fill", "blur")),
+            video_quality=str(cfg.get("video_quality", "1080")),
             overlays=cfg.get("overlays") or {},
             log=log,
             progress=progress,

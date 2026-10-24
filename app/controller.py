@@ -16,11 +16,14 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from core import FRAME_FILLS, OUTPUT_RATIOS, normalize_segments, output_canvas, probe_video_size
+from core import (FRAME_FILLS, OUTPUT_RATIOS, QUALITY_LABELS, normalize_segments, output_canvas, probe_video_size,
+                  video_quality)
 from preview_tools import probe_duration as preview_probe_duration, extract_preview_frame, scale_logo_preview
 from narration_editor import NarrationEditor, failed_segment_from_error
 from splitter_tab import SplitterTab
 from recap_planner import SOURCE_LANGUAGES
+from recap_subtitles import SubtitleControls
+from subtitle_png import geometry as subtitle_geometry, sample as subtitle_sample
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT_DIR / "config.json"
@@ -151,6 +154,11 @@ class App(tk.Tk):
         self.final_folder = tk.StringVar(value=str(self.cfg.get("final_output_folder") or ""))
         saved_voice = str(self.cfg.get("edge_tts_voice_mm") or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
         self.edge_voice = tk.StringVar(value=saved_voice if saved_voice in EDGE_VOICES else EDGE_VOICES[0])
+        self._subtitle_preview_key = None
+        self._subtitle_preview_path = None
+        self._subtitle_busy = False
+        self._subtitle_scaled_key = None
+        self._subtitle_photo = None
         self.edge_rate_percent = tk.DoubleVar(value=float(_parse_edge_rate_percent(self.cfg.get("edge_tts_rate", "+0%"))))
         self.max_speed = tk.StringVar(value=str(self.cfg.get("max_video_speed", 1.25)))
         self.max_slow = tk.StringVar(value=str(self.cfg.get("max_video_slow", 1.35)))
@@ -161,6 +169,7 @@ class App(tk.Tk):
         saved_ratio = str(self.cfg.get("output_ratio") or "16:9")
         self.output_ratio = tk.StringVar(value=saved_ratio if saved_ratio in OUTPUT_RATIOS else "16:9")
         self.frame_fill = tk.StringVar(value=FILL_LABELS.get(str(self.cfg.get("frame_fill") or "blur"), FILL_LABELS["blur"]))
+        self.quality = tk.StringVar(value=QUALITY_LABELS[video_quality(self.cfg.get("video_quality"))])
         self.source_size = (0, 0)
         self.smooth_freeze = tk.BooleanVar(value=bool(self.cfg.get("smooth_freeze_fallback", False)))
         self.max_freeze_hold = tk.StringVar(value=str(self.cfg.get("max_freeze_hold", 0.75)))
@@ -356,7 +365,7 @@ class App(tk.Tk):
         left.add(log_panel, weight=2)
 
         # ---------------- center: preview that fills its pane
-        preview_box = ttk.LabelFrame(main, text="Preview — drag Title / Logo, draw Blur box", padding=7)
+        preview_box = ttk.LabelFrame(main, text="Preview — drag Title / Logo / Subtitle, draw Blur box", padding=7)
         preview_box.columnconfigure(0, weight=1)
         preview_box.rowconfigure(0, weight=1)
         self.preview_canvas = tk.Canvas(preview_box, width=PREVIEW_W, height=PREVIEW_H, bg="#05070a", highlightthickness=1, highlightbackground=BORDER, cursor="crosshair")
@@ -445,6 +454,12 @@ class App(tk.Tk):
         fill_combo.grid(row=0, column=3, sticky="ew")
         for combo in (ratio_combo, fill_combo):
             combo.bind("<<ComboboxSelected>>", lambda _e: self._frame_changed())
+        # Video quality: 720p / 480p render several times faster on PCs without an NVIDIA card.
+        ttk.Label(frame_row, text="Quality", width=9).grid(row=1, column=0, sticky="w", pady=(6, 0))
+        quality_combo = ttk.Combobox(frame_row, textvariable=self.quality, values=tuple(QUALITY_LABELS.values()),
+                                     state="readonly", width=34)
+        quality_combo.grid(row=1, column=1, columnspan=3, sticky="ew", pady=(6, 0))
+        quality_combo.bind("<<ComboboxSelected>>", lambda _e: self._quality_changed())
 
         section(3, "Blur Watermark Area")
         blur_row = ttk.Frame(tools)
@@ -497,6 +512,9 @@ class App(tk.Tk):
                                                "extra_opacity_label", f"{self.extra_text_opacity.get()*100:.0f}%", pady=(2, 2))
         self.extra_opacity_slider.bind("<ButtonRelease-1>", lambda _e: self._redraw_editor_items())
         ttk.Label(tools, text="Drag the text on the preview to move it", style="Muted.TLabel").grid(row=20, column=0, sticky="w", pady=(0, 10))
+        section(22, "Narration Subtitle")
+        self.subtitle_controls = SubtitleControls(tools, self.cfg.get("subtitles"), self._subtitle_changed)
+        self.subtitle_controls.grid(row=23, column=0, sticky="ew", pady=(5, 10))
         self._bind_wheel_recursive(tools, tools_canvas)
         # Job resume / config loads set the IntVars directly; keep the sliders in step.
         self.title_size.trace_add("write", lambda *_a: self._sync_int_slider(self.title_size, self._title_size_scale_var, "title_size_label"))
@@ -784,6 +802,7 @@ class App(tk.Tk):
         c = self.preview_canvas
         c.delete("editor")
         ox, oy, pw, ph = self._preview_bounds()
+        self._draw_subtitle_preview(ox, oy, pw, ph)
         self.blur_count_label.configure(text=f"{len(self.blur_boxes)} box" + ("es" if len(self.blur_boxes) != 1 else ""))
         for i, b in enumerate(self.blur_boxes):
             x1, y1 = ox + b["x"] * pw, oy + b["y"] * ph
@@ -827,6 +846,63 @@ class App(tk.Tk):
             except Exception as exc:
                 self._log(f"⚠️ Logo preview error: {exc}")
 
+    def _quality_code(self) -> str:
+        return next((code for code, label in QUALITY_LABELS.items() if label == self.quality.get()), "1080")
+
+    def _quality_changed(self) -> None:
+        self.cfg["video_quality"] = self._quality_code()
+        save_config(self.cfg)
+        if self._quality_code() != "1080":
+            self._log(f"🎞️ Quality {self._quality_code()}p: the video parts are made smaller and faster "
+                      "(title / logo / subtitle keep their look); the translation and voice are kept.")
+
+    def _subtitle_changed(self) -> None:
+        try:
+            self.cfg["subtitles"] = self.subtitle_controls.values()
+        except (ValueError, tk.TclError):
+            return
+        save_config(self.cfg)
+        self._redraw_editor_items()
+
+    def _draw_subtitle_preview(self, ox, oy, pw, ph) -> None:
+        if not hasattr(self, "subtitle_controls"):
+            return
+        try:
+            values = self.subtitle_controls.values()
+        except (ValueError, tk.TclError):
+            return
+        if not values["enabled"]:
+            return
+        frame = self._output_canvas()
+        identity = dict(values)
+        identity.pop("position")
+        key = json.dumps([identity, frame], sort_keys=True)
+        if key != self._subtitle_preview_key and not self._subtitle_busy:
+            self._subtitle_busy = True
+
+            def render():
+                path = None
+                try:
+                    path = subtitle_sample(values, frame, LOGS_DIR / "subtitle_preview")
+                except Exception as exc:
+                    self._log(f"⚠️ Subtitle preview: {exc}")
+                self.msgq.put(("subtitle_preview", (key, path)))
+
+            threading.Thread(target=render, daemon=True).start()
+        if key != self._subtitle_preview_key or not self._subtitle_preview_path:
+            return
+        from PIL import Image, ImageTk
+        width, height, x, y = subtitle_geometry(values, frame)
+        scale = pw / frame[0]
+        size = max(1, round(width * scale)), max(1, round(height * scale))
+        scaled_key = str(self._subtitle_preview_path), size
+        if scaled_key != self._subtitle_scaled_key:
+            with Image.open(self._subtitle_preview_path) as img:
+                self._subtitle_photo = ImageTk.PhotoImage(img.resize(size, Image.Resampling.LANCZOS))
+            self._subtitle_scaled_key = scaled_key
+        self.preview_canvas.create_image(ox + x * scale, oy + y * scale, image=self._subtitle_photo,
+                                         anchor="nw", tags=("editor", "subtitle"))
+
     def _preview_press(self, event) -> None:
         x, y = self._preview_xy(event)
         if self._draw_blur_mode:
@@ -849,6 +925,8 @@ class App(tk.Tk):
                 i = int(handle.rsplit("_",1)[1]); self.selected_blur=i; self._drag_kind="blur_resize"; self._drag_index=i; self._drag_original=dict(self.blur_boxes[i]); break
             if "title" in t:
                 self._drag_kind="title"; break
+            if "subtitle" in t:
+                self._drag_kind="subtitle"; self._drag_original=list(self.subtitle_controls.position); break
             if "extra_text" in t:
                 self._drag_kind="extra_text"; break
             if "logo" in t:
@@ -868,6 +946,9 @@ class App(tk.Tk):
         dx=(x-self._drag_start[0])/pw; dy=(y-self._drag_start[1])/ph
         if self._drag_kind == "title":
             self.title_pos=[(x-ox)/pw, (y-oy)/ph]
+        elif self._drag_kind == "subtitle":
+            sx, sy = self._drag_original
+            self.subtitle_controls.position = [max(0., min(1., sx + dx)), max(0., min(1., sy + dy))]
         elif self._drag_kind == "extra_text":
             self.extra_text_pos=[(x-ox)/pw, (y-oy)/ph]
         elif self._drag_kind == "logo":
@@ -896,6 +977,9 @@ class App(tk.Tk):
             self.status.set("READY")
             self._redraw_editor_items()
             return
+        if self._drag_kind == "subtitle":
+            self.cfg["subtitles"] = self.subtitle_controls.values()
+            save_config(self.cfg)
         self._drag_kind=None; self._drag_index=None; self._drag_start=None; self._drag_original=None
         self._redraw_editor_items()
 
@@ -934,6 +1018,11 @@ class App(tk.Tk):
                     self.status.set(str(label))
                 elif kind == "stage":
                     self.stage.set(str(payload))
+                elif kind == "subtitle_preview":
+                    key, path = payload
+                    self._subtitle_busy = False
+                    self._subtitle_preview_key, self._subtitle_preview_path = key, path
+                    self._redraw_editor_items()
                 elif kind == "job":
                     self.job_display.set(str(payload))
                 elif kind == "done":
@@ -1058,6 +1147,7 @@ class App(tk.Tk):
         self.cfg["final_output_folder"] = settings["final_output_folder"]
         self.cfg["reuse_transcript_and_plan"] = settings["reuse_transcript_and_plan"]
         self.cfg["edge_tts_voice_mm"] = settings["edge_tts_voice"]
+        self.cfg["subtitles"] = settings["overlays"]["subtitles"]
         self.cfg["edge_tts_rate"] = settings["edge_tts_rate"]
         # Engine settings stay fixed/hidden; only user-facing production values persist.
         self.cfg["zoom_factor"] = settings["zoom_factor"]
@@ -1065,6 +1155,7 @@ class App(tk.Tk):
         self.cfg["voice_volume_percent"] = int(settings.get("voice_volume_percent", 100))
         self.cfg["short_pauses"] = bool(settings.get("short_pauses", True))
         self.cfg["output_ratio"] = settings["output_ratio"]
+        self.cfg["video_quality"] = settings["video_quality"]
         self.cfg["frame_fill"] = settings["frame_fill"]
         self.cfg["logo_enabled"] = bool(settings["overlays"].get("logo_enabled", False))
         self.cfg["logo_path"] = settings["overlays"].get("logo_path", "") if self.cfg["logo_enabled"] else ""
@@ -1108,6 +1199,7 @@ class App(tk.Tk):
         logo_enabled = bool(self.logo_enabled.get())
         logo_path = self.logo_path.get().strip() if logo_enabled else ""
         overlays = {
+            "subtitles": self.subtitle_controls.values(),
             "blur_boxes": [dict(x) for x in self.blur_boxes],
             "blur_strength": int(self.cfg.get("overlay_blur_strength", 18)),
             "title_text": self.title_text.get().strip(),
@@ -1151,6 +1243,7 @@ class App(tk.Tk):
             "voice_volume_percent": int(self.voice_volume.get()),
             "short_pauses": bool(self.short_pauses.get()),
             "output_ratio": self.output_ratio.get() if self.output_ratio.get() in OUTPUT_RATIOS else "16:9",
+            "video_quality": self._quality_code(),
             "frame_fill": self._fill_code() if self._fill_code() in FRAME_FILLS else "blur",
             "zoom_factor": zoom,
             "render_final_video": True,
@@ -1410,6 +1503,7 @@ class App(tk.Tk):
             "voice_volume_percent": settings["voice_volume_percent"],
             "short_pauses": bool(settings.get("short_pauses", True)),
             "output_ratio": settings.get("output_ratio", "16:9"),
+            "video_quality": settings.get("video_quality", "1080"),
             "frame_fill": settings.get("frame_fill", "blur"),
             "gemini_env_path": settings.get("gemini_env_path", ""),
             "stop_file": str(stop_file),
@@ -1422,6 +1516,12 @@ class App(tk.Tk):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(final, target)
             self._log(f"📤 Final video saved to {target}")
+            srt = Path(str(result.get("srt") or ""))
+            if srt.is_file():          # in a folder of its own: players would show a same-name .srt twice
+                srt_target = target.parent / "SRT_for_upload" / f"{target.stem}.srt"
+                srt_target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(srt, srt_target)
+                self._log(f"📝 SRT saved to {srt_target}")
             final = str(target)
         return str(final), job_dir
 

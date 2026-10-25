@@ -156,13 +156,16 @@ class StudioTab(ttk.Frame):
         ttk.Entry(ai, textvariable=self.model_var).grid(row=1, column=1, sticky="ew", pady=4)
         ttk.Label(ai, text="API key").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=4)
         ttk.Entry(ai, textvariable=self.key_var, show="•").grid(row=2, column=1, sticky="ew", pady=4)
-        ttk.Button(ai, text="Test AI", command=self._test_ai).grid(row=3, column=1, sticky="e", pady=(6, 4))
+        ai_buttons = ttk.Frame(ai)
+        ai_buttons.grid(row=3, column=1, sticky="e", pady=(6, 4))
+        ttk.Button(ai_buttons, text="Test AI", command=self._test_ai).pack(side="left")
+        ttk.Button(ai_buttons, text="Use for Recap", command=self._apply_provider_to_recap).pack(side="left", padx=(6, 0))
         ttk.Label(ai, textvariable=self.ai_status_var, wraplength=430, justify="left").grid(
             row=4, column=0, columnspan=2, sticky="w", pady=(5, 0))
         ttk.Label(
             ai,
-            text="Free tiers have account-specific limits. Choose a free model explicitly; this tester never silently switches to paid usage. "
-                 "The existing Gemini recap pipeline remains unchanged in this first integration step.",
+            text="Free tiers have account-specific limits. Choose a model you know is free. Use for Recap saves the provider/model to your local .env and routes story-context, translation, and audit requests through it. "
+                 "Fallback providers are opt-in through RECAP_AI_FALLBACKS.",
             wraplength=430, justify="left",
         ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
@@ -296,6 +299,66 @@ class StudioTab(ttk.Frame):
             self.events.put(("error", str(exc)))
         finally:
             self.events.put(("busy", False))
+
+    def _apply_provider_to_recap(self) -> None:
+        provider = PROVIDER_LABEL_TO_KEY.get(self.provider_var.get(), "groq")
+        model = self.model_var.get().strip()
+        if not model:
+            messagebox.showwarning("Studio", "Enter the model ID before applying this provider.", parent=self)
+            return
+        if not messagebox.askyesno(
+            "Use AI provider for Recap",
+            "This will route story context, translation, and translation-audit requests through "
+            f"{provider}/{model} after the next START/RESUME. Hosted providers may have quotas or charges; "
+            "choose a model explicitly listed as free if you do not want paid usage. Continue?",
+            parent=self,
+        ):
+            return
+        api_env = {"groq": "GROQ_API_KEY", "openrouter": "OPENROUTER_API_KEY", "ollama": ""}[provider]
+        model_env = {"groq": "GROQ_MODEL", "openrouter": "OPENROUTER_MODEL", "ollama": "OLLAMA_MODEL"}[provider]
+        key_value = self.key_var.get().strip()
+        if provider in {"groq", "openrouter"} and not (key_value or os.getenv(api_env, "").strip()):
+            messagebox.showwarning("Studio", f"Enter {api_env} or configure it in the .env file first.", parent=self)
+            return
+        values = {"RECAP_AI_PROVIDER": provider, model_env: model}
+        if api_env and key_value:
+            values[api_env] = key_value
+        for name, value in values.items():
+            if "\n" in value or "\r" in value:
+                messagebox.showerror("Studio", f"{name} contains a newline and cannot be saved.", parent=self)
+                return
+
+        env_path = self.root_dir / ".env"
+        try:
+            if env_path.is_file():
+                lines = env_path.read_text(encoding="utf-8").splitlines()
+            else:
+                example = self.root_dir / ".env.example"
+                lines = example.read_text(encoding="utf-8").splitlines() if example.is_file() else []
+            import re
+            for name, value in values.items():
+                pattern = re.compile(rf"^\s*(?:export\s+)?{re.escape(name)}\s*=")
+                indexes = [i for i, line in enumerate(lines) if pattern.match(line)]
+                replacement = f"{name}={value}"
+                if indexes:
+                    lines[indexes[0]] = replacement
+                    for duplicate in reversed(indexes[1:]):
+                        del lines[duplicate]
+                else:
+                    lines.append(replacement)
+            temp_path = env_path.with_suffix(".env.tmp")
+            temp_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+            temp_path.replace(env_path)
+            self.cfg["studio_provider"] = provider
+            self.cfg["studio_model"] = model
+            self.cfg[f"studio_model_{provider}"] = model
+            self.save_config()
+            if load_dotenv:
+                load_dotenv(env_path, override=True)
+            self.ai_status_var.set(f"Recap provider saved: {provider}/{model}. The next START/RESUME will use it.")
+            messagebox.showinfo("Studio", f"Saved {provider}/{model} to the local .env file.", parent=self)
+        except OSError as exc:
+            messagebox.showerror("Studio", f"Could not update .env: {exc}", parent=self)
 
     def _test_ai(self) -> None:
         if self.busy:

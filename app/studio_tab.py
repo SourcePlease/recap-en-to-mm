@@ -798,36 +798,50 @@ class StudioTab(ttk.Frame):
         if not destination:
             return
         aspect = self.thumbnail_aspect_var.get()
-        title = self.thumbnail_title_var.get().strip() or Path(video).stem
+        title = self.thumbnail_title_var.get().strip()
         try:
-            sample_count = int(self.thumbnail_samples_var.get() or "8")
+            sample_count = max(1, min(24, int(self.thumbnail_samples_var.get() or "8")))
         except ValueError:
             sample_count = 8
+        mode = self.thumbnail_mode_var.get()
+        style = self.thumbnail_style_var.get() or "Anime Recap"
+        scene_prompt = self.thumbnail_prompt_var.get().strip()
+        fal_key = self.fal_key_var.get().strip() or os.getenv("FAL_KEY", "").strip() or None
+        fal_model = self.fal_model_var.get().strip() or os.getenv("FAL_IMAGE_MODEL") or "fal-ai/fast-sdxl"
+        if mode == "AI generated (fal.ai)" and not fal_key:
+            messagebox.showwarning("fal.ai", "Add a FAL_KEY and press Save FAL Key before using AI thumbnails.", parent=self)
+            return
+        self._last_title_source = Path(video).stem
         self.cfg["studio_thumbnail_aspect"] = aspect
         self.cfg["studio_thumbnail_samples"] = str(sample_count)
+        self.cfg["studio_thumbnail_mode"] = mode
+        self.cfg["studio_thumbnail_title_style"] = style
+        self.cfg["studio_thumbnail_scene_prompt"] = scene_prompt
+        self.cfg["fal_image_model"] = fal_model
         self.save_config()
         self._set_busy(True)
-        self.status_var.set("Selecting a clear frame and generating the thumbnail…")
+        self.status_var.set("Generating thumbnail…")
         threading.Thread(
             target=self._thumbnail_worker,
-            args=(video, destination, aspect, title, sample_count),
+            args=(video, destination, aspect, title, sample_count, mode, style, scene_prompt, fal_model, fal_key),
             daemon=True,
         ).start()
 
     def _thumbnail_worker(
         self, video: str, destination: str, aspect: str, title: str, sample_count: int,
+        mode: str, style: str, scene_prompt: str, fal_model: str, fal_key: str | None,
     ) -> None:
         try:
-            result = generate_thumbnail(
-                video, destination, title=title, aspect=aspect, sample_count=sample_count,
-                ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
-                font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
-                logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
+            result = self._render_thumbnail(
+                video, destination, Path(video).stem, mode, aspect, title,
+                style, scene_prompt, sample_count, fal_key, fal_model,
             )
             self.events.put(("thumbnail", result))
             self.events.put(("status", f"Thumbnail saved: {result}"))
         except (ThumbnailError, OSError, ValueError) as exc:
             self.events.put(("error", str(exc)))
+        except Exception as exc:
+            self.events.put(("error", f"Unexpected thumbnail error: {exc}"))
         finally:
             self.events.put(("busy", False))
 

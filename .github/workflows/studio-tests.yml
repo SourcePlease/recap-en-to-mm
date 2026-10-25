@@ -13,6 +13,8 @@ on:
       - "tests/test_studio_tools.py"
       - "requirements.txt"
       - ".env.example"
+      - ".gitignore"
+      - "glossary.example.json"
       - "README.md"
       - "STUDIO_FEATURES.md"
       - ".github/workflows/studio-tests.yml"

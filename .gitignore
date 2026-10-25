@@ -15,3 +15,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv*/
+
+# Local personal translation terms; commit only glossary.example.json
+glossary.json

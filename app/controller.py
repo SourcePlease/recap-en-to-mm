@@ -157,6 +157,12 @@ class App(tk.Tk):
         self.final_folder = tk.StringVar(value=str(self.cfg.get("final_output_folder") or ""))
         saved_voice = str(self.cfg.get("narrator_voice") or self.cfg.get("edge_tts_voice_mm")
                           or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
+        # Upgrade older saved IDs (e.g. gemini:Charon) to their new descriptive dropdown labels.
+        if saved_voice.startswith("gemini:") and saved_voice not in NARRATOR_VOICES:
+            saved_voice = next(
+                (choice for choice in NARRATOR_VOICES if choice.startswith(saved_voice + " — ")),
+                saved_voice,
+            )
         self.edge_voice = tk.StringVar(value=saved_voice if saved_voice in NARRATOR_VOICES else EDGE_VOICES[0])
         self.gemini_direction = tk.StringVar(value=str(self.cfg.get("gemini_direction") or ""))
         self._subtitle_preview_key = None

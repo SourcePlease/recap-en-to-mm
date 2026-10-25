@@ -6,13 +6,17 @@ not a guarantee that the selected frame is the most semantically relevant.
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import tempfile
+from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Iterable
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
+import requests
 
 
 ASPECT_SIZES = {
@@ -228,4 +232,140 @@ def generate_thumbnail(
             _draw_thumbnail(
                 image, destination, title or source.stem, aspect, font_path, logo_path
             )
+    return destination
+
+
+FAL_IMAGE_MODEL = "fal-ai/fast-sdxl"
+FAL_IMAGE_SIZES = {
+    "16:9": "landscape_16_9",
+    "9:16": "portrait_16_9",
+    "1:1": "square_hd",
+}
+
+
+def build_fal_thumbnail_prompt(title: str, scene_prompt: str = "", style: str = "Anime Recap") -> str:
+    """Describe the background image only; Burmese typography is rendered locally afterward."""
+    title = (title or "").strip()[:160]
+    scene_prompt = (scene_prompt or "").strip()[:1200]
+    style_hint = {
+        "Anime Recap": "dramatic anime recap poster, clean focal point, cinematic lighting",
+        "Isekai / Reincarnation": "fantasy portal, magical atmosphere, a sense of a new life and discovery",
+        "Overpowered / Action": "dynamic action pose, powerful energy effects, high-contrast action composition",
+        "Dark Fantasy / Survival": "dark fantasy environment, tense survival atmosphere, dramatic shadows",
+        "Mystery / Twist": "mysterious cinematic scene, symbolic clues, atmospheric light and shadow",
+        "Romance / Betrayal": "emotional anime-drama atmosphere, expressive original characters, contrasting warm and cold light",
+    }.get(style, "cinematic anime recap poster")
+    components = [
+        "Create a high-impact YouTube anime-recap thumbnail BACKGROUND, wide clean composition, "
+        "professional key art, detailed original anime-inspired illustration, strong focal subject, "
+        "cinematic depth, dramatic lighting, rich but controlled colors, legible visual hierarchy.",
+        f"Visual style direction: {style_hint}.",
+    ]
+    if title:
+        components.append(f"Story/title reference for mood only: {title}.")
+    if scene_prompt:
+        components.append(f"User's scene description: {scene_prompt}.")
+    components.append(
+        "Create original characters and scenery; do not reproduce a specific existing character. "
+        "Absolutely no text, letters, subtitles, typography, logos, watermarks, signatures or UI. "
+        "Leave some calmer negative space for a title that will be added afterward."
+    )
+    return " ".join(components)
+
+
+def generate_fal_thumbnail(
+    output_path: str | Path,
+    *,
+    title: str,
+    scene_prompt: str = "",
+    aspect: str = "16:9",
+    style: str = "Anime Recap",
+    model_id: str = FAL_IMAGE_MODEL,
+    api_key: str | None = None,
+    font_path: str | Path | None = None,
+    logo_path: str | Path | None = None,
+    fal_client_module=None,
+    http_get=None,
+) -> Path:
+    """Generate an AI background on fal.ai and render accurate local title/logo overlays.
+
+    fal.ai inference consumes account credits and may be paid. The caller invokes this
+    only when the user explicitly selects the AI mode. This function never falls back
+    silently to a different remote provider.
+    """
+    destination = Path(output_path).expanduser().resolve()
+    if destination.suffix.lower() not in {".jpg", ".jpeg"}:
+        destination = destination.with_suffix(".jpg")
+    thumbnail_size(aspect)
+    fal_size = FAL_IMAGE_SIZES[aspect]
+    model = (model_id or FAL_IMAGE_MODEL).strip()
+    if not model.startswith("fal-ai/") or ".." in model or any(ch in model for ch in "\r\n"):
+        raise ThumbnailError("Model ID must be a valid fal-ai/... endpoint.")
+    key = (api_key or os.getenv("FAL_KEY") or "").strip()
+    if not key:
+        raise ThumbnailError(
+            "FAL_KEY မတွေ့ပါ။ Studio ထဲမှာ fal.ai key ထည့်ပြီး Save FAL Key ကိုနှိပ်ပါ။ "
+            "AI image generation may use paid fal.ai credits."
+        )
+    if fal_client_module is None:
+        try:
+            import fal_client as fal_client_module  # type: ignore[no-redef]
+        except ImportError as exc:
+            raise ThumbnailError(
+                "fal-client is not installed. Run INSTALL_REQUIREMENTS.bat again."
+            ) from exc
+
+    prompt = build_fal_thumbnail_prompt(title, scene_prompt, style)
+    arguments = {
+        "prompt": prompt,
+        "negative_prompt": "text, typography, letters, words, captions, logo, watermark, signature, low quality, blurry, malformed anatomy",
+        "image_size": fal_size,
+        "num_images": 1,
+        "num_inference_steps": 25,
+    }
+    old_key = os.environ.get("FAL_KEY")
+    os.environ["FAL_KEY"] = key
+    try:
+        try:
+            result = fal_client_module.run(model, arguments=arguments)
+        except Exception as exc:
+            detail = str(exc).replace(key, "[redacted]")
+            raise ThumbnailError(
+                "fal.ai image generation failed. Check the FAL key, available credits, "
+                f"model endpoint and connection. Details: {detail[:900]}"
+            ) from exc
+    finally:
+        if old_key is None:
+            os.environ.pop("FAL_KEY", None)
+        else:
+            os.environ["FAL_KEY"] = old_key
+
+    images = result.get("images") if isinstance(result, dict) else None
+    image_url = images[0].get("url") if images and isinstance(images[0], dict) else None
+    parsed = urlparse(str(image_url or ""))
+    if parsed.scheme != "https" or not parsed.hostname or not (
+        parsed.hostname == "fal.media"
+        or parsed.hostname.endswith(".fal.media")
+        or parsed.hostname == "fal.ai"
+        or parsed.hostname.endswith(".fal.ai")
+    ):
+        raise ThumbnailError("fal.ai returned an invalid image URL; no file was downloaded.")
+
+    downloader = http_get or requests.get
+    try:
+        response = downloader(str(image_url), timeout=(10, 90))
+        response.raise_for_status()
+        data = getattr(response, "content", b"")
+        if not data or len(data) > 40 * 1024 * 1024:
+            raise ThumbnailError("Generated image was empty or unexpectedly large (>40 MB).")
+        with Image.open(BytesIO(data)) as generated:
+            frame = generated.convert("RGB")
+            _draw_thumbnail(
+                frame, destination, title, aspect,
+                font_path=font_path, logo_path=logo_path,
+            )
+    except ThumbnailError:
+        raise
+    except Exception as exc:
+        raise ThumbnailError(f"Could not download/render fal.ai image: {exc}") from exc
     return destination

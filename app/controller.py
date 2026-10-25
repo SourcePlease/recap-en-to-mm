@@ -256,6 +256,24 @@ class App(tk.Tk):
         self.option_add("*TCombobox*Listbox.selectBackground", ACCENT)
         self.option_add("*TCombobox*Listbox.selectForeground", "#ffffff")
 
+    def _studio_use_video(self, video_path: Path) -> None:
+        """Move a completed Studio download into the existing Recap source picker."""
+        try:
+            path = Path(video_path).resolve()
+            if not path.is_file():
+                messagebox.showwarning("Studio", "Downloaded video file no longer exists.", parent=self)
+                return
+            self._clear_batch()
+            self.source.set(str(path))
+            self.source_title.set(path.stem)
+            self.tools_tabs.select(self.tools_tabs.tabs()[0])
+            self.status.set("READY")
+            self.stage.set("Downloaded video selected for Recap")
+            self.logbox.insert("end", f"Studio download selected for Recap: {path}\n")
+            self.logbox.see("end")
+        except Exception as exc:
+            messagebox.showerror("Studio", f"Could not select downloaded video: {exc}", parent=self)
+
     def _remember_tool_tab(self, _event=None) -> None:
         try:
             selected = self.tools_tabs.select()
@@ -284,6 +302,7 @@ class App(tk.Tk):
         self.studio_tab = StudioTab(
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
+            on_video_ready=self._studio_use_video,
         )
         self.tools_tabs.add(self.studio_tab, text="Studio")
         last_tool_tab = self.cfg.get("last_tool_tab")

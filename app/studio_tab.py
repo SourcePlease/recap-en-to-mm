@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import queue
 import threading
@@ -164,6 +165,7 @@ class StudioTab(ttk.Frame):
         ai_buttons.grid(row=3, column=1, sticky="e", pady=(6, 4))
         ttk.Button(ai_buttons, text="Test AI", command=self._test_ai).pack(side="left")
         ttk.Button(ai_buttons, text="Use for Recap", command=self._apply_provider_to_recap).pack(side="left", padx=(6, 0))
+        ttk.Button(ai_buttons, text="Edit Glossary", command=self._edit_glossary).pack(side="left", padx=(6, 0))
         ttk.Label(ai, textvariable=self.ai_status_var, wraplength=430, justify="left").grid(
             row=4, column=0, columnspan=2, sticky="w", pady=(5, 0))
         ttk.Label(
@@ -307,6 +309,78 @@ class StudioTab(ttk.Frame):
             self.events.put(("error", str(exc)))
         finally:
             self.events.put(("busy", False))
+
+    def _edit_glossary(self) -> None:
+        """Edit the local glossary used by recap context, translation, and audit prompts."""
+        local_path = self.root_dir / "glossary.json"
+        example_path = self.root_dir / "glossary.example.json"
+        default_data = {"characters": {}, "terms": {}, "places": {}, "notes": []}
+        try:
+            if local_path.is_file():
+                initial = json.loads(local_path.read_text(encoding="utf-8"))
+            elif example_path.is_file():
+                initial = json.loads(example_path.read_text(encoding="utf-8"))
+            else:
+                initial = default_data
+            if not isinstance(initial, dict):
+                initial = default_data
+        except (OSError, json.JSONDecodeError):
+            initial = default_data
+
+        window = tk.Toplevel(self)
+        window.title("Myanmar Translation Glossary")
+        window.transient(self.winfo_toplevel())
+        window.geometry("760x560")
+        window.minsize(560, 400)
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(1, weight=1)
+        ttk.Label(
+            window,
+            text="Edit character names, terms, places, and short style preferences. "
+                 "Save writes to local glossary.json, which is ignored by Git.",
+            wraplength=720,
+        ).grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 6))
+        editor = tk.Text(window, wrap="none", undo=True, font=("Consolas", 10))
+        editor.grid(row=1, column=0, sticky="nsew", padx=12, pady=6)
+        vertical = ttk.Scrollbar(window, orient="vertical", command=editor.yview)
+        vertical.grid(row=1, column=1, sticky="ns", pady=6)
+        editor.configure(yscrollcommand=vertical.set)
+        horizontal = ttk.Scrollbar(window, orient="horizontal", command=editor.xview)
+        horizontal.grid(row=2, column=0, sticky="ew", padx=12)
+        editor.configure(xscrollcommand=horizontal.set)
+        editor.insert("1.0", json.dumps(initial, ensure_ascii=False, indent=2))
+
+        def save_glossary() -> None:
+            try:
+                value = json.loads(editor.get("1.0", "end-1c"))
+                if not isinstance(value, dict):
+                    raise ValueError("The top-level value must be a JSON object.")
+                for section in ("characters", "terms", "places"):
+                    mapping = value.get(section, {})
+                    if not isinstance(mapping, dict):
+                        raise ValueError(f"'{section}' must be a JSON object of original term to preferred Burmese.")
+                    if len(mapping) > 500:
+                        raise ValueError(f"'{section}' has too many entries (maximum 500).")
+                    for source, preferred in mapping.items():
+                        if not isinstance(source, str) or not isinstance(preferred, str):
+                            raise ValueError(f"All '{section}' entries must map strings to strings.")
+                        if len(source) > 160 or len(preferred) > 240:
+                            raise ValueError(f"Terms in '{section}' must be at most 160 source / 240 target characters.")
+                notes = value.get("notes", [])
+                if not isinstance(notes, list) or any(not isinstance(note, str) for note in notes):
+                    raise ValueError("'notes' must be a list of short text preferences.")
+                temp_path = local_path.with_suffix(".json.tmp")
+                temp_path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                temp_path.replace(local_path)
+                self.ai_status_var.set("Glossary saved. It will be applied to the next Recap START/RESUME.")
+                window.destroy()
+            except (ValueError, OSError) as exc:
+                messagebox.showerror("Invalid glossary", str(exc), parent=window)
+
+        footer = ttk.Frame(window, padding=12)
+        footer.grid(row=3, column=0, columnspan=2, sticky="ew")
+        ttk.Button(footer, text="Save Glossary", command=save_glossary).pack(side="right")
+        ttk.Button(footer, text="Close", command=window.destroy).pack(side="right", padx=(0, 8))
 
     def _apply_provider_to_recap(self) -> None:
         provider = PROVIDER_LABEL_TO_KEY.get(self.provider_var.get(), "groq")

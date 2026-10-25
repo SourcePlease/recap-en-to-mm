@@ -20,4 +20,4 @@ playwright==1.62.0          # Myanmar text renderer (Chromium)
 fonttools==4.63.0           # installed Myanmar fonts for the narration subtitles
 
 # Universal URL downloader for supported public/authorized media URLs
-yt-dlp[default]>=2025.10.22
+yt-dlp[default]>=2026.3.17

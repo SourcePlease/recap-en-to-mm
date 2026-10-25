@@ -51,6 +51,9 @@ class StudioTab(ttk.Frame):
         self.quality_var = tk.StringVar(value="Best available")
         self.playlist_var = tk.BooleanVar(value=False)
         self.auto_thumbnail_var = tk.BooleanVar(value=True)
+        self.thumbnail_aspect_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_aspect") or "16:9"))
+        self.thumbnail_title_var = tk.StringVar(value="")
+        self.thumbnail_samples_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_samples") or "8"))
         self.subtitle_var = tk.BooleanVar(value=False)
         self.cookies_var = tk.StringVar(value="")
         self.status_var = tk.StringVar(value="Ready — paste a supported media URL or select a local video.")
@@ -106,8 +109,24 @@ class StudioTab(ttk.Frame):
         ttk.Checkbutton(download, text="Save available subtitles", variable=self.subtitle_var).grid(
             row=3, column=3, sticky="w", padx=(8, 0), pady=4)
 
+        ttk.Label(download, text="Thumbnail format").grid(row=4, column=0, sticky="w", padx=(0, 8), pady=4)
+        ttk.Combobox(
+            download, textvariable=self.thumbnail_aspect_var, state="readonly",
+            values=("16:9", "9:16", "1:1"),
+        ).grid(row=4, column=1, sticky="ew", pady=4)
+        ttk.Label(download, text="Custom title (optional)").grid(row=4, column=2, sticky="w", padx=(8, 8), pady=4)
+        ttk.Entry(download, textvariable=self.thumbnail_title_var).grid(row=4, column=3, sticky="ew", pady=4)
+
+        ttk.Label(download, text="Frame samples").grid(row=5, column=0, sticky="w", padx=(0, 8), pady=4)
+        ttk.Combobox(
+            download, textvariable=self.thumbnail_samples_var, state="readonly",
+            values=("4", "8", "12", "16", "24"),
+        ).grid(row=5, column=1, sticky="ew", pady=4)
+        ttk.Label(download, text="Higher = more candidate frames, slower generation").grid(
+            row=5, column=2, columnspan=2, sticky="w", padx=(8, 0), pady=4)
+
         action_row = ttk.Frame(download)
-        action_row.grid(row=4, column=0, columnspan=4, sticky="ew", pady=(8, 2))
+        action_row.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(8, 2))
         self.download_button = ttk.Button(action_row, text="Download", command=self._start_download)
         self.download_button.pack(side="left")
         ttk.Button(action_row, text="Thumbnail from local video…", command=self._start_local_thumbnail).pack(
@@ -117,7 +136,7 @@ class StudioTab(ttk.Frame):
         self.progress = ttk.Progressbar(action_row, maximum=100, variable=self.progress_var, length=220)
         self.progress.pack(side="left", fill="x", expand=True, padx=(14, 0))
         ttk.Label(download, textvariable=self.status_var, wraplength=1150).grid(
-            row=5, column=0, columnspan=4, sticky="w", pady=(7, 0))
+            row=7, column=0, columnspan=4, sticky="w", pady=(7, 0))
 
         lower = ttk.Frame(self)
         lower.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
@@ -234,9 +253,23 @@ class StudioTab(ttk.Frame):
         self._set_busy(True)
         self.progress_var.set(0)
         self.status_var.set("Starting downloader…")
-        threading.Thread(target=self._download_worker, args=(url, options, self.auto_thumbnail_var.get()), daemon=True).start()
+        self.cfg["studio_thumbnail_aspect"] = self.thumbnail_aspect_var.get()
+        self.cfg["studio_thumbnail_samples"] = self.thumbnail_samples_var.get()
+        self.save_config()
+        threading.Thread(
+            target=self._download_worker,
+            args=(
+                url, options, self.auto_thumbnail_var.get(),
+                self.thumbnail_aspect_var.get(), self.thumbnail_title_var.get().strip(),
+                int(self.thumbnail_samples_var.get() or "8"),
+            ),
+            daemon=True,
+        ).start()
 
-    def _download_worker(self, url: str, options: DownloadOptions, auto_thumbnail: bool) -> None:
+    def _download_worker(
+        self, url: str, options: DownloadOptions, auto_thumbnail: bool,
+        thumbnail_aspect: str, thumbnail_title: str, thumbnail_samples: int,
+    ) -> None:
         try:
             result = download_media(url, options, progress_hook=self._on_download_progress)
             self.events.put(("download_result", result))
@@ -244,7 +277,9 @@ class StudioTab(ttk.Frame):
                 thumbnail_dir = Path(options.output_dir) / "thumbnails"
                 thumbnail_path = thumbnail_dir / f"{result.video_path.stem}_thumbnail.jpg"
                 created = generate_thumbnail(
-                    result.video_path, thumbnail_path, title=result.title,
+                    result.video_path, thumbnail_path,
+                    title=thumbnail_title or result.title, aspect=thumbnail_aspect,
+                    sample_count=thumbnail_samples,
                     ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
                     font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
                     logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
@@ -287,18 +322,29 @@ class StudioTab(ttk.Frame):
         )
         if not destination:
             return
+        aspect = self.thumbnail_aspect_var.get()
+        title = self.thumbnail_title_var.get().strip() or Path(video).stem
+        try:
+            sample_count = int(self.thumbnail_samples_var.get() or "8")
+        except ValueError:
+            sample_count = 8
+        self.cfg["studio_thumbnail_aspect"] = aspect
+        self.cfg["studio_thumbnail_samples"] = str(sample_count)
+        self.save_config()
         self._set_busy(True)
         self.status_var.set("Selecting a clear frame and generating the thumbnail…")
         threading.Thread(
             target=self._thumbnail_worker,
-            args=(video, destination),
+            args=(video, destination, aspect, title, sample_count),
             daemon=True,
         ).start()
 
-    def _thumbnail_worker(self, video: str, destination: str) -> None:
+    def _thumbnail_worker(
+        self, video: str, destination: str, aspect: str, title: str, sample_count: int,
+    ) -> None:
         try:
             result = generate_thumbnail(
-                video, destination, title=Path(video).stem,
+                video, destination, title=title, aspect=aspect, sample_count=sample_count,
                 ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
                 font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
                 logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),

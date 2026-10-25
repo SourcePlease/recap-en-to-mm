@@ -6,7 +6,9 @@ This document describes the work on feature/studio-expansion. The upstream repos
 
 - **Studio tab** in the existing Windows desktop application.
 - **URL downloader** using yt-dlp, with best available / 1080p / 720p / 480p / MP3 choices, playlist mode, subtitle download option, optional user-provided cookies.txt, download progress and resume support provided by yt-dlp.
-- **Automatic thumbnail generator** using local FFmpeg frame extraction and Pillow layouts. It ranks candidate frames by visual contrast/detail and can export landscape, portrait, or square designs with an optional title and logo.
+- **Thumbnail modes:** local frame-based generation remains free/offline (after FFmpeg is installed); optional **fal.ai AI image generation** creates a fresh background then overlays the title and logo locally. fal.ai image inference consumes account credits and may be paid; an API key is never required for the local method.
+- **Burmese title tools:** built-in title styles for general recap, isekai/reincarnation, overpowered action, dark fantasy/survival, mystery/twist, and romance/betrayal; optional AI suggestions use the selected text provider. Burmese typography is rendered locally rather than asking the image model to spell Burmese text.
+- **Narrator choices:** 2 Microsoft Edge Burmese voices plus 30 Gemini prebuilt voice styles in the selector. The Gemini catalogue is a set of voice styles, not 30 independently recorded Burmese native voices; actual output quality and free-tier quotas depend on the model/account.
 - **Optional AI provider tester** for Groq, OpenRouter, and local Ollama through OpenAI-compatible chat-completion endpoints. API keys are read from the environment or typed into the UI; the Studio UI does not store typed API keys in config.json.
 - **Reusable engine modules** in app/studio so future work can connect these tools to batch jobs and other front ends.
 - **Unit tests** that do not need live websites, API keys, or a running local model.

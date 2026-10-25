@@ -394,6 +394,6 @@ The separate Studio tab is being developed on the feature/studio-expansion branc
 - **Downloader:** yt-dlp-based URL downloads with quality selection, playlist mode, optional subtitle downloads, progress updates, and optional user-supplied cookies for content you are authorized to access.
 - **Auto thumbnails:** FFmpeg extracts candidate frames; Pillow ranks and styles a local thumbnail with a title and optional logo in 16:9, 9:16, or 1:1 formats.
 - **Optional AI provider tester:** Groq, OpenRouter, or local Ollama. Provider/model availability and free quotas can change. The existing Gemini recap translation flow remains the default and is not replaced by this first integration.
-- **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. RedNote/Xiaohongshu requires separate validation before it can be described as supported.
+- **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. Recent yt-dlp releases include a RedNote/Xiaohongshu extractor, though individual links can fail due to login, region, CAPTCHA, redirects, or site changes.
 
 See [STUDIO_FEATURES.md](STUDIO_FEATURES.md) for the implementation scope and next steps.

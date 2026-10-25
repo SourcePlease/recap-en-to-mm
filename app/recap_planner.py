@@ -1054,6 +1054,21 @@ def _gemini_json(ai: Any, prompt: str, *, retries: int = 3, log: LogFn | None = 
             active_key = str(getattr(ai, "_recap_active_key_label", "GEMINI_API_KEY"))
             active_model = str(getattr(ai, "_recap_active_model", getattr(ai, "text_model", "Gemini")))
 
+            if getattr(ai, "provider", "gemini") != "gemini":
+                if log:
+                    log(f"⚠️ {active_model} provider request failed on attempt {attempt}/{retries}: {exc}")
+                if _is_gemini_key_rejection(exc):
+                    raise RuntimeError(
+                        f"{getattr(ai, 'provider', 'AI')} provider quota/authentication error: {exc}"
+                    ) from exc
+                if attempt < retries:
+                    time.sleep(min(5.0, 1.2 * attempt))
+                    attempt += 1
+                    continue
+                raise RuntimeError(
+                    f"{getattr(ai, 'provider', 'AI')} JSON response failed after {retries} attempts: {exc}"
+                ) from exc
+
             if _is_gemini_key_rejection(exc):
                 if log:
                     log(f"⚠️ {active_model} | {active_key} quota/auth rejection; trying next key...")
@@ -1856,14 +1871,22 @@ class RecapPlanBuilder:
             inherited_key = str(os.getenv("GEMINI_API_KEY") or "").strip()
             if inherited_key:
                 key_pool.append(("GEMINI_API_KEY", inherited_key))
-        if not key_pool:
+        selected_provider = str(os.getenv("RECAP_AI_PROVIDER") or "gemini").strip().lower()
+        if selected_provider == "gemini":
+            if not key_pool:
+                raise RuntimeError(
+                    "Gemini API key မတွေ့ပါ။ .env ထဲမှာ GEMINI_API_KEY=... "
+                    "(သို့) GEMINI_IMAGE_PROJECT_1_KEY, GEMINI_IMAGE_PROJECT_2_KEY ... ထည့်ပေးပါ။"
+                )
+            os.environ["GEMINI_API_KEY"] = key_pool[0][1]
+            os.environ["GEMINI_TEXT_MODEL"] = self.gemini_text_model
+            self.log(f"🔑 Gemini key pool ready — {len(key_pool)} key(s) | translation only ({language_name} source uses local Whisper {whisper_model})")
+        elif selected_provider in {"groq", "openrouter", "ollama"}:
+            self.log(f"🤖 Recap AI provider selected: {selected_provider}. Gemini API keys are not required for this job.")
+        else:
             raise RuntimeError(
-                "Gemini API key မတွေ့ပါ။ .env ထဲမှာ GEMINI_API_KEY=... "
-                "(သို့) GEMINI_IMAGE_PROJECT_1_KEY, GEMINI_IMAGE_PROJECT_2_KEY ... ထည့်ပေးပါ။"
+                f"Unknown RECAP_AI_PROVIDER={selected_provider!r}. Choose gemini, groq, openrouter, or ollama."
             )
-        os.environ["GEMINI_API_KEY"] = key_pool[0][1]
-        os.environ["GEMINI_TEXT_MODEL"] = self.gemini_text_model
-        self.log(f"🔑 Gemini key pool ready — {len(key_pool)} key(s) | translation only ({language_name} source uses local Whisper {whisper_model})")
 
         transcript = None
         if reuse and transcript_file.is_file() and state_file.is_file():
@@ -1956,14 +1979,20 @@ class RecapPlanBuilder:
 
         with _pushd(self.runtime_root):
             ai = ai_mod.AIService()
-            self.log(f"🤖 Gemini primary text model: {ai.text_model}")
-            _configure_gemini_key_pool(
-                ai,
-                key_pool,
-                client_factory=ai_mod.genai.Client,
-                log=self.log,
-                request_timeout_seconds=self.gemini_request_timeout_seconds,
-            )
+            if ai.provider == "gemini":
+                self.log(f"🤖 Gemini primary text model: {ai.text_model}")
+                _configure_gemini_key_pool(
+                    ai,
+                    key_pool,
+                    client_factory=ai_mod.genai.Client,
+                    log=self.log,
+                    request_timeout_seconds=self.gemini_request_timeout_seconds,
+                )
+            else:
+                self.log(f"🤖 Recap AI provider: {ai.provider} | model: {ai.text_model}")
+                configured_fallbacks = str(os.getenv("RECAP_AI_FALLBACKS") or "").strip()
+                if configured_fallbacks:
+                    self.log(f"🔁 Explicit AI fallbacks: {configured_fallbacks}")
 
             self.progress(1, 4, "Story context memory")
             self.log("🧠 [2/4] Gemini Story Context Memory pass...")

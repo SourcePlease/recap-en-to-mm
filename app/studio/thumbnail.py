@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import Iterable
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageStat
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
 
 
 ASPECT_SIZES = {
@@ -136,11 +136,10 @@ def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
     image = ImageOps.fit(frame.convert("RGB"), (width, height), method=Image.Resampling.LANCZOS)
     # Darken the lower portion behind the title, without obscuring the whole frame.
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
-    pixels = overlay.load()
+    overlay_draw = ImageDraw.Draw(overlay)
     for y in range(height):
         alpha = int(170 * (y / max(1, height - 1)) ** 1.7)
-        for x in range(width):
-            pixels[x, y] = (0, 0, 0, alpha)
+        overlay_draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
     image = Image.alpha_composite(image.convert("RGBA"), overlay)
     draw = ImageDraw.Draw(image)
     margin = max(28, int(width * 0.055))

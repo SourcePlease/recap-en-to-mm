@@ -93,15 +93,23 @@ def _wrap_title(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.ImageFont,
 
 
 def _load_font(font_path: str | Path | None, size: int) -> ImageFont.ImageFont:
+    candidates: list[Path | str] = []
     if font_path:
+        candidates.append(Path(font_path))
+    candidates.extend([
+        Path(r"C:\Windows\Fonts\mmrtext.ttf"),
+        Path(r"C:\Windows\Fonts\pyidaungsu.ttf"),
+        Path(r"C:\Windows\Fonts\notosansmyanmar.ttf"),
+        Path("/usr/share/fonts/truetype/noto/NotoSansMyanmar-Regular.ttf"),
+        Path("/usr/share/fonts/opentype/noto/NotoSansMyanmar-Regular.ttf"),
+        "arial.ttf",
+    ])
+    for candidate in candidates:
         try:
-            return ImageFont.truetype(str(font_path), size=size)
+            return ImageFont.truetype(str(candidate), size=size)
         except OSError:
-            pass
-    try:
-        return ImageFont.truetype("arial.ttf", size=size)
-    except OSError:
-        return ImageFont.load_default()
+            continue
+    return ImageFont.load_default()
 
 
 def _extract_candidate_frames(video_path: Path, duration: float, ffmpeg: str,

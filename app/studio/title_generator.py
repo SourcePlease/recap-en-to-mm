@@ -108,7 +108,7 @@ Rules:
     )
     ideas: list[str] = []
     for line in answer.splitlines():
-        line = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s*", "", line).strip(" \t\"'“”‘’")
+        line = re.sub(r"^\s*(?:[-*•]|\d+[.)။]|[၀-၉]+[.)။])\s*", "", line).strip(" \t\"'“”‘’")
         line = re.sub(r"\s+", " ", line)
         if line and len(line) <= 150 and line not in ideas:
             ideas.append(line)

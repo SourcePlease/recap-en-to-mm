@@ -18,7 +18,11 @@ from studio.ai_providers import AIProviderError, chat_completion, provider_optio
 from studio.downloader import (
     DownloadError, DownloadOptions, build_ytdlp_options, download_media, validate_http_url,
 )
-from studio.thumbnail import thumbnail_size
+from studio.thumbnail import (
+    build_fal_thumbnail_prompt, generate_fal_thumbnail, thumbnail_size,
+)
+from studio.title_generator import ai_title_ideas, builtin_title_ideas, TITLE_STYLES
+import gemini_tts
 from studio.download_queue import PersistentDownloadQueue
 from recap_runtime.services.ai_service import AIService
 from recap_planner import _user_glossary_context
@@ -166,6 +170,92 @@ class TranslationGlossaryTests(unittest.TestCase):
             with patch.dict(os.environ, {"RECAP_GLOSSARY_PATH": str(glossary)}):
                 with self.assertRaises(RuntimeError):
                     _user_glossary_context()
+
+
+class FalThumbnailTests(unittest.TestCase):
+    def test_ai_prompt_requests_no_baked_in_text(self):
+        prompt = build_fal_thumbnail_prompt(
+            "Black Clover", "A young mage discovers forbidden power", "Overpowered / Action",
+        )
+        self.assertIn("Black Clover", prompt)
+        self.assertIn("forbidden power", prompt)
+        self.assertIn("no text", prompt.lower())
+        self.assertIn("original", prompt.lower())
+
+    def test_fal_image_is_downloaded_and_title_is_overlaid(self):
+        with tempfile.TemporaryDirectory() as temp:
+            image_bytes = __import__("io").BytesIO()
+            from PIL import Image
+            Image.new("RGB", (320, 180), (22, 35, 50)).save(image_bytes, format="PNG")
+            response = Mock()
+            response.content = image_bytes.getvalue()
+            response.raise_for_status = Mock()
+            getter = Mock(return_value=response)
+            client = Mock()
+            client.run.return_value = {"images": [{"url": "https://v3.fal.media/files/out.png"}]}
+            destination = Path(temp) / "generated.jpg"
+            old_key = os.environ.get("FAL_KEY")
+            try:
+                os.environ.pop("FAL_KEY", None)
+                result = generate_fal_thumbnail(
+                    destination, title="အင်အားအကြီးဆုံးသူ",
+                    api_key="test-key-not-real", fal_client_module=client, http_get=getter,
+                )
+            finally:
+                if old_key is not None:
+                    os.environ["FAL_KEY"] = old_key
+                else:
+                    os.environ.pop("FAL_KEY", None)
+            self.assertEqual(result, destination.resolve())
+            self.assertTrue(result.is_file())
+            self.assertEqual(client.run.call_args.args[0], "fal-ai/fast-sdxl")
+            self.assertEqual(client.run.call_args.kwargs["arguments"]["num_images"], 1)
+            getter.assert_called_once()
+            with Image.open(result) as output:
+                self.assertEqual(output.size, (1280, 720))
+                self.assertEqual(output.format, "JPEG")
+
+    def test_fal_rejects_untrusted_image_url(self):
+        with tempfile.TemporaryDirectory() as temp:
+            client = Mock()
+            client.run.return_value = {"images": [{"url": "https://example.com/not-fal.png"}]}
+            getter = Mock()
+            with self.assertRaises(Exception):
+                generate_fal_thumbnail(
+                    Path(temp) / "bad.jpg", title="Test", api_key="test-key-not-real",
+                    fal_client_module=client, http_get=getter,
+                )
+            getter.assert_not_called()
+
+
+class BurmeseTitleTests(unittest.TestCase):
+    def test_builtin_ideas_are_burmese_and_keep_source_title(self):
+        ideas = builtin_title_ideas("Black_Clover_S2_1080p", "Isekai / Reincarnation")
+        self.assertGreaterEqual(len(ideas), 4)
+        self.assertTrue(any("Black Clover S2" in idea for idea in ideas))
+        self.assertTrue(all(len(idea) < 150 for idea in ideas))
+        self.assertIn("Anime Recap", TITLE_STYLES)
+
+    def test_ai_title_ideas_parse_bullets(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+            def json(self):
+                return {"choices": [{"message": {"content": "၁။ အားလုံးကို အံ့ဩစေခဲ့သူ\n- မထင်မှတ်ထားတဲ့ အဆုံးသတ်"}}]}
+
+        post = Mock(return_value=Response())
+        ideas = ai_title_ideas(
+            "Black Clover", provider="groq", model="test-model", api_key="fake-key",
+            post=post,
+        )
+        self.assertEqual(ideas, ["အားလုံးကို အံ့ဩစေခဲ့သူ", "မထင်မှတ်ထားတဲ့ အဆုံးသတ်"])
+
+    def test_gemini_voice_catalog_has_thirty_distinct_choices(self):
+        self.assertEqual(len(gemini_tts.GEMINI_VOICE_CATALOG), 30)
+        self.assertEqual(len(set(name for name, _style in gemini_tts.GEMINI_VOICE_CATALOG)), 30)
+        self.assertEqual(gemini_tts.voice_id("gemini:Zephyr — Bright"), "Zephyr")
+        prompt = gemini_tts.narrator_prompt("မင်္ဂလာပါ။", "gemini:Zephyr — Bright")
+        self.assertIn("prebuilt voice Zephyr", prompt)
 
 
 class StudioThumbnailTests(unittest.TestCase):

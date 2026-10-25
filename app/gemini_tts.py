@@ -21,9 +21,29 @@ import wave
 from pathlib import Path
 from typing import Callable
 
+# The prebuilt catalogue currently contains 30 named voice styles. Gemini TTS model access
+# and quota can vary by Google AI Studio account; the Edge voices remain the no-key fallback.
 VOICES = [("Charon", "male"), ("Algenib", "male"), ("Orus", "male"), ("Iapetus", "male"), ("Puck", "male"),
           ("Gacrux", "female"), ("Sulafat", "female"), ("Kore", "female"), ("Achernar", "female"), ("Leda", "female")]
-GEMINI_VOICES = tuple(f"gemini:{name}" for name, _gender in VOICES)
+GEMINI_VOICE_CATALOG = (
+    ("Zephyr", "Bright"), ("Puck", "Upbeat"), ("Charon", "Informative"),
+    ("Kore", "Firm"), ("Fenrir", "Excitable"), ("Leda", "Youthful"),
+    ("Orus", "Firm"), ("Aoede", "Breezy"), ("Callirrhoe", "Easy-going"),
+    ("Autonoe", "Bright"), ("Enceladus", "Breathy"), ("Iapetus", "Clear"),
+    ("Umbriel", "Easy-going"), ("Algieba", "Smooth"), ("Despina", "Smooth"),
+    ("Erinome", "Clear"), ("Algenib", "Gravelly"), ("Rasalgethi", "Informative"),
+    ("Laomedeia", "Upbeat"), ("Achernar", "Soft"), ("Alnilam", "Firm"),
+    ("Schedar", "Even"), ("Gacrux", "Mature"), ("Pulcherrima", "Forward"),
+    ("Achird", "Friendly"), ("Zubenelgenubi", "Casual"), ("Vindemiatrix", "Gentle"),
+    ("Sadachbia", "Lively"), ("Sadaltager", "Knowledgeable"), ("Sulafat", "Warm"),
+)
+# Human-readable style labels stay in the combobox; voice_id() removes the label before API calls.
+GEMINI_VOICES = tuple(f"gemini:{name} — {style}" for name, style in GEMINI_VOICE_CATALOG)
+
+
+def voice_id(voice: str) -> str:
+    """Turn a displayed voice choice such as 'gemini:Zephyr — Bright' into its API voice ID."""
+    return str(voice or "").removeprefix("gemini:").split(" — ", 1)[0].strip()
 TTS_MODELS = ("gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts")
 PROFILE_VERSION = "single_narrator_v2"
 DEFAULT_DIRECTION = ("Warm, clear Burmese storyteller at a medium natural pace; crisp diction, controlled emotion, "
@@ -42,12 +62,12 @@ class GeminiTTSError(RuntimeError):
 
 def narrator_prompt(text: str, voice: str, direction: str = "") -> str:
     """The same narrator for every line of a video (one request per line)."""
-    name = voice.removeprefix("gemini:")
-    gender = dict(VOICES).get(name, "male")
+    name = voice_id(voice)
+    gender = dict(VOICES).get(name)
     text = re.sub(r"\s*\([A-Za-z0-9 ,.'\-]+\)", "", text)          # English glosses are for reading only
     text = re.sub(r"\s+", " ", text).strip()
     return f"""AUDIO PROFILE — ONE CONTINUOUS NARRATOR:
-Use the selected prebuilt voice {name}: ONE adult {gender} Burmese narrator.
+Use the selected prebuilt voice {name}: ONE adult {gender + " " if gender else ""}Burmese narrator.
 This excerpt belongs to one continuous video. Keep exactly the same speaker identity from the first word to
 the last and across all excerpts: the same gender, age, vocal register, timbre, accent, pitch range,
 microphone distance and speaking volume. Begin each excerpt in that same established voice.
@@ -174,7 +194,8 @@ class GeminiTTSEngine:
         out = self.work_dir / f"gemini_{key}.wav"
         if out.is_file() and out.stat().st_size > 1000:
             return out
-        pcm = self._ask(narrator_prompt(text, voice, self.direction), voice.removeprefix("gemini:"))
+        voice_name = voice_id(voice)
+        pcm = self._ask(narrator_prompt(text, voice, self.direction), voice_name)
         raw = out.with_suffix(".24k.wav")
         with wave.open(str(raw), "wb") as w:
             w.setnchannels(1)

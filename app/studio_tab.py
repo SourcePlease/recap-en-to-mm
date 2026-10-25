@@ -14,7 +14,8 @@ except ImportError:  # keep the tool useful if the optional dotenv helper is abs
     load_dotenv = None
 
 from studio.ai_providers import AIProviderError, chat_completion
-from studio.downloader import DownloadError, DownloadOptions, DownloadResult, download_media
+from studio.downloader import DownloadError, DownloadOptions, DownloadResult, download_media, validate_http_url
+from studio.download_queue import PersistentDownloadQueue
 from studio.thumbnail import ThumbnailError, generate_thumbnail
 
 
@@ -38,6 +39,9 @@ class StudioTab(ttk.Frame):
         self.on_video_ready = on_video_ready
         self.env_path = env_path or (lambda: self.root_dir / ".env")
         self.last_video_path: Path | None = None
+        self.queue_model = PersistentDownloadQueue(self.root_dir / "jobs" / "studio_download_queue.json")
+        self.queue_stop = threading.Event()
+        self.queue_running = False
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.busy = False
         self._current_provider = None
@@ -170,6 +174,38 @@ class StudioTab(ttk.Frame):
                  "It works without a remote image-generation API.",
             wraplength=700, justify="left",
         ).pack(anchor="w", fill="x", pady=(10, 0))
+        ttk.Separator(notes, orient="horizontal").pack(fill="x", pady=(12, 8))
+        ttk.Label(notes, text="Persistent URL Queue", font=("Segoe UI Semibold", 10)).pack(anchor="w")
+        ttk.Label(
+            notes,
+            text="Paste several URLs (one per line), queue them, then start the queue. Progress is saved locally under jobs/ and pending items survive app restarts.",
+            wraplength=700, justify="left",
+        ).pack(anchor="w", fill="x", pady=(3, 6))
+        queue_list_frame = ttk.Frame(notes)
+        queue_list_frame.pack(fill="both", expand=True)
+        self.queue_listbox = tk.Listbox(
+            queue_list_frame, height=5, background="#0a0c10", foreground="#e7eaf0",
+            selectbackground="#33445f", relief="flat", highlightthickness=1,
+        )
+        self.queue_listbox.pack(side="left", fill="both", expand=True)
+        queue_scroll = ttk.Scrollbar(queue_list_frame, orient="vertical", command=self.queue_listbox.yview)
+        queue_scroll.pack(side="right", fill="y")
+        self.queue_listbox.configure(yscrollcommand=queue_scroll.set)
+        queue_buttons = ttk.Frame(notes)
+        queue_buttons.pack(fill="x", pady=(6, 0))
+        self.queue_add_button = ttk.Button(queue_buttons, text="Add Current URL", command=self._queue_current_url)
+        self.queue_add_button.pack(side="left")
+        self.queue_paste_button = ttk.Button(queue_buttons, text="Paste URL List…", command=self._queue_url_list)
+        self.queue_paste_button.pack(side="left", padx=(5, 0))
+        self.queue_start_button = ttk.Button(queue_buttons, text="Start Queue", command=self._start_queue)
+        self.queue_start_button.pack(side="left", padx=(5, 0))
+        self.queue_stop_button = ttk.Button(
+            queue_buttons, text="Stop after current", command=self._stop_queue, state="disabled")
+        self.queue_stop_button.pack(side="left", padx=(5, 0))
+        self.queue_retry_button = ttk.Button(queue_buttons, text="Retry Failed", command=self._retry_failed)
+        self.queue_retry_button.pack(side="left", padx=(5, 0))
+        self.queue_clear_button = ttk.Button(queue_buttons, text="Clear Finished", command=self._clear_finished)
+        self.queue_clear_button.pack(side="left", padx=(5, 0))
 
         ai = ttk.LabelFrame(lower, text="Optional AI Provider", padding=10)
         ai.grid(row=0, column=1, sticky="nsew")
@@ -199,6 +235,7 @@ class StudioTab(ttk.Frame):
                  "Fallback providers are opt-in through RECAP_AI_FALLBACKS.",
             wraplength=430, justify="left",
         ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self._refresh_queue_view()
 
     def _browse_output(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.output_var.get() or str(self.root_dir))
@@ -530,8 +567,19 @@ class StudioTab(ttk.Frame):
 
     def _set_busy(self, value: bool) -> None:
         self.busy = value
-        self.download_button.configure(state="disabled" if value else "normal")
-        self.url_entry.configure(state="disabled" if value else "normal")
+        state = "disabled" if value else "normal"
+        self.download_button.configure(state=state)
+        self.url_entry.configure(state=state)
+        for name in ("queue_add_button", "queue_paste_button", "queue_retry_button", "queue_clear_button"):
+            widget = getattr(self, name, None)
+            if widget is not None:
+                widget.configure(state=state)
+        queue_start = getattr(self, "queue_start_button", None)
+        if queue_start is not None:
+            queue_start.configure(state="disabled" if value or not self.queue_model.pending() else "normal")
+        queue_stop = getattr(self, "queue_stop_button", None)
+        if queue_stop is not None:
+            queue_stop.configure(state="normal" if value and self.queue_running else "disabled")
 
     def _poll_events(self) -> None:
         try:

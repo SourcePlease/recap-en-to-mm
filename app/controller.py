@@ -303,6 +303,7 @@ class App(tk.Tk):
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             on_video_ready=self._studio_use_video,
+            env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
         self.tools_tabs.add(self.studio_tab, text="Studio")
         last_tool_tab = self.cfg.get("last_tool_tab")

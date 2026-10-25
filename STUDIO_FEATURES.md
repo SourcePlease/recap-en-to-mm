@@ -15,7 +15,7 @@ This document describes the work on feature/studio-expansion. The upstream repos
 
 - This first step does not mark the whole project complete. The current Recap → Myanmar pipeline still uses its existing Gemini translation path; the new provider helper and UI currently provide an explicit provider test/entry point, not automatic replacement of the translation engine.
 - yt-dlp supports many sites, including common video platforms, but site extractors can stop working when websites change. The app must report failures instead of promising every URL always works.
-- RedNote/Xiaohongshu needs separate live validation and, if the installed extractor cannot handle a URL, a site-specific adapter or other permitted extractor. It is not claimed as verified in this first step.
+- The dependency minimum uses a yt-dlp release that includes the newer RedNote/Xiaohongshu extractor. The application routes those URLs through yt-dlp, but individual links still need live validation because redirects, login requirements, region restrictions, CAPTCHA, or site changes can make them fail.
 - Private, age-restricted, DRM-protected, or otherwise gated content is not unlocked by this application. Cookies can only be supplied by the user for content they are authorized to access.
 - The auto-thumbnail generator is local template/frame selection, not AI image synthesis. A later stage can add selectable image-generation backends where a usable free API or local model is configured.
 - Cloud provider free quotas/models can change and are account-specific. The app requires an explicit model choice and does not automatically switch a free provider to paid usage.

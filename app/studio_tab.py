@@ -42,6 +42,7 @@ class StudioTab(ttk.Frame):
         self.on_video_ready = on_video_ready
         self.env_path = env_path or (lambda: self.root_dir / ".env")
         self.last_video_path: Path | None = None
+        self._last_title_source = ""
         self.queue_model = PersistentDownloadQueue(self.root_dir / "jobs" / "studio_download_queue.json")
         self.queue_stop = threading.Event()
         self.queue_running = False
@@ -540,8 +541,6 @@ class StudioTab(ttk.Frame):
         typed = self.thumbnail_title_var.get().strip()
         if typed:
             return typed
-        if self.last_video_path:
-            return self.last_video_path.stem
         raw_url = self.url_var.get().strip()
         if raw_url:
             try:
@@ -552,6 +551,10 @@ class StudioTab(ttk.Frame):
                     return slug[:100]
             except ValueError:
                 pass
+        if self._last_title_source:
+            return self._last_title_source
+        if self.last_video_path:
+            return self.last_video_path.stem
         return "Anime Recap"
 
     def _render_thumbnail(
@@ -1040,6 +1043,7 @@ class StudioTab(ttk.Frame):
                 elif kind == "download_result":
                     result: DownloadResult = value
                     self.last_video_path = result.video_path
+                    self._last_title_source = result.title or (result.video_path.stem if result.video_path else "")
                     self.use_video_button.configure(state=("normal" if self.last_video_path else "disabled"))
                     self.status_var.set(
                         f"Downloaded: {result.title} — "
@@ -1066,6 +1070,12 @@ class StudioTab(ttk.Frame):
                     self.ai_status_var.set(f"AI test succeeded — {value}")
                 elif kind == "ai_error":
                     self.ai_status_var.set(str(value))
+                elif kind == "title_ideas":
+                    ideas, status = value
+                    self.thumbnail_title_entry.configure(values=tuple(ideas))
+                    if ideas:
+                        self.thumbnail_title_var.set(ideas[0])
+                    self.fal_status_var.set(str(status))
                 elif kind == "busy":
                     self._set_busy(bool(value))
         except queue.Empty:

@@ -151,9 +151,19 @@ class Renderer:
             self.page = self.browser.new_page(viewport={"width": self.width, "height": self.height},
                                               device_scale_factor=1)
             s = self.s
-            font_files = myanmar_fonts().get(s["font"], [])
+            font_catalog = myanmar_fonts()
+            font_files = font_catalog.get(s["font"], [])
             font_css = ""
             family = html.escape(s["font"], quote=True)
+            # If the saved Windows font is not installed here, use another installed Myanmar font
+            # rather than silently rendering Burmese glyphs with an unsupported Latin fallback.
+            if not font_files:
+                fallback = next(
+                    ((name, paths) for name, paths in font_catalog.items() if paths),
+                    None,
+                )
+                if fallback:
+                    _fallback_family, font_files = fallback
             if font_files:
                 chosen = next((p for p in font_files if ("bold" in p.lower()) == bool(s["bold"])), font_files[0])
                 data = base64.b64encode(Path(chosen).read_bytes()).decode()

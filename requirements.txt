@@ -21,3 +21,6 @@ fonttools==4.63.0           # installed Myanmar fonts for the narration subtitle
 
 # Universal URL downloader for supported public/authorized media URLs
 yt-dlp[default]>=2026.3.17
+
+# Optional AI-generated thumbnail backgrounds from fal.ai (requires FAL_KEY and account credits)
+fal-client>=0.5.6

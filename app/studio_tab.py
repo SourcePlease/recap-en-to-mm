@@ -233,6 +233,8 @@ class StudioTab(ttk.Frame):
                 created = generate_thumbnail(
                     result.video_path, thumbnail_path, title=result.title,
                     ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+                    font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
+                    logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
                 )
                 self.events.put(("thumbnail", created))
             self.events.put(("status", f"Download completed: {len(result.files)} file(s)."))
@@ -285,6 +287,8 @@ class StudioTab(ttk.Frame):
             result = generate_thumbnail(
                 video, destination, title=Path(video).stem,
                 ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+                font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
+                logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
             )
             self.events.put(("thumbnail", result))
             self.events.put(("status", f"Thumbnail saved: {result}"))

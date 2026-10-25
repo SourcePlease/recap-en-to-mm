@@ -527,19 +527,27 @@ class StudioTab(ttk.Frame):
         try:
             result = download_media(url, options, progress_hook=self._on_download_progress)
             self.events.put(("download_result", result))
+            thumbnail_error = ""
             if auto_thumbnail and result.video_path:
-                thumbnail_dir = Path(options.output_dir) / "thumbnails"
-                thumbnail_path = thumbnail_dir / f"{result.video_path.stem}_thumbnail.jpg"
-                created = generate_thumbnail(
-                    result.video_path, thumbnail_path,
-                    title=thumbnail_title or result.title, aspect=thumbnail_aspect,
-                    sample_count=thumbnail_samples,
-                    ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
-                    font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
-                    logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
-                )
-                self.events.put(("thumbnail", created))
-            self.events.put(("status", f"Download completed: {len(result.files)} file(s)."))
+                try:
+                    thumbnail_dir = Path(options.output_dir) / "thumbnails"
+                    thumbnail_path = thumbnail_dir / f"{result.video_path.stem}_thumbnail.jpg"
+                    created = generate_thumbnail(
+                        result.video_path, thumbnail_path,
+                        title=thumbnail_title or result.title, aspect=thumbnail_aspect,
+                        sample_count=thumbnail_samples,
+                        ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+                        font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
+                        logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
+                    )
+                    self.events.put(("thumbnail", created))
+                except (ThumbnailError, OSError, ValueError) as exc:
+                    thumbnail_error = str(exc)
+            self.events.put((
+                "status",
+                f"Download completed: {len(result.files)} file(s)."
+                + (f" Thumbnail warning: {thumbnail_error}" if thumbnail_error else ""),
+            ))
         except (DownloadError, ThumbnailError, OSError, ValueError) as exc:
             self.events.put(("error", str(exc)))
         except Exception as exc:

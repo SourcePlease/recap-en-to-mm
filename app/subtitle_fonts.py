@@ -9,8 +9,11 @@ from pathlib import Path
 DEFAULT_FONT = "Myanmar Text"
 ROOT = Path(__file__).resolve().parent
 CACHE_FILE = ROOT.parent / "logs" / "subtitle_fonts.json"
-_FONT_DIRS = [Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts",
-              Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "Windows" / "Fonts"]
+_FONT_DIRS = [Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"]
+if os.environ.get("LOCALAPPDATA"):
+    _FONT_DIRS.append(Path(os.environ["LOCALAPPDATA"]) / "Microsoft" / "Windows" / "Fonts")
+# Also discover system/user-installed fonts when running tests or the renderer outside Windows.
+_FONT_DIRS.extend([Path("/usr/share/fonts"), Path.home() / ".local" / "share" / "fonts"])
 
 
 def _scan() -> dict[str, list[str]]:
@@ -20,8 +23,8 @@ def _scan() -> dict[str, list[str]]:
     for directory in _FONT_DIRS:
         if not directory.is_dir():
             continue
-        for path in sorted(directory.iterdir()):
-            if path.suffix.lower() not in {".ttf", ".otf", ".ttc"}:
+        for path in sorted(directory.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in {".ttf", ".otf", ".ttc"}:
                 continue
             try:
                 fonts = TTCollection(str(path)).fonts if path.suffix.lower() == ".ttc" else [TTFont(str(path), lazy=True)]

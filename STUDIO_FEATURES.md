@@ -23,11 +23,11 @@ This document describes the work on feature/studio-expansion. The upstream repos
 ## Next implementation steps
 
 1. Validate alternate providers against the real story-context, translation, and audit prompts on short and long videos; measure JSON validity, name consistency, and cost/quota behavior.
-2. Add URL capability probing, clearer per-extractor errors, a persistent download queue, playlist item progress, and user-controlled cookies handling.
-3. Live-test recent yt-dlp RedNote support on permitted public URLs, including redirect and access-error handling.
-4. Add an optional gallery/image downloader and allow choosing a downloaded cover or local frame for the thumbnail.
-5. Add template packs, Burmese-font discovery, title wrapping preview, logo placement, and thumbnail batch generation.
-6. Add integration tests around recap-from-downloaded-video without needing network access.
+2. Validate live downloads for YouTube, Facebook, TikTok, Reddit, X/Twitter, and RedNote/Xiaohongshu on permitted public URLs; improve per-extractor diagnostics and playlist item progress.
+3. Add batch thumbnail generation, more title wrapping/templates, and an optional gallery/cover-image downloader.
+4. Add SRT/VTT import and translation, bilingual subtitles, and an explicit audio/background-music preservation option using optional source-separation tooling.
+5. Add one-click export presets, scene/storyboard review, and optional subject-aware vertical reframing.
+6. Validate alternate AI providers on short and long videos, then add project save/load and end-to-end Download → Recap integration tests.
 
 ## Provider configuration
 

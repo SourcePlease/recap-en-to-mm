@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
 import threading
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -132,7 +134,10 @@ class StudioTab(ttk.Frame):
             values=("16:9", "9:16", "1:1"),
         ).grid(row=4, column=1, sticky="ew", pady=4)
         ttk.Label(download, text="Custom title (optional)").grid(row=4, column=2, sticky="w", padx=(8, 8), pady=4)
-        ttk.Entry(download, textvariable=self.thumbnail_title_var).grid(row=4, column=3, sticky="ew", pady=4)
+        self.thumbnail_title_entry = ttk.Combobox(
+            download, textvariable=self.thumbnail_title_var, state="normal", values=(),
+        )
+        self.thumbnail_title_entry.grid(row=4, column=3, sticky="ew", pady=4)
 
         ttk.Label(download, text="Frame samples").grid(row=5, column=0, sticky="w", padx=(0, 8), pady=4)
         ttk.Combobox(
@@ -522,6 +527,155 @@ class StudioTab(ttk.Frame):
         self._refresh_queue_view()
         self.status_var.set(f"Removed {count} completed queue item(s).")
 
+    def _source_title_for_ideas(self) -> str:
+        typed = self.thumbnail_title_var.get().strip()
+        if typed:
+            return typed
+        if self.last_video_path:
+            return self.last_video_path.stem
+        raw_url = self.url_var.get().strip()
+        if raw_url:
+            try:
+                slug = unquote(urlparse(raw_url).path.rstrip("/").rsplit("/", 1)[-1])
+                slug = re.sub(r"\.(mp4|mkv|mov|webm|avi|m4v)$", "", slug, flags=re.I)
+                slug = re.sub(r"[_+]+", " ", slug).strip()
+                if slug and not re.fullmatch(r"[A-Za-z0-9_-]{12,}", slug):
+                    return slug[:100]
+            except ValueError:
+                pass
+        return "Anime Recap"
+
+    def _render_thumbnail(
+        self,
+        video_path,
+        destination,
+        source_title: str,
+        mode: str,
+        aspect: str,
+        title: str,
+        title_style: str,
+        scene_prompt: str,
+        sample_count: int,
+        fal_key: str | None,
+        fal_model: str,
+    ) -> Path:
+        selected_title = (title or "").strip()
+        if not selected_title:
+            selected_title = builtin_title_ideas(source_title, title_style)[0]
+        font_path = self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path")
+        logo_path = self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None
+        if mode == "AI generated (fal.ai)":
+            return generate_fal_thumbnail(
+                destination,
+                title=selected_title,
+                scene_prompt=scene_prompt,
+                aspect=aspect,
+                style=title_style,
+                model_id=fal_model or "fal-ai/fast-sdxl",
+                api_key=fal_key,
+                font_path=font_path,
+                logo_path=logo_path,
+            )
+        if video_path is None:
+            raise ThumbnailError("Frame-based thumbnails need a local video file.")
+        return generate_thumbnail(
+            video_path,
+            destination,
+            title=selected_title,
+            aspect=aspect,
+            sample_count=sample_count,
+            ffmpeg=self.tool("ffmpeg"),
+            ffprobe=self.tool("ffprobe"),
+            font_path=font_path,
+            logo_path=logo_path,
+        )
+
+    def _save_fal_key(self) -> None:
+        key = self.fal_key_var.get().strip()
+        if not key:
+            messagebox.showwarning("fal.ai", "Paste your FAL_KEY first.", parent=self)
+            return
+        model = self.fal_model_var.get().strip() or "fal-ai/fast-sdxl"
+        values = {"FAL_KEY": key, "FAL_IMAGE_MODEL": model}
+        if any("\n" in value or "\r" in value for value in values.values()):
+            messagebox.showerror("fal.ai", "Key/model must not contain newline characters.", parent=self)
+            return
+        env_path = Path(self.env_path()).expanduser().resolve()
+        try:
+            env_path.parent.mkdir(parents=True, exist_ok=True)
+            if env_path.is_file():
+                lines = env_path.read_text(encoding="utf-8").splitlines()
+            else:
+                example = self.root_dir / ".env.example"
+                lines = example.read_text(encoding="utf-8").splitlines() if example.is_file() else []
+            for name, value in values.items():
+                pattern = re.compile(rf"^\s*(?:export\s+)?{re.escape(name)}\s*=")
+                indices = [i for i, line in enumerate(lines) if pattern.match(line)]
+                if indices:
+                    lines[indices[0]] = f"{name}={value}"
+                    for duplicate in reversed(indices[1:]):
+                        del lines[duplicate]
+                else:
+                    lines.append(f"{name}={value}")
+            temp_path = env_path.with_suffix(".env.tmp")
+            temp_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+            temp_path.replace(env_path)
+            os.environ["FAL_KEY"] = key
+            os.environ["FAL_IMAGE_MODEL"] = model
+            self.cfg["fal_image_model"] = model
+            self.save_config()
+            self.fal_status_var.set("FAL_KEY saved to the selected local .env file. AI image calls may use paid credits.")
+            messagebox.showinfo("fal.ai", "FAL_KEY saved locally. Keep the .env file private.", parent=self)
+        except OSError as exc:
+            messagebox.showerror("fal.ai", f"Could not write the selected .env file: {exc}", parent=self)
+
+    def _suggest_title_ideas(self) -> None:
+        if self.busy:
+            return
+        source_title = self._source_title_for_ideas()
+        style = self.thumbnail_style_var.get() or "Anime Recap"
+        provider = PROVIDER_LABEL_TO_KEY.get(self.provider_var.get(), "groq")
+        model = self.model_var.get().strip()
+        api_key = self.key_var.get().strip() or None
+        if not model or (provider in {"groq", "openrouter"} and not api_key):
+            ideas = builtin_title_ideas(source_title, style)
+            self.thumbnail_title_entry.configure(values=ideas)
+            self.thumbnail_title_var.set(ideas[0])
+            self.fal_status_var.set("Using built-in Burmese title templates. Configure an AI provider/model for story-specific suggestions.")
+            return
+        self._set_busy(True)
+        self.fal_status_var.set(f"Generating Burmese title ideas with {provider}/{model}…")
+        threading.Thread(
+            target=self._title_ideas_worker,
+            args=(source_title, style, self.thumbnail_prompt_var.get().strip(), provider, model, api_key),
+            daemon=True,
+        ).start()
+
+    def _title_ideas_worker(
+        self, source_title: str, style: str, summary: str,
+        provider: str, model: str, api_key: str | None,
+    ) -> None:
+        try:
+            ideas = ai_title_ideas(
+                source_title,
+                style=style,
+                summary=summary,
+                provider=provider,
+                model=model,
+                api_key=api_key,
+                base_url=(os.getenv("OLLAMA_BASE_URL") if provider == "ollama" else None),
+                timeout=35,
+            )
+            self.events.put(("title_ideas", (ideas, f"AI title ideas ready ({provider}/{model}). Choose any suggestion or edit it.")))
+        except Exception as exc:
+            ideas = builtin_title_ideas(source_title, style)
+            self.events.put(("title_ideas", (
+                ideas,
+                f"AI title request failed; built-in titles loaded instead: {str(exc)[:240]}",
+            )))
+        finally:
+            self.events.put(("busy", False))
+
     def _start_download(self) -> None:
         if self.busy:
             return
@@ -542,25 +696,41 @@ class StudioTab(ttk.Frame):
             subtitles=self.subtitle_var.get(),
             cookies_file=Path(cookies) if cookies else None,
         )
+        auto_thumbnail = self.auto_thumbnail_var.get()
+        mode = self.thumbnail_mode_var.get()
+        fal_key = self.fal_key_var.get().strip() or os.getenv("FAL_KEY", "").strip() or None
+        if auto_thumbnail and mode == "AI generated (fal.ai)" and not fal_key:
+            messagebox.showwarning("fal.ai", "Add a FAL_KEY and press Save FAL Key before using AI thumbnails.", parent=self)
+            return
+        try:
+            sample_count = max(1, min(24, int(self.thumbnail_samples_var.get() or "8")))
+        except ValueError:
+            sample_count = 8
+        aspect = self.thumbnail_aspect_var.get()
+        title = self.thumbnail_title_var.get().strip()
+        style = self.thumbnail_style_var.get() or "Anime Recap"
+        scene_prompt = self.thumbnail_prompt_var.get().strip()
+        model = self.fal_model_var.get().strip() or os.getenv("FAL_IMAGE_MODEL") or "fal-ai/fast-sdxl"
+        self.cfg["studio_thumbnail_aspect"] = aspect
+        self.cfg["studio_thumbnail_samples"] = str(sample_count)
+        self.cfg["studio_thumbnail_mode"] = mode
+        self.cfg["studio_thumbnail_title_style"] = style
+        self.cfg["studio_thumbnail_scene_prompt"] = scene_prompt
+        self.cfg["fal_image_model"] = model
+        self.save_config()
         self._set_busy(True)
         self.progress_var.set(0)
         self.status_var.set("Starting downloader…")
-        self.cfg["studio_thumbnail_aspect"] = self.thumbnail_aspect_var.get()
-        self.cfg["studio_thumbnail_samples"] = self.thumbnail_samples_var.get()
-        self.save_config()
         threading.Thread(
             target=self._download_worker,
-            args=(
-                url, options, self.auto_thumbnail_var.get(),
-                self.thumbnail_aspect_var.get(), self.thumbnail_title_var.get().strip(),
-                int(self.thumbnail_samples_var.get() or "8"),
-            ),
+            args=(url, options, auto_thumbnail, aspect, title, sample_count, mode, style, scene_prompt, model, fal_key),
             daemon=True,
         ).start()
 
     def _download_worker(
         self, url: str, options: DownloadOptions, auto_thumbnail: bool,
-        thumbnail_aspect: str, thumbnail_title: str, thumbnail_samples: int,
+        aspect: str, title: str, sample_count: int, mode: str, style: str,
+        scene_prompt: str, fal_model: str, fal_key: str | None,
     ) -> None:
         try:
             result = download_media(url, options, progress_hook=self._on_download_progress)
@@ -570,13 +740,9 @@ class StudioTab(ttk.Frame):
                 try:
                     thumbnail_dir = Path(options.output_dir) / "thumbnails"
                     thumbnail_path = thumbnail_dir / f"{result.video_path.stem}_thumbnail.jpg"
-                    created = generate_thumbnail(
-                        result.video_path, thumbnail_path,
-                        title=thumbnail_title or result.title, aspect=thumbnail_aspect,
-                        sample_count=thumbnail_samples,
-                        ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
-                        font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
-                        logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
+                    created = self._render_thumbnail(
+                        result.video_path, thumbnail_path, result.title, mode, aspect, title,
+                        style, scene_prompt, sample_count, fal_key, fal_model,
                     )
                     self.events.put(("thumbnail", created))
                 except (ThumbnailError, OSError, ValueError) as exc:

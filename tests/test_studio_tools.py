@@ -19,6 +19,7 @@ from studio.downloader import (
     DownloadError, DownloadOptions, build_ytdlp_options, download_media, validate_http_url,
 )
 from studio.thumbnail import thumbnail_size
+from studio.download_queue import PersistentDownloadQueue
 from recap_runtime.services.ai_service import AIService
 from recap_planner import _user_glossary_context
 
@@ -109,6 +110,38 @@ class AIServiceProviderRoutingTests(unittest.TestCase):
                 response = service.client.models.generate_content(model="test-model", contents="return JSON")
             self.assertEqual(response.text, "OK")
             self.assertEqual(service._last_provider, "ollama")
+
+
+class PersistentDownloadQueueTests(unittest.TestCase):
+    def test_queue_persists_status_and_resets_interrupted_download(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "queue.json"
+            queue_model = PersistentDownloadQueue(path)
+            added, skipped = queue_model.add([
+                "https://example.com/a",
+                "https://example.com/a",
+                "https://example.com/b",
+            ])
+            self.assertEqual(len(added), 2)
+            self.assertEqual(len(skipped), 1)
+            queue_model.update(added[0].id, status="downloading")
+            queue_model.update(added[1].id, status="completed", title="B")
+            reloaded = PersistentDownloadQueue(path)
+            statuses = {item.url: item.status for item in reloaded.items()}
+            self.assertEqual(statuses["https://example.com/a"], "pending")
+            self.assertEqual(statuses["https://example.com/b"], "completed")
+
+    def test_failed_jobs_can_be_retried_and_completed_jobs_cleared(self):
+        with tempfile.TemporaryDirectory() as temp:
+            queue_model = PersistentDownloadQueue(Path(temp) / "queue.json")
+            added, _ = queue_model.add(["https://example.com/a", "https://example.com/b"])
+            queue_model.update(added[0].id, status="failed", error="network down")
+            queue_model.update(added[1].id, status="completed")
+            self.assertEqual(queue_model.retry_failed(), 1)
+            statuses = {item.url: item.status for item in queue_model.items()}
+            self.assertEqual(statuses["https://example.com/a"], "pending")
+            self.assertEqual(queue_model.clear_finished(), 1)
+            self.assertEqual(len(queue_model.items()), 1)
 
 
 class TranslationGlossaryTests(unittest.TestCase):

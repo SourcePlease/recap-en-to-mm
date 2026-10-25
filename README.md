@@ -383,3 +383,17 @@ the same; changing it re-renders only the video parts (translation and voice are
 ### Notes
 Edge TTS is a Microsoft online service and Gemini is a Google API — follow their terms. You are
 responsible for the rights to the videos you process.
+
+
+---
+
+## Recap Studio tools (feature branch)
+
+The separate Studio tab is being developed on the feature/studio-expansion branch so the upstream code and main branch remain untouched.
+
+- **Downloader:** yt-dlp-based URL downloads with quality selection, playlist mode, optional subtitle downloads, progress updates, and optional user-supplied cookies for content you are authorized to access.
+- **Auto thumbnails:** FFmpeg extracts candidate frames; Pillow ranks and styles a local thumbnail with a title and optional logo in 16:9, 9:16, or 1:1 formats.
+- **Optional AI provider tester:** Groq, OpenRouter, or local Ollama. Provider/model availability and free quotas can change. The existing Gemini recap translation flow remains the default and is not replaced by this first integration.
+- **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. RedNote/Xiaohongshu requires separate validation before it can be described as supported.
+
+See [STUDIO_FEATURES.md](STUDIO_FEATURES.md) for the implementation scope and next steps.

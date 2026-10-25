@@ -273,6 +273,217 @@ class StudioTab(ttk.Frame):
         if self.last_video_path and self.last_video_path.is_file() and callable(self.on_video_ready):
             self.on_video_ready(self.last_video_path)
 
+    def _refresh_queue_view(self) -> None:
+        if not hasattr(self, "queue_listbox"):
+            return
+        self.queue_listbox.delete(0, "end")
+        items = self.queue_model.items()
+        for item in items:
+            label = item.title or item.url
+            if len(label) > 88:
+                label = label[:85] + "..."
+            entry = f"{item.status.upper():10} | {label}"
+            if item.error:
+                error = item.error.replace("\n", " ")
+                entry += f" — {error[:90]}"
+            self.queue_listbox.insert("end", entry)
+        if hasattr(self, "queue_start_button"):
+            self.queue_start_button.configure(
+                state="normal" if not self.busy and self.queue_model.pending() else "disabled"
+            )
+
+    def _queue_current_url(self) -> None:
+        url = self.url_var.get().strip()
+        if not url:
+            messagebox.showwarning("Studio Queue", "Paste a media URL first.", parent=self)
+            return
+        try:
+            url = validate_http_url(url)
+        except DownloadError as exc:
+            messagebox.showerror("Studio Queue", str(exc), parent=self)
+            return
+        added, skipped = self.queue_model.add([url])
+        self._refresh_queue_view()
+        self.status_var.set(
+            f"Added {len(added)} URL to queue." if added
+            else "That URL is already in the queue."
+        )
+
+    def _queue_url_list(self) -> None:
+        window = tk.Toplevel(self)
+        window.title("Add multiple URLs to queue")
+        window.transient(self.winfo_toplevel())
+        window.geometry("680x460")
+        window.minsize(480, 320)
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(1, weight=1)
+        ttk.Label(
+            window,
+            text="Paste one URL per line. Blank lines and lines starting with # are ignored. Up to 100 URLs per batch.",
+            wraplength=640,
+        ).grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 6))
+        editor = tk.Text(window, wrap="word", undo=True)
+        editor.grid(row=1, column=0, sticky="nsew", padx=12, pady=6)
+        buttons = ttk.Frame(window, padding=12)
+        buttons.grid(row=2, column=0, sticky="ew")
+        def save_urls() -> None:
+            raw_urls = [
+                line.strip() for line in editor.get("1.0", "end-1c").splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            if not raw_urls:
+                messagebox.showwarning("Studio Queue", "Paste at least one URL.", parent=window)
+                return
+            if len(raw_urls) > 100:
+                messagebox.showwarning("Studio Queue", "Add no more than 100 URLs at a time.", parent=window)
+                return
+            valid: list[str] = []
+            invalid: list[str] = []
+            for raw in raw_urls:
+                try:
+                    valid.append(validate_http_url(raw))
+                except DownloadError:
+                    invalid.append(raw)
+            if invalid:
+                messagebox.showerror(
+                    "Invalid URL(s)",
+                    "Every line must be an http:// or https:// URL. Fix these lines and try again:\n\n"
+                    + "\n".join(invalid[:12]),
+                    parent=window,
+                )
+                return
+            added, skipped = self.queue_model.add(valid)
+            self._refresh_queue_view()
+            self.status_var.set(f"Queued {len(added)} URL(s); skipped {len(skipped)} duplicate(s).")
+            window.destroy()
+        ttk.Button(buttons, text="Add to Queue", command=save_urls).pack(side="right")
+        ttk.Button(buttons, text="Cancel", command=window.destroy).pack(side="right", padx=(0, 8))
+
+    def _start_queue(self) -> None:
+        if self.busy or self.queue_running:
+            return
+        items = self.queue_model.pending()
+        if not items:
+            messagebox.showinfo("Studio Queue", "No pending URLs. Add URLs or press Retry Failed.", parent=self)
+            self._refresh_queue_view()
+            return
+        output_dir = Path(self.output_var.get().strip() or self.root_dir / "Downloads")
+        quality = self.quality_var.get()
+        audio_only = quality == "Audio only (MP3)"
+        height = {"1080p": 1080, "720p": 720, "480p": 480}.get(quality)
+        cookies = self.cookies_var.get().strip()
+        options = DownloadOptions(
+            output_dir=output_dir,
+            quality_height=height,
+            audio_only=audio_only,
+            playlist=self.playlist_var.get(),
+            subtitles=self.subtitle_var.get(),
+            cookies_file=Path(cookies) if cookies else None,
+        )
+        try:
+            sample_count = max(1, min(24, int(self.thumbnail_samples_var.get() or "8")))
+        except ValueError:
+            sample_count = 8
+        aspect = self.thumbnail_aspect_var.get()
+        title = self.thumbnail_title_var.get().strip()
+        auto_thumbnail = self.auto_thumbnail_var.get()
+        self.cfg["studio_thumbnail_aspect"] = aspect
+        self.cfg["studio_thumbnail_samples"] = str(sample_count)
+        self.save_config()
+        self.queue_stop.clear()
+        self.queue_running = True
+        self._set_busy(True)
+        self.progress_var.set(0)
+        self.status_var.set(f"Starting download queue: {len(items)} pending item(s)…")
+        self._refresh_queue_view()
+        threading.Thread(
+            target=self._queue_worker,
+            args=(items, options, auto_thumbnail, aspect, title, sample_count),
+            daemon=True,
+        ).start()
+
+    def _queue_worker(
+        self, items, options: DownloadOptions, auto_thumbnail: bool,
+        aspect: str, custom_title: str, sample_count: int,
+    ) -> None:
+        completed = failed = processed = 0
+        try:
+            total = len(items)
+            for index, item in enumerate(items, start=1):
+                if self.queue_stop.is_set():
+                    break
+                self.queue_model.update(item.id, status="downloading", error="")
+                self.events.put(("queue_refresh", None))
+                self.events.put(("status", f"Queue item {index}/{total}: starting download…"))
+                try:
+                    result = download_media(item.url, options, progress_hook=self._on_download_progress)
+                    thumbnail_error = ""
+                    if auto_thumbnail and result.video_path:
+                        try:
+                            thumbnail_path = (
+                                Path(options.output_dir) / "thumbnails"
+                                / f"{result.video_path.stem}_thumbnail.jpg"
+                            )
+                            created = generate_thumbnail(
+                                result.video_path, thumbnail_path,
+                                title=custom_title or result.title, aspect=aspect,
+                                sample_count=sample_count,
+                                ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+                                font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
+                                logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
+                            )
+                            self.events.put(("thumbnail", created))
+                        except (ThumbnailError, OSError, ValueError) as exc:
+                            thumbnail_error = str(exc)
+                    self.queue_model.update(
+                        item.id,
+                        status="completed",
+                        title=result.title,
+                        error=(f"Thumbnail: {thumbnail_error}" if thumbnail_error else ""),
+                        output_files=[str(path) for path in result.files],
+                    )
+                    completed += 1
+                    self.events.put(("download_result", result))
+                    self.events.put((
+                        "status",
+                        f"Queue {index}/{total}: downloaded {result.title}"
+                        + (f" (thumbnail warning: {thumbnail_error})" if thumbnail_error else ""),
+                    ))
+                except Exception as exc:
+                    self.queue_model.update(item.id, status="failed", error=str(exc))
+                    failed += 1
+                    self.events.put(("queue_item_failed", f"{item.url}\n{exc}"))
+                finally:
+                    processed += 1
+                    self.events.put(("queue_refresh", None))
+        finally:
+            stopped = self.queue_stop.is_set()
+            self.events.put((
+                "queue_done",
+                f"Queue {'stopped after current item' if stopped else 'finished'} — "
+                f"{completed} completed, {failed} failed, {max(0, len(items) - processed)} pending.",
+            ))
+
+    def _stop_queue(self) -> None:
+        if self.queue_running:
+            self.queue_stop.set()
+            self.status_var.set("Stop requested — current download and thumbnail will finish first.")
+
+    def _retry_failed(self) -> None:
+        if self.busy:
+            return
+        count = self.queue_model.retry_failed()
+        self._refresh_queue_view()
+        self.status_var.set(f"Reset {count} failed item(s) to pending.")
+        self._refresh_queue_view()
+
+    def _clear_finished(self) -> None:
+        if self.busy:
+            return
+        count = self.queue_model.clear_finished()
+        self._refresh_queue_view()
+        self.status_var.set(f"Removed {count} completed queue item(s).")
+
     def _start_download(self) -> None:
         if self.busy:
             return
@@ -601,6 +812,16 @@ class StudioTab(ttk.Frame):
                     )
                 elif kind == "thumbnail":
                     self.status_var.set(f"Thumbnail created: {value}")
+                elif kind == "queue_refresh":
+                    self._refresh_queue_view()
+                elif kind == "queue_item_failed":
+                    # Continue the queue, but preserve the failure in queue.json and the run log.
+                    self.status_var.set("Queue item failed; continuing with the next URL.")
+                elif kind == "queue_done":
+                    self.queue_running = False
+                    self._set_busy(False)
+                    self._refresh_queue_view()
+                    self.status_var.set(str(value))
                 elif kind == "status":
                     self.status_var.set(str(value))
                 elif kind == "error":

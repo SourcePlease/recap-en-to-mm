@@ -16,7 +16,8 @@ except ImportError:  # keep the tool useful if the optional dotenv helper is abs
 from studio.ai_providers import AIProviderError, chat_completion
 from studio.downloader import DownloadError, DownloadOptions, DownloadResult, download_media, validate_http_url
 from studio.download_queue import PersistentDownloadQueue
-from studio.thumbnail import ThumbnailError, generate_thumbnail
+from studio.thumbnail import ThumbnailError, generate_fal_thumbnail, generate_thumbnail
+from studio.title_generator import TITLE_STYLES, ai_title_ideas, builtin_title_ideas
 
 
 PROVIDER_LABEL_TO_KEY = {
@@ -64,6 +65,12 @@ class StudioTab(ttk.Frame):
         self.thumbnail_aspect_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_aspect") or "16:9"))
         self.thumbnail_title_var = tk.StringVar(value="")
         self.thumbnail_samples_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_samples") or "8"))
+        self.thumbnail_mode_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_mode") or "Frame-based (local)"))
+        self.thumbnail_style_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_title_style") or "Anime Recap"))
+        self.thumbnail_prompt_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_scene_prompt") or ""))
+        self.fal_model_var = tk.StringVar(value=str(self.cfg.get("fal_image_model") or os.getenv("FAL_IMAGE_MODEL") or "fal-ai/fast-sdxl"))
+        self.fal_key_var = tk.StringVar(value=os.getenv("FAL_KEY", ""))
+        self.fal_status_var = tk.StringVar(value="fal.ai AI background is optional and may use paid credits.")
         self.subtitle_var = tk.BooleanVar(value=False)
         self.cookies_var = tk.StringVar(value="")
         self.status_var = tk.StringVar(value="Ready — paste a supported media URL or select a local video.")
@@ -132,11 +139,24 @@ class StudioTab(ttk.Frame):
             download, textvariable=self.thumbnail_samples_var, state="readonly",
             values=("4", "8", "12", "16", "24"),
         ).grid(row=5, column=1, sticky="ew", pady=4)
-        ttk.Label(download, text="Higher = more candidate frames, slower generation").grid(
-            row=5, column=2, columnspan=2, sticky="w", padx=(8, 0), pady=4)
+        ttk.Label(download, text="Title style").grid(row=5, column=2, sticky="w", padx=(8, 8), pady=4)
+        ttk.Combobox(
+            download, textvariable=self.thumbnail_style_var, state="readonly",
+            values=tuple(TITLE_STYLES.keys()),
+        ).grid(row=5, column=3, sticky="ew", pady=4)
+
+        ttk.Label(download, text="Thumbnail method").grid(row=6, column=0, sticky="w", padx=(0, 8), pady=4)
+        ttk.Combobox(
+            download, textvariable=self.thumbnail_mode_var, state="readonly",
+            values=("Frame-based (local)", "AI generated (fal.ai)"),
+        ).grid(row=6, column=1, sticky="ew", pady=4)
+        ttk.Label(download, text="AI scene / plot notes (optional)").grid(
+            row=6, column=2, sticky="w", padx=(8, 8), pady=4)
+        ttk.Entry(download, textvariable=self.thumbnail_prompt_var).grid(
+            row=6, column=3, sticky="ew", pady=4)
 
         action_row = ttk.Frame(download)
-        action_row.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(8, 2))
+        action_row.grid(row=7, column=0, columnspan=4, sticky="ew", pady=(8, 2))
         self.download_button = ttk.Button(action_row, text="Download", command=self._start_download)
         self.download_button.pack(side="left")
         ttk.Button(action_row, text="Thumbnail from local video…", command=self._start_local_thumbnail).pack(
@@ -146,7 +166,7 @@ class StudioTab(ttk.Frame):
         self.progress = ttk.Progressbar(action_row, maximum=100, variable=self.progress_var, length=220)
         self.progress.pack(side="left", fill="x", expand=True, padx=(14, 0))
         ttk.Label(download, textvariable=self.status_var, wraplength=1150).grid(
-            row=7, column=0, columnspan=4, sticky="w", pady=(7, 0))
+            row=8, column=0, columnspan=4, sticky="w", pady=(7, 0))
 
         lower = ttk.Frame(self)
         lower.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
@@ -235,6 +255,24 @@ class StudioTab(ttk.Frame):
                  "Fallback providers are opt-in through RECAP_AI_FALLBACKS.",
             wraplength=430, justify="left",
         ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 0))
+
+        ttk.Separator(ai, orient="horizontal").grid(row=6, column=0, columnspan=2, sticky="ew", pady=(10, 6))
+        ttk.Label(ai, text="fal.ai key").grid(row=7, column=0, sticky="w", padx=(0, 8), pady=3)
+        ttk.Entry(ai, textvariable=self.fal_key_var, show="•").grid(row=7, column=1, sticky="ew", pady=3)
+        ttk.Label(ai, text="Image model").grid(row=8, column=0, sticky="w", padx=(0, 8), pady=3)
+        ttk.Entry(ai, textvariable=self.fal_model_var).grid(row=8, column=1, sticky="ew", pady=3)
+        fal_buttons = ttk.Frame(ai)
+        fal_buttons.grid(row=9, column=1, sticky="e", pady=(5, 3))
+        ttk.Button(fal_buttons, text="Save FAL Key", command=self._save_fal_key).pack(side="left")
+        ttk.Button(fal_buttons, text="Suggest Burmese Titles", command=self._suggest_title_ideas).pack(side="left", padx=(6, 0))
+        ttk.Label(ai, textvariable=self.fal_status_var, wraplength=430, justify="left").grid(
+            row=10, column=0, columnspan=2, sticky="w", pady=(5, 0))
+        ttk.Label(
+            ai,
+            text="AI image generation uses fal.ai account credits and may be paid. Frame-based thumbnails remain local and free. "
+                 "Burmese title text is overlaid locally so the spelling stays correct.",
+            wraplength=430, justify="left",
+        ).grid(row=11, column=0, columnspan=2, sticky="w", pady=(6, 0))
         self._refresh_queue_view()
 
     def _browse_output(self) -> None:

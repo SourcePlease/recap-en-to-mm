@@ -13,7 +13,7 @@ This document describes the work on feature/studio-expansion. The upstream repos
 
 ## Important limitations
 
-- This first step does not mark the whole project complete. The current Recap → Myanmar pipeline still uses its existing Gemini translation path; the new provider helper and UI currently provide an explicit provider test/entry point, not automatic replacement of the translation engine.
+- Gemini remains the default, but the selected Groq, OpenRouter, or Ollama provider can now be applied to story context, translation, and audit requests through the same planner interface. The integration needs real long-video validation; output structure, context limits, and translation quality can differ by model.
 - yt-dlp supports many sites, including common video platforms, but site extractors can stop working when websites change. The app must report failures instead of promising every URL always works.
 - The dependency minimum uses a yt-dlp release that includes the newer RedNote/Xiaohongshu extractor. The application routes those URLs through yt-dlp, but individual links still need live validation because redirects, login requirements, region restrictions, CAPTCHA, or site changes can make them fail.
 - Private, age-restricted, DRM-protected, or otherwise gated content is not unlocked by this application. Cookies can only be supplied by the user for content they are authorized to access.
@@ -22,9 +22,9 @@ This document describes the work on feature/studio-expansion. The upstream repos
 
 ## Next implementation steps
 
-1. Add a provider adapter contract and route translation through an explicit provider selection while preserving Gemini as the default.
+1. Validate alternate providers against the real story-context, translation, and audit prompts on short and long videos; measure JSON validity, name consistency, and cost/quota behavior.
 2. Add URL capability probing, clearer per-extractor errors, a persistent download queue, playlist item progress, and user-controlled cookies handling.
-3. Verify RedNote support against permitted test URLs and add a dedicated extractor adapter only if necessary.
+3. Live-test recent yt-dlp RedNote support on permitted public URLs, including redirect and access-error handling.
 4. Add an optional gallery/image downloader and allow choosing a downloaded cover or local frame for the thumbnail.
 5. Add template packs, Burmese-font discovery, title wrapping preview, logo placement, and thumbnail batch generation.
 6. Add integration tests around recap-from-downloaded-video without needing network access.

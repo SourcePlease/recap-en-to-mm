@@ -20,6 +20,7 @@ from studio.downloader import (
 )
 from studio.thumbnail import thumbnail_size
 from recap_runtime.services.ai_service import AIService
+from recap_planner import _user_glossary_context
 
 
 class StudioDownloaderTests(unittest.TestCase):
@@ -108,6 +109,30 @@ class AIServiceProviderRoutingTests(unittest.TestCase):
                 response = service.client.models.generate_content(model="test-model", contents="return JSON")
             self.assertEqual(response.text, "OK")
             self.assertEqual(service._last_provider, "ollama")
+
+
+class TranslationGlossaryTests(unittest.TestCase):
+    def test_glossary_adds_consistent_burmese_terms(self):
+        with tempfile.TemporaryDirectory() as temp:
+            glossary = Path(temp) / "glossary.json"
+            glossary.write_text(
+                '{"characters":{"Asta":"အက်စတာ"},"terms":{"Magic Knight":"မေဂျစ်နိုက်"},'
+                '"places":{},"notes":["Use natural Burmese"]}',
+                encoding="utf-8",
+            )
+            with patch.dict(os.environ, {"RECAP_GLOSSARY_PATH": str(glossary)}):
+                prompt_prefix = _user_glossary_context()
+            self.assertIn("Asta => အက်စတာ", prompt_prefix)
+            self.assertIn("Magic Knight => မေဂျစ်နိုက်", prompt_prefix)
+            self.assertIn("Use natural Burmese", prompt_prefix)
+
+    def test_invalid_glossary_is_reported(self):
+        with tempfile.TemporaryDirectory() as temp:
+            glossary = Path(temp) / "glossary.json"
+            glossary.write_text("{invalid", encoding="utf-8")
+            with patch.dict(os.environ, {"RECAP_GLOSSARY_PATH": str(glossary)}):
+                with self.assertRaises(RuntimeError):
+                    _user_glossary_context()
 
 
 class StudioThumbnailTests(unittest.TestCase):

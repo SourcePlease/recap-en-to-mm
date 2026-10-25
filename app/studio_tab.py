@@ -429,9 +429,21 @@ class StudioTab(ttk.Frame):
             sample_count = 8
         aspect = self.thumbnail_aspect_var.get()
         title = self.thumbnail_title_var.get().strip()
+        title_style = self.thumbnail_style_var.get() or "Anime Recap"
+        scene_prompt = self.thumbnail_prompt_var.get().strip()
+        mode = self.thumbnail_mode_var.get()
+        fal_key = self.fal_key_var.get().strip() or os.getenv("FAL_KEY", "").strip() or None
+        fal_model = self.fal_model_var.get().strip() or os.getenv("FAL_IMAGE_MODEL") or "fal-ai/fast-sdxl"
         auto_thumbnail = self.auto_thumbnail_var.get()
+        if auto_thumbnail and mode == "AI generated (fal.ai)" and not fal_key:
+            messagebox.showwarning("fal.ai", "Add a FAL_KEY and press Save FAL Key before using AI thumbnails.", parent=self)
+            return
         self.cfg["studio_thumbnail_aspect"] = aspect
         self.cfg["studio_thumbnail_samples"] = str(sample_count)
+        self.cfg["studio_thumbnail_mode"] = mode
+        self.cfg["studio_thumbnail_title_style"] = title_style
+        self.cfg["studio_thumbnail_scene_prompt"] = scene_prompt
+        self.cfg["fal_image_model"] = fal_model
         self.save_config()
         self.queue_stop.clear()
         self.queue_running = True
@@ -441,13 +453,14 @@ class StudioTab(ttk.Frame):
         self._refresh_queue_view()
         threading.Thread(
             target=self._queue_worker,
-            args=(items, options, auto_thumbnail, aspect, title, sample_count),
+            args=(items, options, auto_thumbnail, aspect, title, sample_count, mode, title_style, scene_prompt, fal_model, fal_key),
             daemon=True,
         ).start()
 
     def _queue_worker(
         self, items, options: DownloadOptions, auto_thumbnail: bool,
-        aspect: str, custom_title: str, sample_count: int,
+        aspect: str, custom_title: str, sample_count: int, mode: str,
+        title_style: str, scene_prompt: str, fal_model: str, fal_key: str | None,
     ) -> None:
         completed = failed = processed = 0
         try:
@@ -467,13 +480,9 @@ class StudioTab(ttk.Frame):
                                 Path(options.output_dir) / "thumbnails"
                                 / f"{result.video_path.stem}_thumbnail.jpg"
                             )
-                            created = generate_thumbnail(
-                                result.video_path, thumbnail_path,
-                                title=custom_title or result.title, aspect=aspect,
-                                sample_count=sample_count,
-                                ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
-                                font_path=self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path"),
-                                logo_path=(self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None),
+                            created = self._render_thumbnail(
+                                result.video_path, thumbnail_path, result.title, mode, aspect,
+                                custom_title, title_style, scene_prompt, sample_count, fal_key, fal_model,
                             )
                             self.events.put(("thumbnail", created))
                         except (ThumbnailError, OSError, ValueError) as exc:

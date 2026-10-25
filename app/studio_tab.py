@@ -29,13 +29,14 @@ PROVIDER_KEY_TO_LABEL = {value: key for key, value in PROVIDER_LABEL_TO_KEY.item
 class StudioTab(ttk.Frame):
     """Downloader, automatic thumbnail generator, and optional AI-provider tester."""
 
-    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, on_video_ready=None):
+    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, on_video_ready=None, env_path=None):
         super().__init__(master, padding=12)
         self.root_dir = Path(root_dir)
         self.cfg = cfg
         self.save_config = save
         self.tool = tool
         self.on_video_ready = on_video_ready
+        self.env_path = env_path or (lambda: self.root_dir / ".env")
         self.last_video_path: Path | None = None
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.busy = False
@@ -43,7 +44,12 @@ class StudioTab(ttk.Frame):
         self._key_cache: dict[str, str] = {}
 
         if load_dotenv:
-            load_dotenv(self.root_dir / ".env", override=False)
+            try:
+                configured_env = Path(self.env_path()).expanduser()
+                if configured_env.is_file():
+                    load_dotenv(configured_env, override=False)
+            except (OSError, TypeError, ValueError):
+                pass
 
         default_output = self.cfg.get("studio_output_dir") or str(self.root_dir / "Downloads")
         self.url_var = tk.StringVar(value="")
@@ -456,8 +462,9 @@ class StudioTab(ttk.Frame):
                 messagebox.showerror("Studio", f"{name} contains a newline and cannot be saved.", parent=self)
                 return
 
-        env_path = self.root_dir / ".env"
+        env_path = Path(self.env_path()).expanduser().resolve()
         try:
+            env_path.parent.mkdir(parents=True, exist_ok=True)
             if env_path.is_file():
                 lines = env_path.read_text(encoding="utf-8").splitlines()
             else:

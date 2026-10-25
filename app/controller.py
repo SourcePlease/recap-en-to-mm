@@ -25,6 +25,7 @@ from gemini_tts import GEMINI_VOICES
 from recap_planner import SOURCE_LANGUAGES
 from recap_subtitles import SubtitleControls
 from subtitle_png import geometry as subtitle_geometry, sample as subtitle_sample
+from studio_tab import StudioTab
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT_DIR / "config.json"
@@ -255,6 +256,19 @@ class App(tk.Tk):
         self.option_add("*TCombobox*Listbox.selectBackground", ACCENT)
         self.option_add("*TCombobox*Listbox.selectForeground", "#ffffff")
 
+    def _remember_tool_tab(self, _event=None) -> None:
+        try:
+            selected = self.tools_tabs.select()
+            if selected == str(self.splitter_tab):
+                self.cfg["last_tool_tab"] = "splitter"
+            elif selected == str(self.studio_tab):
+                self.cfg["last_tool_tab"] = "studio"
+            else:
+                self.cfg["last_tool_tab"] = "recap"
+            save_config(self.cfg)
+        except Exception:
+            pass
+
     def _build(self) -> None:
         # Layout V33: one-line header, compact source bar, then three resizable panes
         # (Settings+Logs | Preview | Tools). The preview follows its pane size and always
@@ -267,8 +281,17 @@ class App(tk.Tk):
         self.splitter_tab = SplitterTab(self.tools_tabs, cfg=self.cfg, save=lambda: save_config(self.cfg),
                                         tool=lambda name: _tool_path(self.cfg, name), logs_dir=LOGS_DIR)
         self.tools_tabs.add(self.splitter_tab, text="Splitter")
-        if self.cfg.get("last_tool_tab") == "splitter":
+        self.studio_tab = StudioTab(
+            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
+        )
+        self.tools_tabs.add(self.studio_tab, text="Studio")
+        last_tool_tab = self.cfg.get("last_tool_tab")
+        if last_tool_tab == "splitter":
             self.tools_tabs.select(self.splitter_tab)
+        elif last_tool_tab == "studio":
+            self.tools_tabs.select(self.studio_tab)
+        self.tools_tabs.bind("<<NotebookTabChanged>>", self._remember_tool_tab, add="+")
         outer = ttk.Frame(recap_tab, padding=(12, 8, 12, 8))
         outer.pack(fill="both", expand=True)
         outer.columnconfigure(0, weight=1)

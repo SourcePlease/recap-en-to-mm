@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-APP_DIR = Path(__file__).resolve().parents[1] / "app"
+ROOT_DIR = Path(__file__).resolve().parents[1]
+APP_DIR = ROOT_DIR / "app"
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
@@ -15,6 +19,7 @@ from studio.downloader import (
     DownloadError, DownloadOptions, build_ytdlp_options, download_media, validate_http_url,
 )
 from studio.thumbnail import thumbnail_size
+from recap_runtime.services.ai_service import AIService
 
 
 class StudioDownloaderTests(unittest.TestCase):
@@ -88,6 +93,21 @@ class StudioAIProviderTests(unittest.TestCase):
     def test_provider_catalog_includes_openrouter(self):
         keys = {provider["key"] for provider in provider_options()}
         self.assertTrue({"groq", "openrouter", "ollama"}.issubset(keys))
+
+
+class AIServiceProviderRoutingTests(unittest.TestCase):
+    def test_ollama_is_an_explicit_recaps_provider_without_gemini_key(self):
+        with patch.dict(os.environ, {"RECAP_AI_PROVIDER": "ollama", "OLLAMA_MODEL": "test-model"}, clear=True):
+            service = AIService()
+            self.assertEqual(service.provider, "ollama")
+            self.assertEqual(service.text_model, "test-model")
+            with patch(
+                "studio.ai_providers.chat_completion_with_fallback",
+                return_value=("OK", "ollama", "test-model", []),
+            ):
+                response = service.client.models.generate_content(model="test-model", contents="return JSON")
+            self.assertEqual(response.text, "OK")
+            self.assertEqual(service._last_provider, "ollama")
 
 
 class StudioThumbnailTests(unittest.TestCase):

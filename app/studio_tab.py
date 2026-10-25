@@ -28,12 +28,14 @@ PROVIDER_KEY_TO_LABEL = {value: key for key, value in PROVIDER_LABEL_TO_KEY.item
 class StudioTab(ttk.Frame):
     """Downloader, automatic thumbnail generator, and optional AI-provider tester."""
 
-    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool):
+    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, on_video_ready=None):
         super().__init__(master, padding=12)
         self.root_dir = Path(root_dir)
         self.cfg = cfg
         self.save_config = save
         self.tool = tool
+        self.on_video_ready = on_video_ready
+        self.last_video_path: Path | None = None
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.busy = False
         self._current_provider = None
@@ -109,6 +111,8 @@ class StudioTab(ttk.Frame):
         self.download_button.pack(side="left")
         ttk.Button(action_row, text="Thumbnail from local video…", command=self._start_local_thumbnail).pack(
             side="left", padx=(8, 0))
+        self.use_video_button = ttk.Button(action_row, text="Use downloaded video in Recap", command=self._use_downloaded_video, state="disabled")
+        self.use_video_button.pack(side="left", padx=(8, 0))
         self.progress = ttk.Progressbar(action_row, maximum=100, variable=self.progress_var, length=220)
         self.progress.pack(side="left", fill="x", expand=True, padx=(14, 0))
         ttk.Label(download, textvariable=self.status_var, wraplength=1150).grid(
@@ -200,6 +204,10 @@ class StudioTab(ttk.Frame):
             "Uses the local Ollama endpoint; no API key is needed." if provider == "ollama"
             else f"Key variable: {api_env}. The key is kept in memory only and is not saved in config.json."
         )
+
+    def _use_downloaded_video(self) -> None:
+        if self.last_video_path and self.last_video_path.is_file() and callable(self.on_video_ready):
+            self.on_video_ready(self.last_video_path)
 
     def _start_download(self) -> None:
         if self.busy:
@@ -410,6 +418,8 @@ class StudioTab(ttk.Frame):
                     self.status_var.set("Downloading… " + " · ".join(part for part in (f"{percent:.1f}%", speed_text, eta_text) if part))
                 elif kind == "download_result":
                     result: DownloadResult = value
+                    self.last_video_path = result.video_path
+                    self.use_video_button.configure(state=("normal" if self.last_video_path else "disabled"))
                     self.status_var.set(
                         f"Downloaded: {result.title} — "
                         + ", ".join(path.name for path in result.files[:3])

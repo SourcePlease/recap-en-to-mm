@@ -399,3 +399,12 @@ The Studio tab and supporting engines are being developed on the feature/studio-
 - **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. Recent yt-dlp releases include a RedNote/Xiaohongshu extractor, though individual links can fail due to login, region, CAPTCHA, redirects, or site changes.
 
 See [STUDIO_FEATURES.md](STUDIO_FEATURES.md) for the implementation scope and next steps.
+
+
+### Thumbnail and Myanmar narration options
+
+Studio supports two thumbnail workflows: **Frame-based (local)** chooses a clear frame from the source video and overlays a Burmese title; **AI generated (fal.ai)** makes a new anime-inspired background and adds the Burmese title/logo locally. AI image inference requires \`FAL_KEY\` and may use paid fal.ai credits. The local method remains available without fal.ai credentials.
+
+The title-style presets cover Anime Recap, Isekai/Reincarnation, Overpowered/Action, Dark Fantasy/Survival, Mystery/Twist, and Romance/Betrayal. "Suggest Burmese Titles" uses the configured Groq/OpenRouter/Ollama model when available and falls back to built-in templates.
+
+Narrator choices now include Microsoft's two Burmese Edge voices and 30 Gemini prebuilt voice styles. The Gemini choices are style variants rather than 30 distinct native Burmese voice recordings; use the two \`my-MM-*Neural\` Edge voices for the explicitly Burmese-labelled voices. Free-tier access depends on the provider account and quota.

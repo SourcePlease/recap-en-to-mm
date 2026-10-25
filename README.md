@@ -389,11 +389,13 @@ responsible for the rights to the videos you process.
 
 ## Recap Studio tools (feature branch)
 
-The separate Studio tab is being developed on the feature/studio-expansion branch so the upstream code and main branch remain untouched.
+The Studio tab and supporting engines are being developed on the feature/studio-expansion branch. Upstream remains separate; the feature branch is not yet merged into this fork's main branch.
 
-- **Downloader:** yt-dlp-based URL downloads with quality selection, playlist mode, optional subtitle downloads, progress updates, and optional user-supplied cookies for content you are authorized to access.
-- **Auto thumbnails:** FFmpeg extracts candidate frames; Pillow ranks and styles a local thumbnail with a title and optional logo in 16:9, 9:16, or 1:1 formats.
-- **Optional AI provider tester:** Groq, OpenRouter, or local Ollama. Provider/model availability and free quotas can change. Gemini remains the default, and the Studio tab can explicitly apply Groq, OpenRouter, or local Ollama to story-context, translation, and audit requests. Real-world model compatibility still needs validation.
+- **Downloader:** yt-dlp-based URL downloads for supported sites, quality selection, playlist mode, optional subtitle downloads, progress, and optional user-supplied cookies for content you are authorized to access. A persistent multi-URL queue saves pending/completed/failed status, can retry failures, and can resume pending downloads after restart.
+- **Auto thumbnails:** FFmpeg extracts candidate frames; Pillow ranks and styles a local thumbnail with a custom title and optional logo in 16:9, 9:16, or 1:1 formats. Choose how many frames to sample and generate from downloads or local videos.
+- **AI providers:** Gemini remains the default. Explicitly choose Groq, OpenRouter, or local Ollama for story-context, translation, and audit prompts. The Studio tab can test a provider and apply it to Recap; only configured fallback providers are tried. Model names/free quotas change, so enter an available model ID and do not assume every model is free.
+- **Myanmar glossary:** Edit character names, terminology, places, and short style preferences. The local glossary is applied to Recap prompts and ignored by Git.
+- **Workflow:** Downloaded videos can be sent directly to the existing Recap input.
 - **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. Recent yt-dlp releases include a RedNote/Xiaohongshu extractor, though individual links can fail due to login, region, CAPTCHA, redirects, or site changes.
 
 See [STUDIO_FEATURES.md](STUDIO_FEATURES.md) for the implementation scope and next steps.

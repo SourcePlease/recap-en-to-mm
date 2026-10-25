@@ -36,6 +36,8 @@ class StudioTab(ttk.Frame):
         self.tool = tool
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.busy = False
+        self._current_provider = None
+        self._key_cache: dict[str, str] = {}
 
         if load_dotenv:
             load_dotenv(self.root_dir / ".env", override=False)
@@ -50,9 +52,10 @@ class StudioTab(ttk.Frame):
         self.cookies_var = tk.StringVar(value="")
         self.status_var = tk.StringVar(value="Ready — paste a supported media URL or select a local video.")
         self.progress_var = tk.DoubleVar(value=0)
-        self.provider_var = tk.StringVar(value=PROVIDER_KEY_TO_LABEL.get(
-            str(self.cfg.get("studio_provider") or "groq"), "Groq"))
-        self.model_var = tk.StringVar(value=str(self.cfg.get("studio_model") or ""))
+        saved_provider = str(self.cfg.get("studio_provider") or "groq")
+        self.provider_var = tk.StringVar(value=PROVIDER_KEY_TO_LABEL.get(saved_provider, "Groq"))
+        self.model_var = tk.StringVar(value=str(
+            self.cfg.get(f"studio_model_{saved_provider}") or self.cfg.get("studio_model") or ""))
         self.key_var = tk.StringVar(value="")
         self.ai_status_var = tk.StringVar(value="AI provider testing is optional; no request is sent until you press Test AI.")
 
@@ -180,16 +183,19 @@ class StudioTab(ttk.Frame):
 
     def _provider_changed(self) -> None:
         provider = PROVIDER_LABEL_TO_KEY.get(self.provider_var.get(), "groq")
+        if self._current_provider:
+            self._key_cache[self._current_provider] = self.key_var.get()
+            self.cfg[f"studio_model_{self._current_provider}"] = self.model_var.get().strip()
         api_env = {"groq": "GROQ_API_KEY", "openrouter": "OPENROUTER_API_KEY", "ollama": ""}[provider]
         model_env = {"groq": "GROQ_MODEL", "openrouter": "OPENROUTER_MODEL", "ollama": "OLLAMA_MODEL"}[provider]
-        if not self.model_var.get().strip():
-            self.model_var.set(os.getenv(model_env, ""))
-        else:
-            self.model_var.set(os.getenv(model_env, "") or self.model_var.get())
-        self.key_var.set(os.getenv(api_env, "") if api_env else "")
+        if provider != self._current_provider:
+            stored_model = self.cfg.get(f"studio_model_{provider}") or os.getenv(model_env, "")
+            self.model_var.set(str(stored_model or ""))
+            self.key_var.set(self._key_cache.get(provider, os.getenv(api_env, "") if api_env else ""))
+            self._current_provider = provider
         self.ai_status_var.set(
             "Uses the local Ollama endpoint; no API key is needed." if provider == "ollama"
-            else f"Key variable: {api_env}. The key is not saved in config.json."
+            else f"Key variable: {api_env}. The key is kept in memory only and is not saved in config.json."
         )
 
     def _start_download(self) -> None:
@@ -215,13 +221,13 @@ class StudioTab(ttk.Frame):
         self._set_busy(True)
         self.progress_var.set(0)
         self.status_var.set("Starting downloader…")
-        threading.Thread(target=self._download_worker, args=(url, options), daemon=True).start()
+        threading.Thread(target=self._download_worker, args=(url, options, self.auto_thumbnail_var.get()), daemon=True).start()
 
-    def _download_worker(self, url: str, options: DownloadOptions) -> None:
+    def _download_worker(self, url: str, options: DownloadOptions, auto_thumbnail: bool) -> None:
         try:
             result = download_media(url, options, progress_hook=self._on_download_progress)
             self.events.put(("download_result", result))
-            if self.auto_thumbnail_var.get() and result.video_path:
+            if auto_thumbnail and result.video_path:
                 thumbnail_dir = Path(options.output_dir) / "thumbnails"
                 thumbnail_path = thumbnail_dir / f"{result.video_path.stem}_thumbnail.jpg"
                 created = generate_thumbnail(
@@ -295,6 +301,7 @@ class StudioTab(ttk.Frame):
         api_key = self.key_var.get().strip() or None
         self.cfg["studio_provider"] = provider
         self.cfg["studio_model"] = model
+        self.cfg[f"studio_model_{provider}"] = model
         self.save_config()
         self._set_busy(True)
         self.ai_status_var.set(f"Testing {provider} with a tiny prompt…")

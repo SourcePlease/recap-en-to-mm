@@ -1,42 +1,53 @@
-# Recap Studio — feature branch notes
+# Recap Studio — feature branch
 
-This document describes the work on feature/studio-expansion. The upstream repository and its main branch are left unchanged.
+Work in this document belongs to SourcePlease/recap-en-to-mm on feature/studio-expansion. The fork's main branch and the upstream source repository are kept separate.
 
-## Added in the first integration step
+## Main application tabs
 
-- **Studio tab** in the existing Windows desktop application.
-- **URL downloader** using yt-dlp, with best available / 1080p / 720p / 480p / MP3 choices, playlist mode, subtitle download option, optional user-provided cookies.txt, download progress and resume support provided by yt-dlp.
-- **Thumbnail modes:** local frame-based generation remains free/offline (after FFmpeg is installed); optional **fal.ai AI image generation** creates a fresh background then overlays the title and logo locally. fal.ai image inference consumes account credits and may be paid; an API key is never required for the local method.
-- **Burmese title tools:** built-in title styles for general recap, isekai/reincarnation, overpowered action, dark fantasy/survival, mystery/twist, and romance/betrayal; optional AI suggestions use the selected text provider. Burmese typography is rendered locally rather than asking the image model to spell Burmese text.
-- **Narrator choices:** 2 Microsoft Edge Burmese voices plus 30 Gemini prebuilt voice styles in the selector. The Gemini catalogue is a set of voice styles, not 30 independently recorded Burmese native voices; actual output quality and free-tier quotas depend on the model/account.
-- **Optional AI provider tester** for Groq, OpenRouter, and local Ollama through OpenAI-compatible chat-completion endpoints. API keys are read from the environment or typed into the UI; the Studio UI does not store typed API keys in config.json.
-- **Reusable engine modules** in app/studio so future work can connect these tools to batch jobs and other front ends.
-- **Unit tests** that do not need live websites, API keys, or a running local model.
+- **Recap** — local Whisper source transcription, configurable target language, context-aware translation, narrator TTS and timestamp-locked Smart Sync. Myanmar remains the default output.
+- **Splitter** — the original long-video splitter and its editing controls.
+- **Studio** — universal URL downloader, persistent queue, optional provider test, glossary editor and direct hand-off of a downloaded video to Recap.
+- **Thumbnail** — standalone tab for local frame-based thumbnails or optional fal.ai-generated backgrounds, Burmese title templates, AI title ideas, 16:9 / 9:16 / 1:1 output, and local logo/title composition.
+- **Subtitles** — import SRT/VTT, translate without running Whisper, preview the translated text and export translated-only or bilingual SRT while retaining cue timing.
+- **Project** — save/load Recap configuration and paths, preview an audio waveform, edit pronunciation substitutions, and configure optional branded intro/outro cards and smart silence removal.
 
-## Important limitations
+## Downloading and thumbnails
 
-- Gemini remains the default, but the selected Groq, OpenRouter, or Ollama provider can now be applied to story context, translation, and audit requests through the same planner interface. The integration needs real long-video validation; output structure, context limits, and translation quality can differ by model.
-- yt-dlp supports many sites, including common video platforms, but site extractors can stop working when websites change. The app must report failures instead of promising every URL always works.
-- The dependency minimum uses a yt-dlp release that includes the newer RedNote/Xiaohongshu extractor. The application routes those URLs through yt-dlp, but individual links still need live validation because redirects, login requirements, region restrictions, CAPTCHA, or site changes can make them fail.
-- Private, age-restricted, DRM-protected, or otherwise gated content is not unlocked by this application. Cookies can only be supplied by the user for content they are authorized to access.
-- The auto-thumbnail generator is local template/frame selection, not AI image synthesis. A later stage can add selectable image-generation backends where a usable free API or local model is configured.
-- Cloud provider free quotas/models can change and are account-specific. The app requires an explicit model choice and does not automatically switch a free provider to paid usage.
+yt-dlp handles public media URLs supported by the installed extractors. Available options include quality selection, audio-only MP3, playlists, optional subtitle downloads, authorized user cookies, progress, resumable downloads, and a persistent queue with retry-failed support. Website extractors can fail after website changes, login requirements, region restrictions, CAPTCHA or removed media. This tool does not bypass DRM or access controls.
 
-## Next implementation steps
+Local thumbnail generation extracts candidate frames with FFmpeg and applies the title/logo locally; it does not require a remote API. fal.ai creates an optional generated background and the app composites text/logo locally to protect Burmese spelling. fal.ai inference can consume credits and may be paid. Title idea generation falls back to local Burmese templates when an AI provider is unavailable.
 
-1. Validate alternate providers against the real story-context, translation, and audit prompts on short and long videos; measure JSON validity, name consistency, and cost/quota behavior.
-2. Validate live downloads for YouTube, Facebook, TikTok, Reddit, X/Twitter, and RedNote/Xiaohongshu on permitted public URLs; improve per-extractor diagnostics and playlist item progress.
-3. Add batch thumbnail generation, more title wrapping/templates, and an optional gallery/cover-image downloader.
-4. Add SRT/VTT import and translation, bilingual subtitles, and an explicit audio/background-music preservation option using optional source-separation tooling.
-5. Add one-click export presets, scene/storyboard review, and optional subject-aware vertical reframing.
-6. Validate alternate AI providers on short and long videos, then add project save/load and end-to-end Download → Recap integration tests.
+## AI and multilingual narration
 
-## Provider configuration
+Gemini remains the default Recap text provider. Groq, OpenRouter and local Ollama are optional text providers, selected explicitly through the existing provider settings. Free models and quotas vary by model/account; there is no silent fallback to a paid provider.
 
-Optional environment variables:
+Target language can be selected independently of source language in Recap. The selection is used by the translation prompt, output file suffix, subtitle plan and TTS narration profile. Current choices cover Myanmar/Burmese, English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali and Tamil/Telugu/Urdu. Voice options include Edge TTS voices, Gemini voice styles, optional Azure Speech voices and an ElevenLabs multilingual voice configured by voice ID. A voice/language combination must be validated with a short sample before processing a long video.
 
-- GROQ_API_KEY, GROQ_MODEL
-- OPENROUTER_API_KEY, OPENROUTER_MODEL
-- OLLAMA_BASE_URL (defaults to http://127.0.0.1:11434/v1), OLLAMA_MODEL
+- **Microsoft Edge TTS** has no separate API key but is an online service; voice availability can change.
+- **Gemini TTS** uses the selected Gemini voice style and account access/quota; the catalogue styles are not all distinct native Burmese voices.
+- **Azure Speech** requires AZURE_SPEECH_KEY and AZURE_SPEECH_REGION.
+- **ElevenLabs** requires ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID; plan/quota depends on the account.
 
-Do not commit API keys. Hosted free tiers have limits; Ollama runs locally if Ollama and a suitable model are installed.
+## Extra editing features
+
+- **Subtitle import / bilingual export:** translating an existing SRT/VTT uses its cues directly and does not invoke Whisper. Exported timestamps are preserved.
+- **Project save/load:** project JSON stores local paths and Recap configuration, not API key values. Keep project files private if they contain private local paths.
+- **Audio waveform:** FFmpeg converts audio to low-rate mono PCM and the UI renders a compact RMS waveform, streaming data in small blocks to limit memory. It is a waveform overview, not a full multitrack timeline editor.
+- **Pronunciation editor:** pronunciation.json maps a source term to the preferred spoken replacement. Rules are applied before TTS and do not modify visible subtitles.
+- **Auto intro/outro:** locally rendered channel-name/logo cards are added to the final video only when enabled. Intro/outro durations are reflected in the uploaded SRT time offset.
+- **Smart silence removal:** optional FFmpeg silence compression runs on generated narration and then Smart Sync uses the shorter audio duration. It is off by default because aggressive thresholds can trim quiet speech; test on a short clip first.
+
+## Secrets and configuration
+
+Use the local .env file for API secrets. Do not commit .env or local pronunciation.json. Supported variables include:
+
+- GEMINI_API_KEY, GEMINI_TEXT_MODEL, GEMINI_PROXY
+- RECAP_AI_PROVIDER, RECAP_AI_FALLBACKS, GROQ_API_KEY, GROQ_MODEL, OPENROUTER_API_KEY, OPENROUTER_MODEL
+- OLLAMA_BASE_URL, OLLAMA_MODEL
+- FAL_KEY, FAL_IMAGE_MODEL
+- AZURE_SPEECH_KEY, AZURE_SPEECH_REGION
+- ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID
+
+## Validation status and limitations
+
+Automated regression tests and Python compilation are run by the feature-branch GitHub Actions workflow. Those tests do not prove that an online provider key/quota works, that every site-specific URL is downloadable, or that a long video finishes without sync issues. Before treating a provider or site as production-ready, test a short real example, inspect the output audio/subtitles and then test a longer video. Do not share API keys when reporting errors.

@@ -408,3 +408,20 @@ Studio supports two thumbnail workflows: **Frame-based (local)** chooses a clear
 The title-style presets cover Anime Recap, Isekai/Reincarnation, Overpowered/Action, Dark Fantasy/Survival, Mystery/Twist, and Romance/Betrayal. "Suggest Burmese Titles" uses the configured Groq/OpenRouter/Ollama model when available and falls back to built-in templates.
 
 Narrator choices now include Microsoft's two Burmese Edge voices and 30 Gemini prebuilt voice styles. The Gemini choices are style variants rather than 30 distinct native Burmese voice recordings; use the two \`my-MM-*Neural\` Edge voices for the explicitly Burmese-labelled voices. Free-tier access depends on the provider account and quota.
+
+
+## Additional Studio tabs and multilingual output (feature/studio-expansion)
+
+The feature branch adds dedicated **Thumbnail**, **Subtitles**, and **Project** tabs next to Recap, Splitter, and Studio. Thumbnail generation no longer needs to be configured inside the downloader: open Thumbnail to create a local frame-based cover or an optional AI background using fal.ai. The Studio downloader can still auto-create a thumbnail after a download using the saved Thumbnail settings.
+
+Recap now includes a separate **Target language** selector. Myanmar/Burmese remains the default; other available targets include English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu, and Urdu. Voice choices include Microsoft Edge voices, Gemini styles, optional Azure Speech, and an ElevenLabs multilingual voice. Some providers need keys and may have limited or paid quotas.
+
+The **Subtitles** tab imports existing SRT/VTT without running Whisper, translates cues with Gemini/Groq/OpenRouter/Ollama, and exports translated-only or bilingual SRT files with the original cue timing. The **Project** tab saves/restores the local Recap settings and paths, displays an audio waveform overview, edits pronunciation replacements, and enables optional branded intro/outro cards and smart silence removal.
+
+Optional .env variables:
+
+- Azure Speech: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION
+- ElevenLabs: ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID
+- fal.ai thumbnails: FAL_KEY, FAL_IMAGE_MODEL
+
+Smart silence removal and branded intro/outro are off by default. Provider quota, voice/language support, downloader-site support, and real long-video sync need testing with your own short samples before large jobs.

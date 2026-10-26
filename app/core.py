@@ -16,6 +16,9 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 
+from studio.pronunciation import apply_pronunciation_overrides
+
+
 LogFn = Callable[[str], None]
 def _noop(_: str) -> None:
     pass
@@ -396,6 +399,27 @@ def trim_edge_silence(
         writer.writeframes(samples[first:last].tobytes())
     partial.replace(target)
     return target, (last - first) / rate
+
+
+def compress_internal_silence(ffmpeg: str, source: Path, target: Path, threshold_db: float = -45.0) -> Path:
+    """Compress long quiet spans within one speech segment; the downstream sync uses the new duration."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_file() and target.stat().st_mtime >= source.stat().st_mtime:
+        return target
+    threshold = max(-70.0, min(-20.0, float(threshold_db)))
+    audio_filter = (
+        f"silenceremove=start_periods=1:start_duration=0.10:start_threshold={threshold:.1f}dB:"
+        f"stop_periods=-1:stop_duration=0.14:stop_threshold={threshold:.1f}dB"
+    )
+    result = subprocess.run(
+        [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
+         "-af", audio_filter, "-c:a", "pcm_s16le", str(target)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if result.returncode != 0 or not target.is_file() or target.stat().st_size < 1000:
+        target.unlink(missing_ok=True)
+        raise RuntimeError(f"Smart silence removal failed: {(result.stderr or '')[-1200:]}")
+    return target
 
 
 def concat_audio(ffmpeg: str, parts: list[Path], output: Path, work_dir: Path) -> None:
@@ -790,6 +814,96 @@ def mux_audio(ffmpeg: str, video: Path, audio: Path, output: Path, volume_percen
 
 
 
+def _make_brand_card(path: Path, *, width: int, height: int, channel_name: str,
+                    logo_path: str, tagline: str) -> Path:
+    """Create a locally rendered branded intro/outro card; no AI or remote service is used."""
+    from PIL import Image, ImageDraw
+    from studio.thumbnail import _load_font
+
+    width, height = max(320, int(width)), max(240, int(height))
+    image = Image.new("RGB", (width, height), (13, 15, 22))
+    draw = ImageDraw.Draw(image)
+    band_y = int(height * 0.72)
+    draw.rectangle((0, band_y, width, height), fill=(18, 24, 36))
+    logo = Path(logo_path) if str(logo_path or "").strip() else None
+    if logo and logo.is_file():
+        try:
+            with Image.open(logo) as raw:
+                mark = raw.convert("RGBA")
+                mark.thumbnail((int(width * 0.26), int(height * 0.27)), Image.Resampling.LANCZOS)
+                image.paste(mark, ((width - mark.width) // 2, int(height * 0.18)), mark)
+        except Exception:
+            pass
+    draw = ImageDraw.Draw(image)
+    heading_font = _load_font(None, max(18, int(height * 0.055)))
+    channel_font = _load_font(None, max(20, int(height * 0.075)))
+    heading = str(tagline or "").strip()
+    channel = str(channel_name or "My Channel").strip()
+    def centered(text, y, font, fill):
+        if not text:
+            return
+        box = draw.textbbox((0, 0), text, font=font)
+        x = max(0, (width - (box[2] - box[0])) // 2)
+        draw.text((x, y), text, font=font, fill=fill, stroke_width=max(0, int(height * 0.0015)),
+                  stroke_fill=(0, 0, 0))
+    centered(channel, int(height * 0.50), channel_font, (255, 255, 255))
+    centered(heading, int(height * 0.81), heading_font, (185, 205, 239))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(path, format="PNG")
+    return path
+
+
+def add_branded_intro_outro(
+    ffmpeg: str, source_video: Path, output_video: Path, *, width: int, height: int,
+    channel_name: str, logo_path: str, intro_seconds: int = 3, outro_seconds: int = 5,
+    log: LogFn = _noop,
+) -> Path:
+    """Add branded cards with silence; preserve the core narration video between them."""
+    import os
+    work = output_video.parent
+    intro_seconds = max(1, min(15, int(intro_seconds)))
+    outro_seconds = max(1, min(30, int(outro_seconds)))
+    intro_image = _make_brand_card(work / "brand_intro.png", width=width, height=height,
+                                   channel_name=channel_name, logo_path=logo_path, tagline="WELCOME")
+    outro_image = _make_brand_card(work / "brand_outro.png", width=width, height=height,
+                                   channel_name=channel_name, logo_path=logo_path, tagline="THANK YOU FOR WATCHING")
+    clips = []
+    for name, image, duration in (
+        ("brand_intro.mp4", intro_image, intro_seconds),
+        ("brand_outro.mp4", outro_image, outro_seconds),
+    ):
+        clip = work / name
+        command = [
+            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+            "-loop", "1", "-framerate", "30", "-i", str(image),
+            "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+            "-t", str(duration), "-vf", f"scale={width}:{height}:flags=lanczos,format=yuv420p",
+            "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+            "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(clip),
+        ]
+        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if result.returncode != 0 or not clip.is_file():
+            raise RuntimeError(f"Could not render branded {name}: {(result.stderr or '')[-1600:]}")
+        clips.append(clip)
+    listing = work / "branded_concat.txt"
+    listing.write_text("\n".join(_concat_list_line(path) for path in (clips[0], source_video, clips[1])) + "\n",
+                       encoding="utf-8")
+    output_video.parent.mkdir(parents=True, exist_ok=True)
+    copy_cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0",
+                "-i", str(listing), "-c", "copy", "-movflags", "+faststart", str(output_video)]
+    result = subprocess.run(copy_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if result.returncode != 0 or not output_video.is_file():
+        output_video.unlink(missing_ok=True)
+        fallback_cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0",
+                        "-i", str(listing), "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(output_video)]
+        fallback = subprocess.run(fallback_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if fallback.returncode != 0 or not output_video.is_file():
+            raise RuntimeError(f"Branded video concat failed: {(fallback.stderr or result.stderr or '')[-2400:]}")
+        log("ℹ️ Branded intro/outro required a final re-encode to align video/audio streams.")
+    return output_video
+
+
 def _clamp01(value: Any, default: float = 0.0) -> float:
     try:
         return max(0.0, min(1.0, float(value)))
@@ -1092,6 +1206,14 @@ class EdgeSmartSync:
         frame_fill: str = "blur",
         video_quality: str = "1080",
         overlays: dict[str, Any] | None = None,
+        target_language: str = "mm",
+        brand_intro_outro_enabled: bool = False,
+        brand_channel_name: str = "My Channel",
+        brand_logo_path: str = "",
+        brand_intro_seconds: int = 3,
+        brand_outro_seconds: int = 5,
+        smart_silence_removal: bool = False,
+        smart_silence_threshold_db: float = -45.0,
         log: LogFn = _noop,
         progress: Callable[[int, int, str], None] | None = None,
         should_stop: Callable[[], bool] | None = None,
@@ -1116,6 +1238,14 @@ class EdgeSmartSync:
         self.smooth_freeze_fallback = bool(smooth_freeze_fallback)
         self.max_freeze_hold = max(0.15, min(float(max_freeze_hold), 1.50))
         self.render_final_video = bool(render_final_video)
+        self.target_language = str(target_language or "mm")
+        self.brand_intro_outro_enabled = bool(brand_intro_outro_enabled)
+        self.brand_channel_name = str(brand_channel_name or "My Channel")
+        self.brand_logo_path = str(brand_logo_path or "")
+        self.brand_intro_seconds = max(1, min(15, int(brand_intro_seconds or 3)))
+        self.brand_outro_seconds = max(1, min(30, int(brand_outro_seconds or 5)))
+        self.smart_silence_removal = bool(smart_silence_removal)
+        self.smart_silence_threshold_db = max(-70.0, min(-20.0, float(smart_silence_threshold_db)))
         # Short pauses: see trim_edge_silence. Set by render_worker from the UI box.
         self.short_pauses = False
         self.overlays = dict(overlays or {})
@@ -1172,8 +1302,14 @@ class EdgeSmartSync:
         checkpoint = self._checkpoint_load(paths)
         checkpoint.setdefault("audio", {})
         checkpoint.setdefault("video", {})
-        provider = "gemini" if self.voice.startswith("gemini:") else "edge_tts"    # gemini_tts.py: one narrator
-        tts_label = "Gemini TTS" if provider == "gemini" else "Edge TTS"
+        if self.voice.startswith("gemini:"):
+            provider, tts_label = "gemini", "Gemini TTS"
+        elif self.voice.startswith("azure:"):
+            provider, tts_label = "azure", "Azure Speech TTS"
+        elif self.voice.startswith("elevenlabs:"):
+            provider, tts_label = "elevenlabs", "ElevenLabs TTS"
+        else:
+            provider, tts_label = "edge_tts", "Edge TTS"
         checkpoint["engine"] = provider
         checkpoint["voice"] = self.voice
 
@@ -1197,18 +1333,39 @@ class EdgeSmartSync:
             from gemini_tts import GeminiTTSEngine
             engine = GeminiTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "gemini_tts_temp",
                                      rate=self.edge_tts_rate, env_file=getattr(self, "gemini_env_path", ""),
-                                     direction=getattr(self, "gemini_direction", ""), log=self.log)
+                                     direction=getattr(self, "gemini_direction", ""), log=self.log,
+                                     target_language=self.target_language)
+            fingerprint_voice = engine.fingerprint(self.voice)
+        elif provider == "azure":
+            from tts_providers import AzureSpeechTTSEngine
+            engine = AzureSpeechTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "azure_tts_temp",
+                rate=self.edge_tts_rate, pitch=self.edge_tts_pitch,
+                env_file=getattr(self, "gemini_env_path", ""), log=self.log, target_language=self.target_language)
+            fingerprint_voice = engine.fingerprint(self.voice)
+        elif provider == "elevenlabs":
+            from tts_providers import ElevenLabsTTSEngine
+            engine = ElevenLabsTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "elevenlabs_tts_temp",
+                rate=self.edge_tts_rate, pitch=self.edge_tts_pitch,
+                env_file=getattr(self, "gemini_env_path", ""), log=self.log, target_language=self.target_language)
             fingerprint_voice = engine.fingerprint(self.voice)
         else:
             engine = EdgeTTSEngine(ffmpeg=self.ffmpeg, work_dir=paths.work / "edge_tts_temp",
                                    rate=self.edge_tts_rate, pitch=self.edge_tts_pitch, log=self.log)
             fingerprint_voice = self.voice + "|edge-tts-v1|rate=" + self.edge_tts_rate + "|pitch=" + self.edge_tts_pitch
+        pronunciation_path = Path(__file__).resolve().parents[1] / "pronunciation.json"
+        pronunciation_digest = "none"
+        if self.target_language == "mm" and pronunciation_path.is_file():
+            try:
+                pronunciation_digest = hashlib.sha256(pronunciation_path.read_bytes()).hexdigest()
+            except OSError:
+                pronunciation_digest = "unreadable"
+        fingerprint_voice = f"{fingerprint_voice}|target:{self.target_language}|pronunciation:{pronunciation_digest}"
         checkpoint["tts_provider"] = provider
 
         timing: list[dict[str, Any]] = []
         audio_parts: list[Path] = []
         cursor = 0.0
-        short_pauses = bool(self.short_pauses)
+        short_pauses = bool(self.short_pauses or self.smart_silence_removal)
         tts_total = 0.0
 
         # AUDIO: timestamp segment = master save unit. The user's engine may split
@@ -1228,12 +1385,14 @@ class EdgeSmartSync:
                 self.progress(idx - 1, len(segments), f"{tts_label} {idx}/{len(segments)}")
                 self.log(f"🗣️ [{idx}/{len(segments)}] {base} generate via {tts_label}")
                 speak = spoken_text(seg["narration"])
+                if self.target_language == "mm":
+                    speak = apply_pronunciation_overrides(speak, pronunciation_path)
                 try:
                     try:
                         produced = engine.generate_channel99_voice(speak, self.voice)
                     except Exception as first:
                         plain = without_english(speak)
-                        if provider == "gemini" or is_edge_refused(first) or plain == speak or not any(ch.isalpha() for ch in plain):
+                        if provider != "edge_tts" or is_edge_refused(first) or plain == speak or not any(ch.isalpha() for ch in plain):
                             raise
                         # A line mixing English and Burmese sometimes gets no audio at all (2026-10-12).
                         self.log(f"⚠️ [{idx}/{len(segments)}] no audio — trying again without the English words "
@@ -1245,8 +1404,8 @@ class EdgeSmartSync:
                     if is_edge_refused(exc):            # the network, not the text: no Edit Text offer
                         raise RuntimeError(f"Edge TTS stopped at line {idx}/{len(segments)}.\n\n{exc}") from exc
                     # "FAILED at segment N" lets the app open Edit Text on that line.
-                    if provider == "gemini":
-                        raise RuntimeError(f"Gemini TTS stopped at line {idx}/{len(segments)} ({base}).\n\n{exc}") from exc
+                    if provider != "edge_tts":
+                        raise RuntimeError(f"{tts_label} stopped at line {idx}/{len(segments)} ({base}).\n\n{exc}") from exc
                     raise RuntimeError(f"Edge TTS FAILED at segment {idx} ({base}): {exc}\n\n"
                                        f"Text: {seg['narration'][:200]}") from exc
                 produced_path = Path(produced).resolve()
@@ -1269,10 +1428,23 @@ class EdgeSmartSync:
 
             part = dst
             tts_total += duration
+            if self.smart_silence_removal:
+                threshold_key = str(int(round(self.smart_silence_threshold_db))).replace("-", "m")
+                compressed = paths.tts_parts.parent / f"tts_parts_silence_{threshold_key}" / dst.name
+                try:
+                    part = compress_internal_silence(self.ffmpeg, part, compressed, self.smart_silence_threshold_db)
+                except Exception as exc:
+                    self.log(f"⚠️ Smart silence removal skipped for {base}: {exc}")
             if short_pauses:
                 window = float(seg["video_end"]) - float(seg["video_start"])
-                part, duration = trim_edge_silence(dst, paths.tts_parts.parent / "tts_parts_short" / dst.name,
-                                                   min_duration=window / self.max_video_speed)
+                threshold = self.smart_silence_threshold_db if self.smart_silence_removal else -50.0
+                threshold_key = str(int(round(threshold))).replace("-", "m")
+                folder_key = "smart" if self.smart_silence_removal else "short"
+                trim_target = paths.tts_parts.parent / f"tts_parts_{folder_key}_{threshold_key}" / dst.name
+                part, duration = trim_edge_silence(
+                    part, trim_target, min_duration=window / self.max_video_speed,
+                    threshold_db=threshold,
+                )
             start = cursor
             end = cursor + duration
             timing.append({
@@ -1458,13 +1630,32 @@ class EdgeSmartSync:
         if volume_percent != 100:
             self.log(f"🔊 Voice volume {volume_percent}% applied at final mux (limiter on)")
         mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
+        if self.brand_intro_outro_enabled:
+            branded = paths.work / "final_branded.mp4"
+            self.log("🎬 Adding local branded intro/outro cards…")
+            add_branded_intro_outro(
+                self.ffmpeg, paths.final, branded, width=layout["cw"], height=layout["ch"],
+                channel_name=self.brand_channel_name, logo_path=self.brand_logo_path,
+                intro_seconds=self.brand_intro_seconds, outro_seconds=self.brand_outro_seconds, log=self.log,
+            )
+            branded.replace(paths.final)
         final_duration = probe_duration(self.ffprobe, paths.final)
         self.log(f"✅ FINAL READY: {paths.final}")
         self.log(f"⏱️ Final duration: {final_duration:.2f}s")
         srt = ""
         try:
             from subtitle_png import upload_srt
-            srt = str(upload_srt(paths.final, out_plan["subtitle_segments"], out_plan.get("subtitle_srt")))
+            srt_segments = list(out_plan["subtitle_segments"])
+            if self.brand_intro_outro_enabled:
+                offset = float(self.brand_intro_seconds)
+                srt_segments = [
+                    {**cue, "start": float(cue["start"]) + offset, "end": float(cue["end"]) + offset}
+                    for cue in srt_segments
+                ]
+            srt = str(upload_srt(
+                paths.final, srt_segments,
+                None if self.brand_intro_outro_enabled else out_plan.get("subtitle_srt"),
+            ))
             self.log(f"📝 SRT for upload: {srt}")
         except Exception as exc:  # the video itself is finished
             self.log(f"⚠️ SRT for upload not written: {exc}")

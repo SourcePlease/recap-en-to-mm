@@ -26,6 +26,9 @@ from recap_planner import SOURCE_LANGUAGES
 from recap_subtitles import SubtitleControls
 from subtitle_png import geometry as subtitle_geometry, sample as subtitle_sample
 from studio_tab import StudioTab
+from thumbnail_tab import ThumbnailTab
+from subtitle_tools_tab import SubtitleToolsTab
+from project_tools_tab import ProjectToolsTab
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT_DIR / "config.json"
@@ -49,10 +52,32 @@ PREVIEW_W = 640
 PREVIEW_H = 360
 
 EDGE_VOICES = ("my-MM-ThihaNeural", "my-MM-NilarNeural")
-NARRATOR_VOICES = EDGE_VOICES + GEMINI_VOICES        # gemini_tts.py: one narrator voice for the whole video
+OTHER_EDGE_VOICES = (
+    "en-US-AriaNeural", "en-US-GuyNeural", "en-GB-SoniaNeural", "en-GB-RyanNeural",
+    "ja-JP-NanamiNeural", "ja-JP-KeitaNeural", "ko-KR-SunHiNeural", "ko-KR-InJoonNeural",
+    "zh-CN-XiaoxiaoNeural", "zh-CN-YunxiNeural", "hi-IN-SwaraNeural", "hi-IN-MadhurNeural",
+    "th-TH-PremwadeeNeural", "th-TH-NiwatNeural", "id-ID-GadisNeural", "id-ID-ArdiNeural",
+    "es-ES-ElviraNeural", "fr-FR-DeniseNeural", "de-DE-KatjaNeural", "pt-BR-FranciscaNeural",
+    "ru-RU-SvetlanaNeural", "ar-EG-SalmaNeural", "tr-TR-EmelNeural", "vi-VN-HoaiMyNeural",
+)
+AZURE_VOICES = tuple("azure:" + voice for voice in (
+    "my-MM-ThihaNeural", "my-MM-NilarNeural", "en-US-AvaMultilingualNeural",
+    "en-US-AndrewMultilingualNeural", "ja-JP-NanamiNeural", "ja-JP-KeitaNeural",
+    "ko-KR-SunHiNeural", "zh-CN-XiaoxiaoNeural", "hi-IN-SwaraNeural",
+    "th-TH-PremwadeeNeural", "es-ES-ElviraNeural", "fr-FR-DeniseNeural",
+))
+ELEVENLABS_VOICES = ("elevenlabs:default",)
+NARRATOR_VOICES = EDGE_VOICES + OTHER_EDGE_VOICES + AZURE_VOICES + GEMINI_VOICES + ELEVENLABS_VOICES
 FILL_LABELS = {"blur": "Blur background", "black": "Black bars", "crop": "Crop to fill"}
-# Source language (2026-10-17): any language → Myanmar; Auto-detect asks Whisper which language the video speaks.
+# Source language is the spoken language in the original video; target is chosen independently.
 LANGUAGE_LABELS = {"auto": "Auto-detect", **SOURCE_LANGUAGES}
+TARGET_LANGUAGE_LABELS = {
+    "mm": "Myanmar (Burmese)", "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
+    "hi": "Hindi", "th": "Thai", "vi": "Vietnamese", "id": "Indonesian", "ms": "Malay",
+    "tl": "Filipino (Tagalog)", "es": "Spanish", "pt": "Portuguese", "fr": "French", "de": "German",
+    "it": "Italian", "ru": "Russian", "tr": "Turkish", "ar": "Arabic", "bn": "Bengali",
+    "ta": "Tamil", "te": "Telugu", "ur": "Urdu",
+}
 
 
 def _tool_path(cfg: dict, name: str) -> str:
@@ -154,6 +179,8 @@ class App(tk.Tk):
         self.source_title = tk.StringVar(value="")
         saved_language = str(self.cfg.get("source_language") or "auto")
         self.source_language = tk.StringVar(value=LANGUAGE_LABELS.get(saved_language, LANGUAGE_LABELS["auto"]))
+        saved_target = str(self.cfg.get("target_language") or "mm")
+        self.target_language = tk.StringVar(value=TARGET_LANGUAGE_LABELS.get(saved_target, TARGET_LANGUAGE_LABELS["mm"]))
         self.final_folder = tk.StringVar(value=str(self.cfg.get("final_output_folder") or ""))
         saved_voice = str(self.cfg.get("narrator_voice") or self.cfg.get("edge_tts_voice_mm")
                           or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
@@ -283,15 +310,134 @@ class App(tk.Tk):
     def _remember_tool_tab(self, _event=None) -> None:
         try:
             selected = self.tools_tabs.select()
-            if selected == str(self.splitter_tab):
-                self.cfg["last_tool_tab"] = "splitter"
-            elif selected == str(self.studio_tab):
-                self.cfg["last_tool_tab"] = "studio"
-            else:
-                self.cfg["last_tool_tab"] = "recap"
+            tabs = {
+                str(self.splitter_tab): "splitter",
+                str(self.studio_tab): "studio",
+                str(self.thumbnail_tab): "thumbnail",
+                str(self.subtitle_tools_tab): "subtitles",
+                str(self.project_tools_tab): "project",
+            }
+            self.cfg["last_tool_tab"] = tabs.get(selected, "recap")
             save_config(self.cfg)
         except Exception:
             pass
+
+    def _project_state(self) -> dict:
+        # Capture current unsaved editor values as well as persisted configuration.
+        settings = dict(self.cfg)
+        settings.update({
+            "source_language": self._source_language_code(),
+            "target_language": self._target_language_code(),
+            "narrator_voice": self.edge_voice.get(),
+            "edge_tts_voice_mm": self.edge_voice.get(),
+            "edge_tts_rate": _format_edge_rate(self.edge_rate_percent.get()),
+            "zoom_factor": float(self.zoom_factor.get()),
+            "mirror_video": bool(self.mirror_video.get()),
+            "voice_volume_percent": int(self.voice_volume.get()),
+            "short_pauses": bool(self.short_pauses.get()),
+            "output_ratio": self.output_ratio.get(),
+            "frame_fill": next((key for key, value in FILL_LABELS.items() if value == self.frame_fill.get()), "blur"),
+            "video_quality": self._quality_code(),
+            "smooth_freeze_fallback": bool(self.smooth_freeze.get()),
+            "max_freeze_hold": self.max_freeze_hold.get(),
+            "render_final_video": bool(self.render_final.get()),
+            "reuse_transcript_and_plan": bool(self.reuse_plan.get()),
+            "title_text": self.title_text.get(),
+            "title_font_size": int(self.title_size.get()),
+            "title_position": list(self.title_pos),
+            "logo_path": self.logo_path.get(),
+            "logo_enabled": bool(self.logo_enabled.get()),
+            "logo_width_fraction": float(self.logo_width_frac.get()),
+            "logo_opacity": float(self.logo_opacity.get()),
+            "logo_position": list(self.logo_pos),
+            "extra_text": self.extra_text.get(),
+            "extra_text_font_size": int(self.extra_text_size.get()),
+            "extra_text_opacity": float(self.extra_text_opacity.get()),
+            "extra_text_position": list(self.extra_text_pos),
+            "blur_boxes": [dict(box) for box in self.blur_boxes],
+            "subtitles": self.subtitle_controls.values() if hasattr(self, "subtitle_controls") else dict(self.cfg.get("subtitles") or {}),
+            "final_output_folder": self.final_folder.get(),
+            "gemini_env_path": self.gemini_env.get(),
+        })
+        return {
+            "format": "recap-studio-project-v1",
+            "config": settings,
+            "source": self.source.get(),
+            "source_title": self.source_title.get(),
+            "source_language": self._source_language_code(),
+            "target_language": self._target_language_code(),
+            "narrator_voice": self.edge_voice.get(),
+            "final_output_folder": self.final_folder.get(),
+            "gemini_env_path": self.gemini_env.get(),
+        }
+
+    def _apply_project_state(self, state: dict) -> None:
+        saved_cfg = state.get("config")
+        if isinstance(saved_cfg, dict):
+            self.cfg.update(saved_cfg)
+        self.source.set(str(state.get("source") or ""))
+        source_path = self.source.get().strip()
+        if source_path and Path(source_path).is_file():
+            try:
+                self._load_source(source_path)
+            except Exception:
+                pass
+        self.source_title.set(str(state.get("source_title") or (Path(source_path).stem if source_path else "")))
+        source_code = str(state.get("source_language") or self.cfg.get("source_language") or "auto")
+        target_code = str(state.get("target_language") or self.cfg.get("target_language") or "mm")
+        self.source_language.set(LANGUAGE_LABELS.get(source_code, LANGUAGE_LABELS["auto"]))
+        self.target_language.set(TARGET_LANGUAGE_LABELS.get(target_code, TARGET_LANGUAGE_LABELS["mm"]))
+        voice = str(state.get("narrator_voice") or self.cfg.get("narrator_voice") or EDGE_VOICES[0])
+        self.edge_voice.set(voice if voice in NARRATOR_VOICES else EDGE_VOICES[0])
+        self.final_folder.set(str(state.get("final_output_folder") or self.cfg.get("final_output_folder") or ""))
+        self.gemini_env.set(str(state.get("gemini_env_path") or self.cfg.get("gemini_env_path") or ROOT_DIR / ".env"))
+        # Restore every visual/editor control. Missing keys use the app's existing defaults.
+        self.edge_rate_percent.set(float(_parse_edge_rate_percent(self.cfg.get("edge_tts_rate", "+0%"))))
+        self.zoom_factor.set(float(self.cfg.get("zoom_factor", 1.05)))
+        self.mirror_video.set(bool(self.cfg.get("mirror_video", True)))
+        self.voice_volume.set(int(self.cfg.get("voice_volume_percent", 100) or 100))
+        self.short_pauses.set(bool(self.cfg.get("short_pauses", True)))
+        self.output_ratio.set(str(self.cfg.get("output_ratio") or "16:9"))
+        fill_key = str(self.cfg.get("frame_fill") or "blur")
+        self.frame_fill.set(FILL_LABELS.get(fill_key, FILL_LABELS["blur"]))
+        quality_key = video_quality(self.cfg.get("video_quality", "1080"))
+        self.quality.set(QUALITY_LABELS.get(quality_key, QUALITY_LABELS["1080"]))
+        self.smooth_freeze.set(bool(self.cfg.get("smooth_freeze_fallback", False)))
+        self.max_freeze_hold.set(str(self.cfg.get("max_freeze_hold", 0.75)))
+        self.render_final.set(bool(self.cfg.get("render_final_video", True)))
+        self.reuse_plan.set(bool(self.cfg.get("reuse_transcript_and_plan", True)))
+        self.title_text.set(str(self.cfg.get("title_text") or ""))
+        self.title_size.set(int(self.cfg.get("title_font_size", 54) or 54))
+        self.title_pos = list(self.cfg.get("title_position", [0.50, 0.12]))
+        self.logo_path.set(str(self.cfg.get("logo_path") or ""))
+        self.logo_enabled.set(bool(self.cfg.get("logo_enabled", False)))
+        self.logo_width_frac.set(float(self.cfg.get("logo_width_fraction", 0.16)))
+        self.logo_opacity.set(float(self.cfg.get("logo_opacity", 0.65)))
+        self.logo_pos = list(self.cfg.get("logo_position", [0.80, 0.06]))
+        self.extra_text.set(str(self.cfg.get("extra_text") or ""))
+        self.extra_text_size.set(int(self.cfg.get("extra_text_font_size", 42) or 42))
+        self.extra_text_opacity.set(float(self.cfg.get("extra_text_opacity", 0.65)))
+        self.extra_text_pos = list(self.cfg.get("extra_text_position", [0.50, 0.84]))
+        self.blur_boxes = [dict(box) for box in self.cfg.get("blur_boxes", []) if isinstance(box, dict)]
+        if hasattr(self, "subtitle_controls"):
+            subtitle_values = self.cfg.get("subtitles") or {}
+            for key, value in subtitle_values.items():
+                if key in self.subtitle_controls.variables:
+                    self.subtitle_controls.variables[key].set(value)
+            if "outline_width" in subtitle_values:
+                self.subtitle_controls.outline.set("Auto" if int(subtitle_values["outline_width"]) < 0 else str(subtitle_values["outline_width"]))
+            if "width" in subtitle_values:
+                self.subtitle_controls.width_percent.set(str(round(float(subtitle_values["width"]) * 100)))
+            if "position" in subtitle_values:
+                self.subtitle_controls.position = list(subtitle_values["position"])
+        self.cfg["source_language"] = source_code
+        self.cfg["target_language"] = target_code
+        self.cfg["narrator_voice"] = self.edge_voice.get()
+        self.cfg["final_output_folder"] = self.final_folder.get()
+        self.cfg["gemini_env_path"] = self.gemini_env.get()
+        save_config(self.cfg)
+        self._redraw_editor_items()
+        self._refresh_preview()
 
     def _build(self) -> None:
         # Layout V33: one-line header, compact source bar, then three resizable panes
@@ -312,11 +458,29 @@ class App(tk.Tk):
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
         self.tools_tabs.add(self.studio_tab, text="Studio")
+        self.thumbnail_tab = ThumbnailTab(
+            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
+            env_path=lambda: Path(self.gemini_env.get()).expanduser(),
+        )
+        self.tools_tabs.add(self.thumbnail_tab, text="Thumbnail")
+        self.subtitle_tools_tab = SubtitleToolsTab(
+            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            save=lambda: save_config(self.cfg),
+            env_path=lambda: Path(self.gemini_env.get()).expanduser(),
+        )
+        self.tools_tabs.add(self.subtitle_tools_tab, text="Subtitles")
+        self.project_tools_tab = ProjectToolsTab(
+            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
+            get_state=self._project_state, apply_state=self._apply_project_state,
+        )
+        self.tools_tabs.add(self.project_tools_tab, text="Project")
         last_tool_tab = self.cfg.get("last_tool_tab")
-        if last_tool_tab == "splitter":
-            self.tools_tabs.select(self.splitter_tab)
-        elif last_tool_tab == "studio":
-            self.tools_tabs.select(self.studio_tab)
+        tab_attr = {"splitter": "splitter_tab", "studio": "studio_tab", "thumbnail": "thumbnail_tab",
+                    "subtitles": "subtitle_tools_tab", "project": "project_tools_tab"}.get(last_tool_tab)
+        if tab_attr:
+            self.tools_tabs.select(getattr(self, tab_attr))
         self.tools_tabs.bind("<<NotebookTabChanged>>", self._remember_tool_tab, add="+")
         outer = ttk.Frame(recap_tab, padding=(12, 8, 12, 8))
         outer.pack(fill="both", expand=True)
@@ -381,15 +545,21 @@ class App(tk.Tk):
         ttk.Combobox(source_box, textvariable=self.source_language, state="readonly",
                      values=tuple(LANGUAGE_LABELS.values())).grid(row=1, column=1, sticky="ew", pady=3)
         hint(1, "ဗီဒီယိုထဲက ပြောတဲ့ ဘာသာ။ Auto-detect = Whisper က နားထောင်ပြီး သိအောင်လုပ်မယ်")
-        ttk.Label(source_box, text="Output").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=3)
-        ttk.Label(source_box, text="Myanmar  ·  Narrator only  ·  Edge / Gemini TTS").grid(
-            row=2, column=1, columnspan=2, sticky="w", pady=3)
+        ttk.Label(source_box, text="Target language").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=3)
+        self.target_language_combo = ttk.Combobox(
+            source_box, textvariable=self.target_language, state="readonly",
+            values=tuple(TARGET_LANGUAGE_LABELS.values()),
+        )
+        self.target_language_combo.grid(row=2, column=1, sticky="ew", pady=3)
+        self.target_language_combo.bind("<<ComboboxSelected>>", self._target_language_changed)
+        hint(2, "Output narration + translation language; source language remains independent.")
 
         self.edge_voice_label = ttk.Label(source_box, text="Narrator Voice")
         self.edge_voice_label.grid(row=11, column=0, sticky="w", padx=(0, 8), pady=3)
         self.edge_voice_combo = ttk.Combobox(source_box, textvariable=self.edge_voice, state="readonly", values=NARRATOR_VOICES)
         self.edge_voice_combo.grid(row=11, column=1, sticky="ew", pady=3)
-        self.edge_voice_hint = hint(11, "my-MM = Edge TTS · gemini: = Gemini TTS (.env keys) — one voice all through")
+        self.edge_voice_hint = hint(11, "Voice options are filtered by output language; Gemini/ElevenLabs can be used for multilingual output")
+        self._target_language_changed()
 
         self.edge_speed_label = ttk.Label(source_box, text="Narrator Speed")
         self.edge_speed_label.grid(row=12, column=0, sticky="w", padx=(0, 8), pady=3)
@@ -1113,6 +1283,32 @@ class App(tk.Tk):
     def _source_language_code(self) -> str:
         return next((code for code, label in LANGUAGE_LABELS.items() if label == self.source_language.get()), "auto")
 
+    def _target_language_code(self) -> str:
+        return next((code for code, label in TARGET_LANGUAGE_LABELS.items() if label == self.target_language.get()), "mm")
+
+    def _target_language_changed(self, _event=None) -> None:
+        if not hasattr(self, "edge_voice_combo"):
+            return
+        code = self._target_language_code()
+        prefixes = {
+            "mm": ("my-MM",), "en": ("en-US", "en-GB"), "zh": ("zh-CN", "zh-TW"),
+            "ja": ("ja-JP",), "ko": ("ko-KR",), "hi": ("hi-IN",), "th": ("th-TH",),
+            "vi": ("vi-VN",), "id": ("id-ID",), "ms": ("ms-MY",), "tl": ("fil-PH", "en-PH"),
+            "es": ("es-ES", "es-MX"), "pt": ("pt-BR", "pt-PT"), "fr": ("fr-FR",),
+            "de": ("de-DE",), "it": ("it-IT",), "ru": ("ru-RU",), "tr": ("tr-TR",),
+            "ar": ("ar-EG", "ar-SA"), "bn": ("bn-BD", "bn-IN"), "ta": ("ta-IN",),
+            "te": ("te-IN",), "ur": ("ur-PK", "ur-IN"),
+        }
+        allowed_prefixes = prefixes.get(code, ())
+        edge = [voice for voice in EDGE_VOICES + OTHER_EDGE_VOICES if voice.startswith(allowed_prefixes)]
+        azure = [voice for voice in AZURE_VOICES if voice.removeprefix("azure:").startswith(allowed_prefixes)]
+        # Gemini's prebuilt voice styles and ElevenLabs' configured multilingual voice are provider-level options.
+        voices = tuple(edge + azure + list(GEMINI_VOICES) + list(ELEVENLABS_VOICES))
+        self.edge_voice_combo.configure(values=voices)
+        current = self.edge_voice.get()
+        if current not in voices:
+            self.edge_voice.set(edge[0] if edge else azure[0] if azure else GEMINI_VOICES[0])
+
     def _browse_env(self) -> None:
         current = self.gemini_env.get().strip()
         initial = str(Path(current).parent) if current else str(ROOT_DIR.parent)
@@ -1201,6 +1397,7 @@ class App(tk.Tk):
     def _save_cfg(self, settings: dict) -> None:
         self.cfg["gemini_env_path"] = settings["gemini_env_path"]
         self.cfg["source_language"] = settings["source_language"]
+        self.cfg["target_language"] = settings.get("target_language", "mm")
         self.cfg["final_output_folder"] = settings["final_output_folder"]
         self.cfg["reuse_transcript_and_plan"] = settings["reuse_transcript_and_plan"]
         self.cfg["edge_tts_voice_mm"] = settings["edge_tts_voice"]
@@ -1286,7 +1483,15 @@ class App(tk.Tk):
         return {
             "source": source,
             "source_language": self._source_language_code(),
+            "target_language": self._target_language_code(),
             "final_output_folder": final_folder,
+            "brand_intro_outro_enabled": bool(self.cfg.get("brand_intro_outro_enabled", False)),
+            "brand_channel_name": str(self.cfg.get("brand_channel_name") or "My Channel"),
+            "brand_logo_path": str(self.cfg.get("brand_logo_path") or ""),
+            "brand_intro_seconds": int(self.cfg.get("brand_intro_seconds", 3) or 3),
+            "brand_outro_seconds": int(self.cfg.get("brand_outro_seconds", 5) or 5),
+            "smart_silence_removal": bool(self.cfg.get("smart_silence_removal", False)),
+            "smart_silence_threshold_db": int(self.cfg.get("smart_silence_threshold_db", -45) or -45),
             "source_title": self.source_title.get().strip() or source.stem,
             "edge_tts_voice": voice,
             "edge_tts_rate": _format_edge_rate(self.edge_rate_percent.get()),
@@ -1396,7 +1601,8 @@ class App(tk.Tk):
         self.progress["value"] = 0
         self.status.set("STARTING")
         self.stage.set("Preparing")
-        self._log(f"📦 {self.source_language.get()} → Myanmar · Narrator only · Edge TTS · V2 Smart Sync")
+        target_name = TARGET_LANGUAGE_LABELS.get(settings.get("target_language", "mm"), "Myanmar (Burmese)")
+        self._log(f"📦 {self.source_language.get()} → {target_name} · Narrator only · Smart Sync")
         self._log(f"📁 App root: {ROOT_DIR}")
         if batch:
             self._log(f"📂 Folder batch: {len(batch)} video(s) — one at a time")
@@ -1516,6 +1722,7 @@ class App(tk.Tk):
             "reuse": settings["reuse_transcript_and_plan"],
             "stop_file": str(stop_file),
             "source_language": settings.get("source_language", "auto"),
+            "target_language": settings.get("target_language", "mm"),
             "whisper_model_other": cfg_values.get("whisper_model_other", "medium"),
         }
         for key in (
@@ -1567,13 +1774,31 @@ class App(tk.Tk):
             "frame_fill": settings.get("frame_fill", "blur"),
             "gemini_env_path": settings.get("gemini_env_path", ""),
             "gemini_direction": settings.get("gemini_direction", ""),
+            "target_language": settings.get("target_language", "mm"),
+            "brand_intro_outro_enabled": settings.get("brand_intro_outro_enabled", False),
+            "brand_channel_name": settings.get("brand_channel_name", "My Channel"),
+            "brand_logo_path": settings.get("brand_logo_path", ""),
+            "brand_intro_seconds": settings.get("brand_intro_seconds", 3),
+            "brand_outro_seconds": settings.get("brand_outro_seconds", 5),
+            "smart_silence_removal": settings.get("smart_silence_removal", False),
+            "smart_silence_threshold_db": settings.get("smart_silence_threshold_db", -45),
             "stop_file": str(stop_file),
         })
         result = self._run_child("render_worker.py", render_cfg, "STEP 2 — Narrator TTS + Smart Sync").get("result") or {}
         final = result.get("final") or result.get("audio") or str(job_dir)
         folder = str(settings.get("final_output_folder") or "").strip()
         if folder and Path(final).is_file():
-            target = Path(folder) / f"{source.stem}_Myanmar.mp4"
+            if str(settings.get("target_language") or "mm") == "mm":
+                target = Path(folder) / f"{source.stem}_Myanmar.mp4"
+            else:
+                target_suffix = {
+                    "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
+                    "hi": "Hindi", "th": "Thai", "vi": "Vietnamese", "id": "Indonesian", "ms": "Malay",
+                    "tl": "Filipino", "es": "Spanish", "pt": "Portuguese", "fr": "French", "de": "German",
+                    "it": "Italian", "ru": "Russian", "tr": "Turkish", "ar": "Arabic", "bn": "Bengali",
+                    "ta": "Tamil", "te": "Telugu", "ur": "Urdu",
+                }.get(str(settings.get("target_language")), "Output")
+                target = Path(folder) / f"{source.stem}_{target_suffix}.mp4"
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(final, target)
             self._log(f"📤 Final video saved to {target}")

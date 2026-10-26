@@ -48,10 +48,20 @@ SOURCE_LANGUAGES = {
     "pt": "Portuguese", "fr": "French", "de": "German", "it": "Italian", "ru": "Russian", "tr": "Turkish",
     "ar": "Arabic", "bn": "Bengali", "ta": "Tamil", "te": "Telugu", "ur": "Urdu",
 }
+TARGET_LANGUAGES = {
+    "mm": "Myanmar (Burmese)", "en": "English", "zh": "Chinese", "hi": "Hindi", "ko": "Korean", "ja": "Japanese",
+    "th": "Thai", "vi": "Vietnamese", "id": "Indonesian", "ms": "Malay", "tl": "Filipino (Tagalog)",
+    "es": "Spanish", "pt": "Portuguese", "fr": "French", "de": "German", "it": "Italian", "ru": "Russian",
+    "tr": "Turkish", "ar": "Arabic", "bn": "Bengali", "ta": "Tamil", "te": "Telugu", "ur": "Urdu",
+}
 
 
 def source_language_name(code: str) -> str:
     return SOURCE_LANGUAGES.get(str(code or "").strip().lower(), str(code or "the source language"))
+
+
+def target_language_name(code: str) -> str:
+    return TARGET_LANGUAGES.get(str(code or "mm").strip().lower(), str(code or "mm"))
 
 
 def whisper_choice(language: str, other_model: str = WHISPER_MODEL_OTHER) -> tuple[str, str]:
@@ -1330,19 +1340,29 @@ def translate_batch(
     log: LogFn,
     _split_depth: int = 0,
     source_language: str = "English",
+    target_language: str = "mm",
 ) -> list[dict[str, Any]]:
-    task_rules = """
-You are a CONTEXT-AWARE BURMESE NARRATION TRANSLATOR.
-Translate ONLY the CURRENT English items into smooth, natural spoken Burmese that sounds as if it was originally written by a fluent Burmese movie/story narrator.
+    target_language = str(target_language or "mm").strip().lower()
+    target_name = "Burmese" if target_language == "mm" else target_language_name(target_language)
+    target_is_mm = target_language == "mm"
+    target_script_rule = (
+        "Write EVERY word in Burmese script — no English/Latin words (the Burmese voice cannot read them). "
+        "Translate titles and terms; write names of people, places and techniques in Burmese letters by sound, with one spelling per name."
+        if target_is_mm else
+        f"Write natural {target_name} using its normal writing system. Keep personal and place names consistent and readable to a native {target_name} speaker."
+    )
+    task_rules = f"""
+You are a CONTEXT-AWARE {target_name.upper()} NARRATION TRANSLATOR.
+Translate ONLY the CURRENT {source_language} items into smooth, natural spoken {target_name} that sounds like it was originally written by a fluent {target_name} movie/story narrator.
 
 CORE PRINCIPLE:
 Preserve the SOURCE MEANING and VISUAL EVENTS 100%, NOT the original wording or sentence structure.
 
-NATIVE BURMESE NARRATOR STYLE:
-- Use natural spoken Burmese narrator phrasing, rhythm, and connectors.
+NATIVE {target_name.upper()} NARRATOR STYLE:
+- Use natural spoken {target_name} narrator phrasing, rhythm, and connectors.
 - Avoid stiff word-for-word translation; restructure wording and clause order INSIDE THE SAME ID when needed.
-- Keep Burmese pronouns, kinship terms, honorifics, gendered self-reference, names, and relationships contextually correct.
-- Keep dialogue intent and social register natural without turning ordinary speech into formal literary Burmese.
+- Keep target-language pronouns, kinship terms, honorifics, self-reference, names, and relationships contextually correct.
+- Keep dialogue intent and social register natural without turning ordinary speech into unnecessarily formal wording.
 
 HARD RULES:
 1. Do NOT remove, condense away, or omit meaningful source information. Every action, event, object, person, relationship, cause/effect, dialogue, and important visual detail must remain in the same ID.
@@ -1355,10 +1375,9 @@ HARD RULES:
 8. Timestamps are local metadata. Return no timestamps.
 9. Return JSON only with top-level key "items". Each item must contain integer "id" and non-empty string "translation".
 10. NEVER return placeholders such as "...", "…", dashes, empty text, or schema/example text. Every spoken SOURCE row must produce actual target-language narration words.
-11. Write EVERY word in Burmese script — no English/Latin words (the Burmese voice cannot read them). Translate titles and terms; write names of people, places and techniques in Burmese letters by sound, with one spelling per name.
+11. {target_script_rule}
 12. A sentence often runs across two IDs. Each ID says only its own source words: never tell the next ID's part early, never say again what the previous ID already said.
 """
-    task_rules = task_rules.replace("the CURRENT English items", f"the CURRENT {source_language} items")
     prompt = f"""
 {task_rules}
 
@@ -1387,14 +1406,19 @@ CRITICAL OUTPUT ID PROTOCOL:
             payload = _gemini_json(ai, prompt, retries=1, log=log)
             translated = _validate_translation_items(current, payload, log=log)
             _assert_no_adjacent_translation_duplicates(translated, previous_context)
-            stray = [f"ID {int(x['id']):05d}: {' '.join(_foreign_letters(x['translation']))}"
-                     for x in translated if _foreign_letters(x["translation"])]
-            if stray and attempt < 3:  # the last answer is kept; build() drops the letters and logs the line
+            stray = ([f"ID {int(x['id']):05d}: {' '.join(_foreign_letters(x['translation']))}"
+                      for x in translated if _foreign_letters(x["translation"])] if target_is_mm else [])
+            if stray and attempt < 3:  # the last answer is kept; Burmese output must not contain other scripts
                 raise ValueError("letters of another script inside the Burmese (" + "; ".join(stray) +
                                  "); write every word in Burmese script")
-            english = [f"ID {int(x['id']):05d}: {', '.join(_latin_words(x['translation']))}"
-                       for x in translated if _latin_words(x["translation"])]
-            notes = [f"ID {int(x['id']):05d}" for x in translated if _note_text(x["translation"])]
+            english = ([f"ID {int(x['id']):05d}: {', '.join(_latin_words(x['translation']))}"
+                        for x in translated if _latin_words(x["translation"])] if target_is_mm else [])
+            notes = [
+                f"ID {int(x['id']):05d}" for x in translated
+                if (_note_text(x["translation"]) if target_is_mm else
+                    (not _has_speakable_content(x["translation"]) or bool(_NOTE_RE.search(str(x["translation"]))))
+                )
+            ]
             repeats = find_repeated_next_lines(translated, previous_context)
             twice = find_near_duplicates(translated, previous_context)
             slid = _slid_runs(translated, next_context[0].get("source_text") if next_context else None)
@@ -1462,6 +1486,7 @@ CRITICAL OUTPUT ID PROTOCOL:
             log=log,
             _split_depth=_split_depth + 1,
             source_language=source_language,
+            target_language=target_language,
         )
         right_prev = (list(previous_context or []) + translated_left)[-context_limit:]
         translated_right = translate_batch(
@@ -1473,6 +1498,7 @@ CRITICAL OUTPUT ID PROTOCOL:
             log=log,
             _split_depth=_split_depth + 1,
             source_language=source_language,
+            target_language=target_language,
         )
         combined = translated_left + translated_right
         _assert_no_adjacent_translation_duplicates(combined, list(previous_context or []))
@@ -1490,6 +1516,7 @@ def audit_and_repair_batch(
     previous_context: list[dict[str, Any]] | None = None,
     next_context: list[dict[str, Any]] | None = None,
     log: LogFn,
+    target_language: str = "mm",
 ) -> list[dict[str, Any]]:
     """Mandatory per-ID ownership/completeness audit; only failed rows may be rewritten.
 
@@ -1502,7 +1529,7 @@ def audit_and_repair_batch(
     """
     previous_context = list(previous_context or [])
     next_context = list(next_context or [])
-    target_name = "Burmese/Myanmar narrator output"
+    target_name = target_language_name(target_language) + " narrator output"
 
     def _audit_window(
         current_rows: list[dict[str, Any]],
@@ -1709,8 +1736,7 @@ def _job_segmentation_profile(state_file: Path, translations_file: Path) -> str:
 
 
 class RecapPlanBuilder:
-    """Narrator video in any language (English by small.en, others by the multilingual model) → timestamp-locked
-    Burmese narration plan (narrator-only source)."""
+    """Narrator video in any language → target-language narration plan with timestamp-locked Smart Sync."""
 
     def __init__(
         self,
@@ -1731,9 +1757,12 @@ class RecapPlanBuilder:
         gemini_request_timeout_seconds: int = 120,
         gemini_text_model: str = "gemini-3.5-flash",
         source_language: str = "auto",
+        target_language: str = "mm",
         whisper_model_other: str = WHISPER_MODEL_OTHER,
     ):
         self.source_language = str(source_language or "auto").strip().lower()
+        target_code = str(target_language or "mm").strip().lower()
+        self.target_language = target_code if target_code in TARGET_LANGUAGES else "mm"
         self.whisper_model_other = str(whisper_model_other or WHISPER_MODEL_OTHER).strip()
         self.runtime_root = Path(runtime_root).resolve()
         self.gemini_env_path = Path(gemini_env_path).expanduser().resolve() if str(gemini_env_path or "").strip() else None
@@ -1843,7 +1872,7 @@ class RecapPlanBuilder:
         transcript_file = job_dir / "whisper_transcript.json"
         whisper_model, whisper_language = self._pick_whisper(source, job_dir, transcript_file, reuse)
         language_name = source_language_name(whisper_language)
-        direction = f"{whisper_language}_to_mm"          # "en_to_mm" as before for English
+        direction = f"{whisper_language}_to_{self.target_language}"
         transcript_text_file = job_dir / "whisper_transcript.txt"
         atomic_file = job_dir / "atomic_units.json"
         context_file = job_dir / "story_context.json"
@@ -1853,6 +1882,8 @@ class RecapPlanBuilder:
         state_file = job_dir / "planner_checkpoint.json"
         fp = _source_fingerprint_for_mode(
             source, PLANNER_MODE + "|" + direction + f"|whisper:{whisper_model}:{whisper_language}")
+        # Direction is part of fp, so a different target language cannot reuse a translation checkpoint.
+        translation_fingerprint = fp
         segmentation_profile = _job_segmentation_profile(state_file, translations_file)
         sentence_lines = segmentation_profile == SEGMENTATION_PROFILE
 
@@ -1955,7 +1986,7 @@ class RecapPlanBuilder:
             if self.should_stop():
                 raise InterruptedError("STOP requested before local Whisper")
             runtime_cfg = _load_runtime_config(self.runtime_root)
-            self.log(f"🌐 {language_name} → Myanmar | Local Whisper language={whisper_language} | model={whisper_model}")
+            self.log(f"🌐 Source language: {language_name} | target narration: {target_language_name(self.target_language)} | Whisper={whisper_language} / {whisper_model}")
             self.progress(0, 4, "Whisper timestamp transcript")
             self.log("🎙️ [1/4] Local Whisper — full video timestamp transcript...")
             whisper = whisper_mod.WhisperTimestampService(
@@ -2058,14 +2089,14 @@ class RecapPlanBuilder:
             })
 
             self.progress(2, 4, "Timestamp translation")
-            self.log(f"🌐 [3/4] Gemini {language_name} → Myanmar translation — narrator source | V2 Smart Sync | no summary / no shortening...")
+            self.log(f"🌐 [3/4] Translate {language_name} → {target_language_name(self.target_language)} — narrator source | V2 Smart Sync | no summary / no shortening...")
             batches = _batch_by_size(units, max_items=self.translation_batch_max_items, max_chars=16000)
             translated_all: list[dict[str, Any]] = []
             if reuse and translations_file.is_file():
                 try:
                     saved = json.loads(translations_file.read_text(encoding="utf-8"))
                     saved_items = saved.get("items") or []
-                    if (saved.get("planner_mode") == PLANNER_MODE and saved.get("source_fingerprint") == fp
+                    if (saved.get("planner_mode") == PLANNER_MODE and saved.get("source_fingerprint") == translation_fingerprint
                             and str(saved.get("segmentation_profile") or "") == segmentation_profile
                             and isinstance(saved_items, list)):
                         saved_by_id: dict[int, dict[str, Any]] = {}
@@ -2144,6 +2175,7 @@ class RecapPlanBuilder:
                         next_context=nxt,
                         log=self.log,
                         source_language=language_name,
+                        target_language=self.target_language,
                     )
                 except GeminiKeyPoolExhaustedError as exc:
                     saved = len(translated_all)
@@ -2161,8 +2193,10 @@ class RecapPlanBuilder:
                         previous_context=prev,
                         next_context=nxt,
                         log=self.log,
+                        target_language=self.target_language,
                     )
-                translated = _drop_foreign_letters(translated, self.log)
+                if self.target_language == "mm":
+                    translated = _drop_foreign_letters(translated, self.log)
                 for row in translated:
                     if _latin_words(row.get("translation")):
                         self.log(f"⚠️ ID {int(row['id']):05d}: English words kept ({', '.join(_latin_words(row['translation']))}); "
@@ -2174,7 +2208,7 @@ class RecapPlanBuilder:
                 _atomic_json(translations_file, {
                     "planner_mode": PLANNER_MODE,
                     "segmentation_profile": segmentation_profile,
-                    "source_fingerprint": fp,
+                    "source_fingerprint": translation_fingerprint,
                     "translation_direction": direction,
                     "completed": len(translated_all),
                     "total": len(units),
@@ -2198,7 +2232,7 @@ class RecapPlanBuilder:
         plan["boundary_profile"] = BOUNDARY_PROFILE
         plan["translation_direction"] = direction
         plan["source_language"] = whisper_language
-        plan["target_language"] = "mm"
+        plan["target_language"] = self.target_language
         plan["translation_batch_count"] = len(batches)
         plan["atomic_unit_count"] = len(translated_all)
         plan["translation_rules"] = {

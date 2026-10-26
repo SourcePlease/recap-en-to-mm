@@ -18,3 +18,8 @@ __pycache__/
 
 # Local personal translation terms; commit only glossary.example.json
 glossary.json
+
+
+# Personal pronunciation mappings and project presets may contain local paths
+pronunciation.json
+*.recapproject.json

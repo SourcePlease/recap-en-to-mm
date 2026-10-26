@@ -269,5 +269,48 @@ class StudioThumbnailTests(unittest.TestCase):
             thumbnail_size("4:3")
 
 
+
+from studio.pronunciation import apply_pronunciation_overrides
+from studio.subtitles import SubtitleCue, format_srt, parse_subtitles
+
+
+class ImportedSubtitleTests(unittest.TestCase):
+    def test_srt_import_preserves_cue_times_and_text(self):
+        source = "1\n00:00:01,250 --> 00:00:02,900\nHello there!\n\n2\n00:00:03,000 --> 00:00:04,250\nGoodbye.\n"
+        cues = parse_subtitles(source)
+        self.assertEqual(len(cues), 2)
+        self.assertEqual(cues[0].start, "00:00:01,250")
+        self.assertEqual(cues[0].end, "00:00:02,900")
+        self.assertEqual(cues[0].text, "Hello there!")
+
+    def test_vtt_import_and_bilingual_export_keep_time_codes(self):
+        source = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000 align:start\nHello world.\n"
+        cues = parse_subtitles(source)
+        result = format_srt(cues, ["မင်္ဂလာပါ။"], bilingual=True)
+        self.assertIn("00:00:01,000 --> 00:00:02,000", result)
+        self.assertIn("Hello world.\nမင်္ဂလာပါ။", result)
+
+    def test_empty_subtitle_file_is_rejected(self):
+        with self.assertRaises(ValueError):
+            parse_subtitles("WEBVTT\n\nNo timestamps here")
+
+
+class PronunciationTests(unittest.TestCase):
+    def test_pronunciation_override_is_applied_before_tts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            dictionary = Path(temp) / "pronunciation.json"
+            dictionary.write_text(
+                '{"Black Clover":"ဘလက် ကလိုဗာ","Asta":"အက်စတာ"}',
+                encoding="utf-8",
+            )
+            output = apply_pronunciation_overrides("Asta watched Black Clover.", dictionary)
+            self.assertIn("အက်စတာ", output)
+            self.assertIn("ဘလက် ကလိုဗာ", output)
+
+    def test_gemini_tts_prompt_respects_non_burmese_target(self):
+        prompt = gemini_tts.narrator_prompt("Hello there.", "gemini:Zephyr — Bright", target_language="en")
+        self.assertIn("English narrator", prompt)
+        self.assertIn("native English pronunciation", prompt)
+
 if __name__ == "__main__":
     unittest.main()

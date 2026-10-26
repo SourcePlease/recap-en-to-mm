@@ -1988,15 +1988,12 @@ class App(tk.Tk):
                 style = str(self.cfg.get("studio_thumbnail_title_style") or "Anime Recap")
                 thumb_title = str(self.cfg.get("studio_thumbnail_title") or "").strip() or builtin_title_ideas(source.stem, style)[0]
                 thumbnail_path = final_path.with_name(f"{final_path.stem}_thumbnail.jpg")
-                # Use the original footage for its thumbnail, not a frame chosen from the rendered recap.
-                thumbnail_source = source if source.is_file() else final_path
                 generate_thumbnail(
-                    thumbnail_source, thumbnail_path, title=thumb_title, aspect=aspect, sample_count=samples,
+                    final_path, thumbnail_path, title=thumb_title, aspect=aspect, sample_count=samples,
                     ffmpeg=ffmpeg, ffprobe=ffprobe,
                     font_path=settings.get("overlays", {}).get("title_font_path"),
                     logo_path=(settings.get("overlays", {}).get("logo_path")
                                if settings.get("overlays", {}).get("logo_enabled") else None),
-                    selected_fraction=self.cfg.get("studio_thumbnail_selected_fraction"),
                 )
                 self._log(f"🖼️ Automatic Recap thumbnail saved: {thumbnail_path}")
             except Exception as exc:

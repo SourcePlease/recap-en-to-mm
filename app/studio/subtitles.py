@@ -18,28 +18,6 @@ class SubtitleCue:
     text: str
 
 
-def format_subtitle_glossary(glossary: dict | None) -> str:
-    """Flatten Recap's local glossary schema into compact subtitle translation rules."""
-    if not isinstance(glossary, dict):
-        return ""
-    lines: list[str] = []
-    for section, label in (("characters", "Character"), ("terms", "Term"), ("places", "Place")):
-        mapping = glossary.get(section, {})
-        if not isinstance(mapping, dict):
-            continue
-        for source, preferred in list(mapping.items())[:200]:
-            source_text, preferred_text = str(source).strip(), str(preferred).strip()
-            if source_text and preferred_text:
-                lines.append(f"{label}: {source_text} => {preferred_text}")
-    notes = glossary.get("notes", [])
-    if isinstance(notes, list):
-        for note in notes[:20]:
-            note_text = str(note).strip()
-            if note_text:
-                lines.append(f"Style: {note_text[:300]}")
-    return "\n".join(lines)[:9000]
-
-
 TIMESTAMP_RE = re.compile(
     r"(?P<start>\d{1,2}:\d{2}(?::\d{2})?[,.]\d{3})\s*-->\s*"
     r"(?P<end>\d{1,2}:\d{2}(?::\d{2})?[,.]\d{3})(?:\s+.*)?"
@@ -103,7 +81,7 @@ def _strip_code_fence(value: str) -> str:
 
 
 def _translate_gemini_batch(rows: list[SubtitleCue], *, model: str, target_language: str,
-                            source_language: str, api_key: str, glossary_context: str = "") -> list[str]:
+                            source_language: str, api_key: str) -> list[str]:
     try:
         from google import genai
     except ImportError as exc:
@@ -115,7 +93,6 @@ def _translate_gemini_batch(rows: list[SubtitleCue], *, model: str, target_langu
         "Keep meaning, names, tone and concise subtitle phrasing. Never summarize. "
         'Return JSON only: {"items":[{"id":1,"translation":"..."}]}. '
         "Return exactly one translated item for each supplied ID, in order. No explanations or timestamps.\n\n"
-        + (f"Must-follow glossary and style rules:\n{glossary_context}\n\n" if glossary_context else "")
         + json.dumps([{"id": row.index, "text": row.text} for row in rows], ensure_ascii=False)
     )
     response = genai.Client(api_key=api_key).models.generate_content(model=model, contents=prompt)
@@ -134,14 +111,12 @@ def _translate_gemini_batch(rows: list[SubtitleCue], *, model: str, target_langu
 def translate_subtitles(
     cues: list[SubtitleCue], *, provider: str, model: str, target_language: str,
     source_language: str = "Auto-detect", api_key: str | None = None,
-    base_url: str | None = None, glossary: dict | None = None,
-    progress: Callable[[int, int], None] | None = None,
+    base_url: str | None = None, progress: Callable[[int, int], None] | None = None,
 ) -> list[str]:
     """Translate imported subtitle text only; does not invoke Whisper or alter timestamps."""
     if not cues:
         raise ValueError("Import a subtitle file first.")
     target = (target_language or "Myanmar (Burmese)").strip()
-    glossary_context = format_subtitle_glossary(glossary)
     output: list[str] = []
     for start in range(0, len(cues), 20):
         batch = cues[start:start + 20]
@@ -150,7 +125,6 @@ def translate_subtitles(
             translated = _translate_gemini_batch(
                 rows, model=model or "gemini-3.5-flash", target_language=target,
                 source_language=source_language, api_key=(api_key or "").strip(),
-                glossary_context=glossary_context,
             )
         else:
             prompt = (
@@ -158,7 +132,6 @@ def translate_subtitles(
                 "Keep meaning, names, emotional tone and short subtitle phrasing. Never summarize. "
                 'Return JSON only: {"items":[{"id":1,"translation":"..."}]}. '
                 "Keep every ID exactly once and in order; no explanations or timestamps.\n\n"
-                + (f"Must-follow glossary and style rules:\n{glossary_context}\n\n" if glossary_context else "")
                 + json.dumps([{"id": row.index, "text": row.text} for row in rows], ensure_ascii=False)
             )
             answer = chat_completion(

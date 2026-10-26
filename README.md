@@ -387,52 +387,84 @@ responsible for the rights to the videos you process.
 
 ---
 
-## Recap Studio tools (feature branch)
+---
 
-The Studio tab and supporting engines are being developed on the feature/studio-expansion branch. Upstream remains separate; the feature branch is not yet merged into this fork's main branch.
+## Recap Studio Tools / Recap Studio ကိရိယာများ (Feature Branch)
 
-- **Downloader:** yt-dlp-based URL downloads for supported sites, quality selection, playlist mode, optional subtitle downloads, progress, and optional user-supplied cookies for content you are authorized to access. A persistent multi-URL queue saves pending/completed/failed status, can retry failures, and can resume pending downloads after restart.
-- **Auto thumbnails:** FFmpeg extracts candidate frames; Pillow ranks and styles a local thumbnail with a custom title and optional logo in 16:9, 9:16, or 1:1 formats. Choose how many frames to sample and generate from downloads or local videos.
-- **AI providers:** Gemini remains the default. Explicitly choose Groq, OpenRouter, or local Ollama for story-context, translation, and audit prompts. The Studio tab can test a provider and apply it to Recap; only configured fallback providers are tried. Model names/free quotas change, so enter an available model ID and do not assume every model is free.
-- **Myanmar glossary:** Edit character names, terminology, places, and short style preferences. The local glossary is applied to Recap prompts and ignored by Git.
-- **Workflow:** Downloaded videos can be sent directly to the existing Recap input.
-- **Platform caveat:** yt-dlp supports many websites, but no generic downloader can guarantee every URL keeps working. Recent yt-dlp releases include a RedNote/Xiaohongshu extractor, though individual links can fail due to login, region, CAPTCHA, redirects, or site changes.
+**မြန်မာ:** ဤ Feature များသည် feature/studio-expansion branch ပေါ်တွင် ရှိသည်။ စမ်းသပ်ပြီးမှသာ main သို့ Merge လုပ်ရန် ရည်ရွယ်ထားပြီး၊ မူရင်း upstream repository နှင့် main branch ကို မပြောင်းထားပါ။
 
-See [STUDIO_FEATURES.md](STUDIO_FEATURES.md) for the implementation scope and next steps.
+**English:** These additional tools live on the feature/studio-expansion branch. They are kept separate from the upstream repository and this fork's main branch until reviewed and tested.
 
+### ပါဝင်သော Tabs / Included Tabs
 
-### Thumbnail and Myanmar narration options
+- **Recap — ဘာသာပြန်အသံဖြင့် Video ထုတ်လုပ်ခြင်း / Video Recap:** Whisper transcription, context-aware AI translation, selectable target language, TTS narration and Smart Sync. မြန်မာဘာသာသည် Default ဖြစ်သည်.  
+  **English:** Local transcription, context-aware translation, target-language selection, narration TTS and timestamp-aware Smart Sync.
 
-Studio supports two thumbnail workflows: **Frame-based (local)** chooses a clear frame from the source video and overlays a Burmese title; **AI generated (fal.ai)** makes a new anime-inspired background and adds the Burmese title/logo locally. AI image inference requires \`FAL_KEY\` and may use paid fal.ai credits. The local method remains available without fal.ai credentials.
+- **Splitter — Video အပိုင်းခွဲခြင်း / Video Splitter:** ကြာချိန်၊ Ratio, Fill, Text, Part Number နဲ့ Smart Cut ကို သတ်မှတ်နိုင်သည်။  
+  **English:** Split videos by duration, preview cuts, configure ratios/layouts and optionally cut around pauses in speech.
 
-The title-style presets cover Anime Recap, Isekai/Reincarnation, Overpowered/Action, Dark Fantasy/Survival, Mystery/Twist, and Romance/Betrayal. "Suggest Burmese Titles" uses the configured Groq/OpenRouter/Ollama model when available and falls back to built-in templates.
+- **Studio — Downloader & Workflow:** ပံ့ပိုးထားသော Public URL များမှ Video/Audio Download လုပ်ပြီး Queue ထဲထားနိုင်သည်။ Download ပြီး Video များကို Recap Queue သို့ အလိုအလျောက်ပို့နိုင်သည်။  
+  **English:** Download supported media URLs, manage a persistent URL queue and optionally enqueue downloaded videos for Recap.
 
-Narrator choices now include Microsoft's two Burmese Edge voices and 30 Gemini prebuilt voice styles. The Gemini choices are style variants rather than 30 distinct native Burmese voice recordings; use the two \`my-MM-*Neural\` Edge voices for the explicitly Burmese-labelled voices. Free-tier access depends on the provider account and quota.
+- **Thumbnail — Thumbnail Studio:** Original Video မှ Frame ရွေးခြင်း၊ Thumbnail ကို ကိုယ်တိုင် Frame ရွေးပြင်ခြင်း၊ Local Variant ၃ မျိုးထုတ်ခြင်း၊ မြန်မာ Title/Logo ထည့်ခြင်း၊ fal.ai AI Background ရွေးချယ်ခြင်း။  
+  **English:** Manual source-frame selection, three free local variants, Burmese titles/logos, automatic post-Recap thumbnails and optional fal.ai-generated backgrounds.
 
+- **Subtitles — Subtitle Tools:** SRT/VTT Import, Whisper မပြန်သုံးဘဲ ဘာသာပြန်ခြင်း၊ Glossary အသုံးပြုခြင်း၊ စာသား Review ပြင်ဆင်ခြင်း၊ Timestamp ထိန်းထားတဲ့ Translated/Bilingual SRT Export။  
+  **English:** Import and translate existing subtitles, reuse the Recap glossary, review translations and preserve cue timing in exported SRT files.
 
-## Additional Studio tabs and multilingual output (feature/studio-expansion)
+- **Project — Project & Audio Tools:** Save/Load Project, Waveform Overview, Pronunciation Editor, Intro/Outro, BGM, Smart Silence, Preflight/QC, Storage Scan နဲ့ Safe Cache Cleanup။  
+  **English:** Project presets, waveform overview, pronunciation mappings, optional branding/music/silence compression, preflight checks, output QC and safe storage/cache tools.
 
-The feature branch adds dedicated **Thumbnail**, **Subtitles**, and **Project** tabs next to Recap, Splitter, and Studio. Thumbnail generation no longer needs to be configured inside the downloader: open Thumbnail to create a local frame-based cover or an optional AI background using fal.ai. The Studio downloader can still auto-create a thumbnail after a download using the saved Thumbnail settings.
+- **Recap Queue — Batch Processing:** Video အများအပြားကို Local Queue ထဲထည့်ပြီး တစ်ခုချင်း လုပ်ဆောင်နိုင်သည်။ App ပြန်ဖွင့်လည်း pending jobs များကို ပြန်ရယူပြီး Failed Job ကို Retry လုပ်နိုင်သည်။  
+  **English:** A persistent local queue recovers interrupted jobs, retries failures and processes jobs sequentially.
 
-Recap now includes a separate **Target language** selector. Myanmar/Burmese remains the default; other available targets include English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu, and Urdu. Voice choices include Microsoft Edge voices, Gemini styles, optional Azure Speech, and an ElevenLabs multilingual voice. Some providers need keys and may have limited or paid quotas.
+### Thumbnail အလိုအလျောက်ထုတ်ခြင်း / Automatic Thumbnails
 
-The **Subtitles** tab imports existing SRT/VTT without running Whisper, translates cues with Gemini/Groq/OpenRouter/Ollama, and exports translated-only or bilingual SRT files with the original cue timing. The **Project** tab saves/restores the local Recap settings and paths, displays an audio waveform overview, edits pronunciation replacements, and enables optional branded intro/outro cards and smart silence removal.
+**မြန်မာ:** Auto-thumbnail after Recap သည် Default အားဖြင့် ဖွင့်ထားသည်။ Recap ပြီးသွားလျှင် မူရင်း Video ထဲမှ Frame များကို ရွေးပြီး Final Output ဘေးမှာ JPG Thumbnail ထုတ်ပေးသည်။ Download ပြီးနောက် Auto-thumbnail Option လည်း သီးခြားရှိသည်။ Local Mode သည် AI Credits မလိုပါ။ fal.ai Mode သည် FAL_KEY နဲ့ Credits လိုနိုင်သည်။
 
-Optional .env variables:
+**English:** The default-enabled Auto-thumbnail after Recap option extracts a frame from the original source video and saves a JPG beside the final recap output. Downloader auto-thumbnails are also available. Local thumbnails do not require AI credits; optional fal.ai image generation requires FAL_KEY and may consume account credits.
+
+### ဘာသာစကားနှင့် AI / Languages & AI Providers
+
+**မြန်မာ:** Recap Target Language ကို Myanmar, English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu နဲ့ Urdu တို့ထဲက ရွေးနိုင်သည်။ Gemini သည် Default ဖြစ်ပြီး Groq, OpenRouter, Local Ollama တို့ကို ရွေးသုံးနိုင်သည်။
+
+**English:** Available target languages include Myanmar/Burmese, English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu and Urdu. Gemini is the default text provider; Groq, OpenRouter and local Ollama are optional alternatives.
+
+**မြန်မာ:** Narrator ရွေးချယ်မှုများတွင် Microsoft Edge TTS, Gemini TTS, Optional Azure Speech နဲ့ ElevenLabs ပါဝင်သည်။ Azure/ElevenLabs အတွက် API Key လိုပြီး quota သို့မဟုတ် plan က Account ပေါ်မူတည်သည်။ Gemini Voice Style များသည် Native Myanmar အသံ ၃၀ မျိုးဟု မဆိုလိုပါ။
+
+**English:** Narrator options include Edge TTS, Gemini TTS, optional Azure Speech and ElevenLabs. Azure/ElevenLabs need credentials and account quota; the Gemini catalogue is a set of voice styles, not 30 distinct native Burmese recordings.
+
+### စစ်ဆေးမှုနှင့် သတိပြုရန် / Validation & Limitations
+
+- **မြန်မာ:** Project ထဲက Background Music, Intro/Outro နဲ့ Smart Silence Removal တို့သည် Default ပိတ်ထားသည်။ အရင် Video အတိုနဲ့ စမ်းပါ။  
+  **English:** Background music, branded cards and smart silence removal are optional and off by default. Test each on a short clip first.
+
+- **မြန်မာ:** Preflight က Tool/Disk/Credential ရှိမရှိကို စစ်ပေးသော်လည်း API Key မှန်မမှန်ကို အာမမခံနိုင်ပါ။ Output QC က Video/Audio Streams, Duration, Resolution နဲ့ SRT/Thumbnail ရှိမရှိကို စစ်ပြီး Translation ကောင်းမကောင်းကို မဆုံးဖြတ်နိုင်ပါ။  
+  **English:** Preflight checks file/tools/disk/credential presence but cannot validate a live key. Output QC checks media metadata and expected files, not translation quality or perceptual sync.
+
+- **မြန်မာ:** yt-dlp က ပံ့ပိုးထားတဲ့ URL တွေကိုသာ Download လုပ်နိုင်သည်။ Website ပြောင်းလဲမှု၊ Login, Region Restriction, CAPTCHA သို့မဟုတ် Media ဖျက်ထားမှုကြောင့် အချို့ URL များ မရနိုင်ပါ။ DRM/Access Control ကို ကျော်ဖြတ်ခြင်း မလုပ်ပါ။  
+  **English:** yt-dlp site support can change, so individual URLs may fail. The downloader does not bypass DRM or access controls.
+
+### API Key များ / API Keys
+
+Local .env ထဲမှာသာ သိမ်းပါ။ GitHub ပေါ် မတင်ပါနှင့်.
+
+Keep keys in your local .env file; never commit it.
 
 - Azure Speech: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION
 - ElevenLabs: ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID
-- fal.ai thumbnails: FAL_KEY, FAL_IMAGE_MODEL
+- fal.ai: FAL_KEY, FAL_IMAGE_MODEL
+- Optional text providers: GROQ_API_KEY, OPENROUTER_API_KEY, OLLAMA_BASE_URL, OLLAMA_MODEL
 
-Smart silence removal and branded intro/outro are off by default. Provider quota, voice/language support, downloader-site support, and real long-video sync need testing with your own short samples before large jobs.
+### စမ်းသပ်ရန် အစီအစဉ် / Suggested Test Order
 
+1. Video အတိုတစ်ခုနဲ့ Recap ပြီးအောင်လုပ်ကာ အသံ၊ Subtitle နဲ့ Sync ကိုစစ်ပါ။ / Run a short recap and inspect narration, subtitles and sync.
+2. Auto-thumbnail JPG နဲ့ *_quality_report.json ထုတ်ထားမှုကိုစစ်ပါ။ / Check the generated thumbnail and JSON quality report.
+3. Stop/Resume, Recap Queue နဲ့ Download Queue ကို စမ်းပါ။ / Test Stop/Resume and both queues.
+4. SRT/VTT Translate, Glossary, BGM, Intro/Outro နဲ့ Platform Presets ကို တစ်ခုချင်းစမ်းပါ။ / Test subtitle translation, glossary, music, branding and presets.
+5. နောက်ဆုံးမှ Video အရှည်ကြီးကို စမ်းပြီး Memory, Disk Space နဲ့ Sync ကိုစစ်ပါ။ / Test a long video only after short samples are successful.
 
-### Production workflow (feature branch)
+Automated Python compilation and regression tests passed in the latest branch run before this documentation update. Actual Windows GUI operation, live provider keys/quotas, individual website URLs, and long-video sync still need real-world testing.
 
-The feature branch also includes a separate **Recap Queue** for local files and optional **Download → Recap** automation in Studio. Turn on “Queue downloaded videos for Recap” to add downloaded videos to that queue; “Auto-start Recap after download queue finishes” is an independent opt-in. Jobs run sequentially. The Recap Queue stores queue status on disk and can retry failures.
-
-The **Thumbnail** tab can create three local variants and has an “Auto-thumbnail after Recap” checkbox (on by default). Local thumbnails are built from video frames and do not require fal.ai. A JSON output-quality report is written beside a final video, checking file streams and metadata rather than subjective translation accuracy.
-
-In **Project → Audio, Music & Intro / Outro**, optional background music can be mixed beneath narration at a limited volume. It is off by default. **Project → Preflight / Storage** provides source/tool/disk checks, final-video validation, storage estimates, and safe cache cleanup. The Subtitle tab includes a translation-review dialog that preserves timestamps by requiring one edited translated line per cue.
-
-Platform presets are available in the Recap editor for YouTube 16:9, vertical 9:16, square 1:1 and a lightweight 720p choice. These presets are starting points; verify the final export against each platform’s current requirements.
+အသေးစိတ် Feature နှင့် ကန့်သတ်ချက်များအတွက် [STUDIO_FEATURES.md](STUDIO_FEATURES.md) ကိုကြည့်ပါ။  
+For the complete feature list and limitations, see [STUDIO_FEATURES.md](STUDIO_FEATURES.md).

@@ -141,75 +141,16 @@ def _extract_candidate_frames(video_path: Path, duration: float, ffmpeg: str,
     return candidates
 
 
-def candidate_frame_fraction(candidate: str | Path, sample_count: int) -> float:
-    """Return the normalized timeline position represented by a sampled frame path."""
-    count = max(1, min(int(sample_count), 24))
-    try:
-        index = int(Path(candidate).stem.rsplit("_", 1)[-1])
-    except (TypeError, ValueError):
-        index = 0
-    index = max(0, min(index, count - 1))
-    return 0.08 + (0.84 * (index + 0.5) / count)
-
-
-def choose_candidate_frame(
-    candidates: list[Path], selected_fraction: float, sample_count: int
-) -> Path:
-    """Choose the extracted candidate closest to the user's requested timeline position."""
-    if not candidates:
-        raise ThumbnailError("No candidate frames are available.")
-    target = max(0.08, min(0.92, float(selected_fraction)))
-    return min(candidates, key=lambda candidate: abs(
-        candidate_frame_fraction(candidate, sample_count) - target
-    ))
-
-
-def sample_thumbnail_frames(
-    video_path: str | Path, *, sample_count: int = 8,
-    ffmpeg: str = "ffmpeg", ffprobe: str = "ffprobe",
-) -> list[tuple[Image.Image, float]]:
-    """Extract small preview images for the Thumbnail tab's frame picker."""
-    source = Path(video_path).expanduser().resolve()
-    if not source.is_file():
-        raise ThumbnailError(f"Video file does not exist: {source}")
-    if not shutil.which(ffmpeg) and not Path(ffmpeg).is_file():
-        raise ThumbnailError(f"FFmpeg executable was not found: {ffmpeg}")
-    if not shutil.which(ffprobe) and not Path(ffprobe).is_file():
-        raise ThumbnailError(f"FFprobe executable was not found: {ffprobe}")
-    count = max(1, min(int(sample_count), 24))
-    duration = _video_duration(source, ffprobe)
-    previews: list[tuple[Image.Image, float]] = []
-    with tempfile.TemporaryDirectory(prefix="recap_thumbnail_preview_") as temp:
-        candidates = _extract_candidate_frames(source, duration, ffmpeg, Path(temp), count)
-        for candidate in candidates:
-            try:
-                with Image.open(candidate) as image:
-                    previews.append((image.convert("RGB").copy(), candidate_frame_fraction(candidate, count)))
-            except OSError:
-                continue
-    if not previews:
-        raise ThumbnailError("No readable frame previews were extracted.")
-    return previews
-
-
 def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
                     aspect: str, font_path: str | Path | None,
-                    logo_path: str | Path | None, template_variant: int = 0) -> None:
+                    logo_path: str | Path | None) -> None:
     width, height = thumbnail_size(aspect)
     image = ImageOps.fit(frame.convert("RGB"), (width, height), method=Image.Resampling.LANCZOS)
     # Darken the lower portion behind the title, without obscuring the whole frame.
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
     overlay_draw = ImageDraw.Draw(overlay)
-    variant = int(template_variant) % 3
     for y in range(height):
-        position = y / max(1, height - 1)
-        if variant == 1:
-            strength = (1.0 - position) ** 1.7
-        elif variant == 2:
-            strength = 0.72 if 0.27 <= position <= 0.76 else 0.08
-        else:
-            strength = position ** 1.7
-        alpha = int(170 * strength)
+        alpha = int(170 * (y / max(1, height - 1)) ** 1.7)
         overlay_draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
     image = Image.alpha_composite(image.convert("RGBA"), overlay)
     draw = ImageDraw.Draw(image)
@@ -220,13 +161,7 @@ def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
     line_sizes = [draw.textbbox((0, 0), line, font=font, stroke_width=max(1, font_size // 18)) for line in lines]
     line_height = max(font_size + 8, max((box[3] - box[1] for box in line_sizes), default=font_size) + 8)
     block_height = line_height * len(lines)
-    if variant == 1:
-        text_y = max(margin, margin // 2)
-    elif variant == 2:
-        text_y = max(margin, (height - block_height) // 2)
-    else:
-        text_y = max(margin, height - margin - block_height)
-    title_top = text_y
+    text_y = max(margin, height - margin - block_height)
     for line in lines:
         draw.text(
             (margin, text_y), line, font=font, fill="white",
@@ -234,18 +169,10 @@ def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
         )
         text_y += line_height
     # Accent stripe adds a clear title anchor without claiming the image is AI artwork.
-    if variant == 1:
-        stripe_y = min(height - margin // 2, title_top + block_height + 12)
-        stripe_color = (80, 220, 190, 255)
-    elif variant == 2:
-        stripe_y = max(margin // 2, title_top - 16)
-        stripe_color = (255, 176, 72, 255)
-    else:
-        stripe_y = max(margin // 2, title_top - 16)
-        stripe_color = (95, 140, 255, 255)
+    stripe_y = max(margin // 2, height - margin - block_height - 16)
     draw.rounded_rectangle(
         (margin, stripe_y, margin + max(52, int(width * 0.11)), stripe_y + max(5, int(height * 0.009))),
-        radius=4, fill=stripe_color,
+        radius=4, fill=(95, 140, 255, 255),
     )
     if logo_path:
         logo_file = Path(logo_path)
@@ -271,10 +198,8 @@ def generate_thumbnail(
     ffprobe: str = "ffprobe",
     font_path: str | Path | None = None,
     logo_path: str | Path | None = None,
-    selected_fraction: float | None = None,
-    template_variant: int = 0,
 ) -> Path:
-    """Select a clear frame or a user-picked timeline point, then render a JPEG thumbnail."""
+    """Select a clear frame, apply a title template, and save a JPEG thumbnail."""
     source = Path(video_path).expanduser().resolve()
     if not source.is_file():
         raise ThumbnailError(f"Video file does not exist: {source}")
@@ -290,27 +215,22 @@ def generate_thumbnail(
     if not shutil.which(ffprobe) and not Path(ffprobe).is_file():
         raise ThumbnailError(f"FFprobe executable was not found: {ffprobe}")
 
-    count = max(1, min(int(sample_count), 24))
     duration = _video_duration(source, ffprobe)
     with tempfile.TemporaryDirectory(prefix="recap_thumbnail_") as temp:
-        candidates = _extract_candidate_frames(source, duration, ffmpeg, Path(temp), count)
-        if selected_fraction is not None:
-            best = choose_candidate_frame(candidates, selected_fraction, count)
-        else:
-            ranked: list[tuple[float, Path]] = []
-            for candidate in candidates:
-                try:
-                    with Image.open(candidate) as image:
-                        ranked.append((_frame_score(image), candidate))
-                except OSError:
-                    continue
-            if not ranked:
-                raise ThumbnailError("Extracted frames could not be read.")
-            best = max(ranked, key=lambda item: item[0])[1]
+        candidates = _extract_candidate_frames(source, duration, ffmpeg, Path(temp), sample_count)
+        ranked: list[tuple[float, Path]] = []
+        for candidate in candidates:
+            try:
+                with Image.open(candidate) as image:
+                    ranked.append((_frame_score(image), candidate))
+            except OSError:
+                continue
+        if not ranked:
+            raise ThumbnailError("Extracted frames could not be read.")
+        best = max(ranked, key=lambda item: item[0])[1]
         with Image.open(best) as image:
             _draw_thumbnail(
-                image, destination, title or source.stem, aspect, font_path, logo_path,
-                template_variant=template_variant,
+                image, destination, title or source.stem, aspect, font_path, logo_path
             )
     return destination
 

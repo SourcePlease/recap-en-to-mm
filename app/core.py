@@ -1656,11 +1656,22 @@ class EdgeSmartSync:
         if volume_percent != 100:
             self.log(f"🔊 Voice volume {volume_percent}% applied at final mux (limiter on)")
         bgm_path = self.background_music_path if self.background_music_enabled else ""
-        if bgm_path and Path(bgm_path).is_file() and self.background_music_volume_percent > 0:
-            self.log(f"🎼 Mixing background music at {self.background_music_volume_percent}% volume.")
-        mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent,
-                  background_music_path=bgm_path,
-                  background_music_volume_percent=self.background_music_volume_percent)
+        if bgm_path:
+            music_file = Path(bgm_path).expanduser()
+            if not music_file.is_file():
+                raise RuntimeError(f"Background music file was not found: {music_file}")
+            if self.background_music_volume_percent > 0:
+                self.log(f"🎼 Mixing background music at {self.background_music_volume_percent}% volume.")
+                mux_audio(
+                    self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent,
+                    background_music_path=music_file,
+                    background_music_volume_percent=self.background_music_volume_percent,
+                )
+            else:
+                mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
+        else:
+            # Preserve the historical call shape for existing integrations and mocks.
+            mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
         if self.brand_intro_outro_enabled:
             branded = paths.work / "final_branded.mp4"
             self.log("🎬 Adding local branded intro/outro cards…")

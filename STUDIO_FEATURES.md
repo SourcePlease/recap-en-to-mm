@@ -15,7 +15,7 @@ Work in this document belongs to SourcePlease/recap-en-to-mm on feature/studio-e
 
 yt-dlp handles public media URLs supported by the installed extractors. Available options include quality selection, audio-only MP3, playlists, optional subtitle downloads, authorized user cookies, progress, resumable downloads, and a persistent queue with retry-failed support. Website extractors can fail after website changes, login requirements, region restrictions, CAPTCHA or removed media. This tool does not bypass DRM or access controls.
 
-Local thumbnail generation extracts candidate frames with FFmpeg and applies the title/logo locally; it does not require a remote API. fal.ai creates an optional generated background and the app composites text/logo locally to protect Burmese spelling. fal.ai inference can consume credits and may be paid. Title idea generation falls back to local Burmese templates when an AI provider is unavailable.
+Local thumbnail generation extracts candidate frames with FFmpeg and applies the title/logo locally; it does not require a remote API. The Thumbnail tab's **Choose Frame** contact sheet lets users select a source-video timeline position or return to automatic best-frame selection. **Create 3 Local Variants** produces different frames, Burmese title ideas, and layout templates without using AI credits. fal.ai creates an optional generated background and the app composites text/logo locally to protect Burmese spelling. fal.ai inference can consume credits and may be paid. Title idea generation falls back to local Burmese templates when an AI provider is unavailable.
 
 ## AI and multilingual narration
 
@@ -30,7 +30,8 @@ Target language can be selected independently of source language in Recap. The s
 
 ## Extra editing features
 
-- **Subtitle import / bilingual export:** translating an existing SRT/VTT uses its cues directly and does not invoke Whisper. Exported timestamps are preserved.
+- **Subtitle import / bilingual export:** translating an existing SRT/VTT uses its cues directly and does not invoke Whisper. Exported timestamps are preserved. A review dialog lets one translated cue per line be edited before export.
+- **Shared glossary for subtitle translation:** the Subtitles tab can apply the local `glossary.json` used by Recap (falling back to `glossary.example.json` when available) to keep character names, terms, places, and style rules consistent. Turn it off for literal translations.
 - **Project save/load:** project JSON stores local paths and Recap configuration, not API key values. Keep project files private if they contain private local paths.
 - **Audio waveform:** FFmpeg converts audio to low-rate mono PCM and the UI renders a compact RMS waveform, streaming data in small blocks to limit memory. It is a waveform overview, not a full multitrack timeline editor.
 - **Pronunciation editor:** pronunciation.json maps a source term to the preferred spoken replacement. Rules are applied before TTS and do not modify visible subtitles.

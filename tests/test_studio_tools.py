@@ -20,7 +20,7 @@ from studio.downloader import (
     DownloadError, DownloadOptions, build_ytdlp_options, download_media, validate_http_url,
 )
 from studio.thumbnail import (
-    build_fal_thumbnail_prompt, generate_fal_thumbnail, thumbnail_size,
+    build_fal_thumbnail_prompt, choose_candidate_frame, generate_fal_thumbnail, thumbnail_size,
 )
 from studio.title_generator import ai_title_ideas, builtin_title_ideas, TITLE_STYLES
 import gemini_tts
@@ -271,13 +271,45 @@ class StudioThumbnailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             thumbnail_size("4:3")
 
+    def test_user_selected_thumbnail_frame_uses_nearest_sample(self):
+        candidates = [Path("frame_00.jpg"), Path("frame_01.jpg"), Path("frame_02.jpg"), Path("frame_03.jpg")]
+        self.assertEqual(choose_candidate_frame(candidates, 0.80, 4), Path("frame_03.jpg"))
+        self.assertEqual(choose_candidate_frame(candidates, 0.20, 4), Path("frame_00.jpg"))
+
 
 
 from studio.pronunciation import apply_pronunciation_overrides
-from studio.subtitles import SubtitleCue, format_srt, parse_subtitles
+from studio.subtitles import (
+    SubtitleCue, format_srt, format_subtitle_glossary, parse_subtitles, translate_subtitles,
+)
 
 
 class ImportedSubtitleTests(unittest.TestCase):
+    def test_subtitle_glossary_flattens_recap_glossary(self):
+        context = format_subtitle_glossary({
+            "characters": {"Asta": "အက်စတာ"},
+            "terms": {"Magic Knight": "မေဂျစ်နိုက်"},
+            "places": {"Clover Kingdom": "ကလိုဗာနိုင်ငံ"},
+            "notes": ["Use natural Burmese"],
+        })
+        self.assertIn("Asta => အက်စတာ", context)
+        self.assertIn("Magic Knight => မေဂျစ်နိုက်", context)
+        self.assertIn("Clover Kingdom => ကလိုဗာနိုင်ငံ", context)
+        self.assertIn("Use natural Burmese", context)
+
+    def test_imported_subtitle_translation_uses_glossary_prompt(self):
+        cues = [SubtitleCue(1, "00:00:01,000", "00:00:02,000", "Asta is a Magic Knight.")]
+        answer = json.dumps({"items": [{"id": 1, "translation": "အက်စတာသည် မေဂျစ်နိုက်ဖြစ်သည်။"}]}, ensure_ascii=False)
+        with patch("studio.subtitles.chat_completion", return_value=answer) as mocked:
+            translated = translate_subtitles(
+                cues, provider="groq", model="test-model", target_language="Myanmar (Burmese)",
+                api_key="test-key", glossary={"characters": {"Asta": "အက်စတာ"}, "terms": {"Magic Knight": "မေဂျစ်နိုက်"}},
+            )
+        self.assertEqual(len(translated), 1)
+        prompt = mocked.call_args.args[2][0]["content"]
+        self.assertIn("Asta => အက်စတာ", prompt)
+        self.assertIn("Magic Knight => မေဂျစ်နိုက်", prompt)
+
     def test_srt_import_preserves_cue_times_and_text(self):
         source = "1\n00:00:01,250 --> 00:00:02,900\nHello there!\n\n2\n00:00:03,000 --> 00:00:04,250\nGoodbye.\n"
         cues = parse_subtitles(source)

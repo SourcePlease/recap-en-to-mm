@@ -226,6 +226,7 @@ def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
         text_y = max(margin, (height - block_height) // 2)
     else:
         text_y = max(margin, height - margin - block_height)
+    title_top = text_y
     for line in lines:
         draw.text(
             (margin, text_y), line, font=font, fill="white",
@@ -234,13 +235,13 @@ def _draw_thumbnail(frame: Image.Image, output_path: Path, title: str,
         text_y += line_height
     # Accent stripe adds a clear title anchor without claiming the image is AI artwork.
     if variant == 1:
-        stripe_y = min(height - margin // 2, text_y + block_height + 12)
+        stripe_y = min(height - margin // 2, title_top + block_height + 12)
         stripe_color = (80, 220, 190, 255)
     elif variant == 2:
-        stripe_y = max(margin // 2, text_y - 16)
+        stripe_y = max(margin // 2, title_top - 16)
         stripe_color = (255, 176, 72, 255)
     else:
-        stripe_y = max(margin // 2, text_y - 16)
+        stripe_y = max(margin // 2, title_top - 16)
         stripe_color = (95, 140, 255, 255)
     draw.rounded_rectangle(
         (margin, stripe_y, margin + max(52, int(width * 0.11)), stripe_y + max(5, int(height * 0.009))),

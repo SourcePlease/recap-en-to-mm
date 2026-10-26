@@ -20,7 +20,8 @@ from studio.downloader import (
     DownloadError, DownloadOptions, build_ytdlp_options, download_media, validate_http_url,
 )
 from studio.thumbnail import (
-    build_fal_thumbnail_prompt, choose_candidate_frame, generate_fal_thumbnail, thumbnail_size,
+    _draw_thumbnail, build_fal_thumbnail_prompt, choose_candidate_frame,
+    generate_fal_thumbnail, thumbnail_size,
 )
 from studio.title_generator import ai_title_ideas, builtin_title_ideas, TITLE_STYLES
 import gemini_tts
@@ -275,6 +276,17 @@ class StudioThumbnailTests(unittest.TestCase):
         candidates = [Path("frame_00.jpg"), Path("frame_01.jpg"), Path("frame_02.jpg"), Path("frame_03.jpg")]
         self.assertEqual(choose_candidate_frame(candidates, 0.80, 4), Path("frame_03.jpg"))
         self.assertEqual(choose_candidate_frame(candidates, 0.20, 4), Path("frame_00.jpg"))
+
+    def test_three_thumbnail_templates_produce_distinct_local_images(self):
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as temp:
+            frame = Image.new("RGB", (320, 180), (48, 66, 90))
+            output_files = []
+            for variant in range(3):
+                target = Path(temp) / f"variant_{variant}.jpg"
+                _draw_thumbnail(frame, target, "Sample recap title", "16:9", None, None, template_variant=variant)
+                output_files.append(target.read_bytes())
+            self.assertEqual(len(set(output_files)), 3)
 
 
 

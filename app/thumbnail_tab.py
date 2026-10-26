@@ -26,6 +26,7 @@ class ThumbnailTab(ttk.Frame):
         self.style = tk.StringVar(value=str(cfg.get("studio_thumbnail_title_style") or "Anime Recap"))
         self.scene = tk.StringVar(value=str(cfg.get("studio_thumbnail_scene_prompt") or ""))
         self.model = tk.StringVar(value=str(cfg.get("fal_image_model") or os.getenv("FAL_IMAGE_MODEL") or "fal-ai/fast-sdxl"))
+        self.auto_after_recap = tk.BooleanVar(value=bool(cfg.get("auto_thumbnail_after_recap", True)))
         self.fal_key = tk.StringVar(value=os.getenv("FAL_KEY", ""))
         self.provider = tk.StringVar(value=str(cfg.get("studio_provider") or "groq"))
         self.ai_model = tk.StringVar(value=str(cfg.get("studio_model") or os.getenv("GROQ_MODEL") or ""))
@@ -82,6 +83,10 @@ class ThumbnailTab(ttk.Frame):
         actions.grid(row=16, column=0, columnspan=3, sticky="ew", pady=(12, 4))
         self.generate_button = ttk.Button(actions, text="Generate Thumbnail", command=self._generate)
         self.generate_button.pack(side="left")
+        self.variations_button = ttk.Button(actions, text="Create 3 Local Variants", command=self._generate_variations)
+        self.variations_button.pack(side="left", padx=(6, 0))
+        ttk.Checkbutton(actions, text="Auto-thumbnail after Recap", variable=self.auto_after_recap,
+                        command=self._save_auto_setting).pack(side="left", padx=(12, 0))
         ttk.Label(actions, textvariable=self.status, wraplength=880).pack(side="left", padx=12)
         ttk.Label(self, text="Frame-based mode is local/free. fal.ai image inference may use account credits. "
                   "Correct Burmese title/logo text is composited locally.",
@@ -191,6 +196,7 @@ class ThumbnailTab(ttk.Frame):
         aspect, style = self.aspect.get(), self.style.get()
         scene, model = self.scene.get().strip(), self.model.get().strip() or "fal-ai/fast-sdxl"
         self.cfg.update({
+            "auto_thumbnail_after_recap": bool(self.auto_after_recap.get()),
             "studio_thumbnail_aspect": aspect, "studio_thumbnail_samples": str(samples),
             "studio_thumbnail_mode": mode, "studio_thumbnail_title_style": style,
             "studio_thumbnail_scene_prompt": scene, "studio_thumbnail_title": title,
@@ -199,6 +205,7 @@ class ThumbnailTab(ttk.Frame):
         self.save()
         self.busy = True
         self.generate_button.configure(state="disabled")
+        self.variations_button.configure(state="disabled")
         self.status.set("Generating thumbnail…")
         def work():
             try:
@@ -218,9 +225,67 @@ class ThumbnailTab(ttk.Frame):
                 self.after(0, lambda message=message: self._done("", message))
         threading.Thread(target=work, daemon=True).start()
 
+    def _save_auto_setting(self):
+        self.cfg["auto_thumbnail_after_recap"] = bool(self.auto_after_recap.get())
+        self.save()
+        self.status.set(
+            "Automatic local thumbnail generation after Recap is ON."
+            if self.auto_after_recap.get() else "Automatic thumbnail generation after Recap is OFF."
+        )
+
+    def _generate_variations(self):
+        if self.busy:
+            return
+        video, destination = self.video.get().strip(), self.output.get().strip()
+        if self.mode.get() != "Frame-based (local)":
+            messagebox.showinfo("Thumbnail Variants", "Local variants are free and do not spend AI credits. Switch Method to Frame-based (local) first.", parent=self)
+            return
+        if not video or not Path(video).is_file():
+            messagebox.showwarning("Thumbnail Variants", "Choose a local source video first.", parent=self)
+            return
+        if not destination:
+            messagebox.showwarning("Thumbnail Variants", "Choose an output filename first.", parent=self)
+            return
+        title = self.title.get().strip() or builtin_title_ideas(Path(video).stem, self.style.get())[0]
+        aspect, style = self.aspect.get(), self.style.get()
+        target = Path(destination)
+        self.busy = True
+        self.generate_button.configure(state="disabled")
+        self.variations_button.configure(state="disabled")
+        self.status.set("Creating 3 local thumbnail variants with different sample counts…")
+        def work():
+            outputs = []
+            error = None
+            try:
+                font = self.cfg.get("thumbnail_font_path") or self.cfg.get("title_font_path")
+                logo = self.cfg.get("logo_path") if self.cfg.get("logo_enabled") else None
+                for index, samples in enumerate((4, 8, 12), start=1):
+                    variant = target.with_name(f"{target.stem}_variant_{index}{target.suffix or '.jpg'}")
+                    outputs.append(str(generate_thumbnail(
+                        video, variant, title=title, aspect=aspect, sample_count=samples,
+                        ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+                        font_path=font, logo_path=logo,
+                    )))
+            except Exception as exc:
+                error = str(exc)
+            self.after(0, lambda: self._done_variations(outputs, error))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _done_variations(self, outputs, error):
+        self.busy = False
+        self.generate_button.configure(state="normal")
+        self.variations_button.configure(state="normal")
+        if error:
+            self.status.set(f"Variants failed: {error}")
+            messagebox.showerror("Thumbnail Variants", error, parent=self)
+        else:
+            self.status.set(f"Created {len(outputs)} local variants: " + ", ".join(Path(x).name for x in outputs))
+            messagebox.showinfo("Thumbnail Variants", "Created local variants:\n" + "\n".join(outputs), parent=self)
+
     def _done(self, result, error):
         self.busy = False
         self.generate_button.configure(state="normal")
+        self.variations_button.configure(state="normal")
         self.status.set(f"Failed: {error}" if error else f"Thumbnail saved: {result}")
         if error:
             messagebox.showerror("Thumbnail", error, parent=self)

@@ -33,13 +33,18 @@ PROVIDER_KEY_TO_LABEL = {value: key for key, value in PROVIDER_LABEL_TO_KEY.item
 class StudioTab(ttk.Frame):
     """Downloader, automatic thumbnail generator, and optional AI-provider tester."""
 
-    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, on_video_ready=None, env_path=None):
+    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, on_video_ready=None, on_auto_recap_enqueue=None, on_auto_recap_start=None, env_path=None):
         super().__init__(master, padding=12)
         self.root_dir = Path(root_dir)
         self.cfg = cfg
         self.save_config = save
         self.tool = tool
         self.on_video_ready = on_video_ready
+        self.on_auto_recap_enqueue = on_auto_recap_enqueue
+        self.on_auto_recap_start = on_auto_recap_start
+        self.pipeline_queue_enabled = bool(cfg.get("studio_auto_queue_recap", False))
+        self.pipeline_auto_start = bool(cfg.get("studio_auto_start_recap", False))
+        self._auto_recap_queued_count = 0
         self.env_path = env_path or (lambda: self.root_dir / ".env")
         self.last_video_path: Path | None = None
         self._last_title_source = ""
@@ -65,6 +70,8 @@ class StudioTab(ttk.Frame):
         self.quality_var = tk.StringVar(value="Best available")
         self.playlist_var = tk.BooleanVar(value=False)
         self.auto_thumbnail_var = tk.BooleanVar(value=True)
+        self.auto_queue_recap_var = tk.BooleanVar(value=self.pipeline_queue_enabled)
+        self.auto_start_recap_var = tk.BooleanVar(value=self.pipeline_auto_start)
         self.thumbnail_aspect_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_aspect") or "16:9"))
         self.thumbnail_title_var = tk.StringVar(value="")
         self.thumbnail_samples_var = tk.StringVar(value=str(self.cfg.get("studio_thumbnail_samples") or "8"))
@@ -129,8 +136,15 @@ class StudioTab(ttk.Frame):
         ttk.Checkbutton(download, text="Save available subtitles", variable=self.subtitle_var).grid(
             row=3, column=3, sticky="w", padx=(8, 0), pady=4)
 
+        pipeline_row = ttk.Frame(download)
+        pipeline_row.grid(row=4, column=0, columnspan=4, sticky="ew", pady=(6, 2))
+        ttk.Checkbutton(pipeline_row, text="Queue downloaded videos for Recap", variable=self.auto_queue_recap_var,
+                        command=self._save_pipeline_settings).pack(side="left")
+        ttk.Checkbutton(pipeline_row, text="Auto-start Recap after download queue finishes", variable=self.auto_start_recap_var,
+                        command=self._save_pipeline_settings).pack(side="left", padx=(16, 0))
+
         action_row = ttk.Frame(download)
-        action_row.grid(row=4, column=0, columnspan=4, sticky="ew", pady=(8, 2))
+        action_row.grid(row=5, column=0, columnspan=4, sticky="ew", pady=(6, 2))
         self.download_button = ttk.Button(action_row, text="Download", command=self._start_download)
         self.download_button.pack(side="left")
         self.use_video_button = ttk.Button(action_row, text="Use downloaded video in Recap", command=self._use_downloaded_video, state="disabled")
@@ -138,7 +152,7 @@ class StudioTab(ttk.Frame):
         self.progress = ttk.Progressbar(action_row, maximum=100, variable=self.progress_var, length=220)
         self.progress.pack(side="left", fill="x", expand=True, padx=(14, 0))
         ttk.Label(download, textvariable=self.status_var, wraplength=1150).grid(
-            row=5, column=0, columnspan=4, sticky="w", pady=(7, 0))
+            row=6, column=0, columnspan=4, sticky="w", pady=(7, 0))
 
         lower = ttk.Frame(self)
         lower.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
@@ -235,6 +249,17 @@ class StudioTab(ttk.Frame):
             wraplength=430, justify="left",
         ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(5, 0))
         self._refresh_queue_view()
+
+    def _save_pipeline_settings(self) -> None:
+        self.pipeline_queue_enabled = bool(self.auto_queue_recap_var.get())
+        self.pipeline_auto_start = bool(self.auto_start_recap_var.get())
+        self.cfg["studio_auto_queue_recap"] = self.pipeline_queue_enabled
+        self.cfg["studio_auto_start_recap"] = self.pipeline_auto_start
+        if not self.pipeline_auto_start:
+            self._auto_recap_queued_count = 0
+        self.save_config()
+        if self.pipeline_auto_start and not self.pipeline_queue_enabled:
+            self.status_var.set("Auto-start is enabled; also enable Queue downloaded videos for Recap to use the pipeline.")
 
     def _browse_output(self) -> None:
         folder = filedialog.askdirectory(initialdir=self.output_var.get() or str(self.root_dir))
@@ -401,6 +426,7 @@ class StudioTab(ttk.Frame):
         self.cfg["studio_thumbnail_scene_prompt"] = scene_prompt
         self.cfg["fal_image_model"] = fal_model
         self.save_config()
+        self._save_pipeline_settings()
         self.queue_stop.clear()
         self.queue_running = True
         self._set_busy(True)
@@ -452,6 +478,8 @@ class StudioTab(ttk.Frame):
                     )
                     completed += 1
                     self.events.put(("download_result", result))
+                    if self.pipeline_queue_enabled and result.video_path:
+                        self.events.put(("auto_recap_enqueue", result.video_path))
                     self.events.put((
                         "status",
                         f"Queue {index}/{total}: downloaded {result.title}"
@@ -685,6 +713,7 @@ class StudioTab(ttk.Frame):
         self.cfg["studio_thumbnail_scene_prompt"] = scene_prompt
         self.cfg["fal_image_model"] = model
         self.save_config()
+        self._save_pipeline_settings()
         self._set_busy(True)
         self.progress_var.set(0)
         self.status_var.set("Starting downloader…")
@@ -702,6 +731,8 @@ class StudioTab(ttk.Frame):
         try:
             result = download_media(url, options, progress_hook=self._on_download_progress)
             self.events.put(("download_result", result))
+            if self.pipeline_queue_enabled and result.video_path:
+                self.events.put(("auto_recap_enqueue", result.video_path))
             thumbnail_error = ""
             if auto_thumbnail and result.video_path:
                 try:
@@ -725,6 +756,7 @@ class StudioTab(ttk.Frame):
             self.events.put(("error", f"Unexpected error: {exc}"))
         finally:
             self.events.put(("busy", False))
+            self.events.put(("download_worker_done", None))
 
     def _on_download_progress(self, data: dict) -> None:
         status = data.get("status")
@@ -1006,6 +1038,20 @@ class StudioTab(ttk.Frame):
                     )
                 elif kind == "thumbnail":
                     self.status_var.set(f"Thumbnail created: {value}")
+                elif kind == "auto_recap_enqueue":
+                    if callable(self.on_auto_recap_enqueue):
+                        try:
+                            added = int(self.on_auto_recap_enqueue(Path(value)) or 0)
+                            if self.pipeline_auto_start:
+                                self._auto_recap_queued_count += added
+                            self.status_var.set(f"Queued {Path(value).name} for Recap." if added else f"{Path(value).name} is already queued for Recap.")
+                        except Exception as exc:
+                            self.status_var.set(f"Could not queue Recap: {str(exc)[:180]}")
+                elif kind == "download_worker_done":
+                    if self.pipeline_auto_start and self._auto_recap_queued_count > 0 and callable(self.on_auto_recap_start):
+                        self._auto_recap_queued_count = 0
+                        self.status_var.set("Download finished; starting the persistent Recap queue…")
+                        self.on_auto_recap_start()
                 elif kind == "queue_refresh":
                     self._refresh_queue_view()
                 elif kind == "queue_item_failed":
@@ -1016,6 +1062,10 @@ class StudioTab(ttk.Frame):
                     self._set_busy(False)
                     self._refresh_queue_view()
                     self.status_var.set(str(value))
+                    if self.pipeline_auto_start and self._auto_recap_queued_count > 0 and callable(self.on_auto_recap_start):
+                        self._auto_recap_queued_count = 0
+                        self.status_var.set("Download queue finished; starting the persistent Recap queue…")
+                        self.on_auto_recap_start()
                 elif kind == "status":
                     self.status_var.set(str(value))
                 elif kind == "error":

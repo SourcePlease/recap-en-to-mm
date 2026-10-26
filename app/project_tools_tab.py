@@ -13,12 +13,16 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from studio.quality import cleanup_safe_cache, inspect_output_quality, preflight_check, scan_storage, write_quality_report
+
 
 class ProjectToolsTab(ttk.Frame):
-    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, get_state, apply_state):
+    def __init__(self, master, *, root_dir: Path, cfg: dict, save, tool, get_state, apply_state, get_source=None, env_path=None):
         super().__init__(master, padding=14)
         self.root_dir, self.cfg, self.save = Path(root_dir), cfg, save
         self.tool, self.get_state, self.apply_state = tool, get_state, apply_state
+        self.get_source = get_source or (lambda: "")
+        self.env_path = env_path or (lambda: self.root_dir / ".env")
         self.wave_video = tk.StringVar()
         self.channel_name = tk.StringVar(value=str(cfg.get("brand_channel_name") or "My Channel"))
         self.brand_logo = tk.StringVar(value=str(cfg.get("brand_logo_path") or ""))
@@ -27,6 +31,10 @@ class ProjectToolsTab(ttk.Frame):
         self.outro_seconds = tk.StringVar(value=str(cfg.get("brand_outro_seconds") or "5"))
         self.silence_enabled = tk.BooleanVar(value=bool(cfg.get("smart_silence_removal", False)))
         self.silence_threshold = tk.StringVar(value=str(cfg.get("smart_silence_threshold_db") or "-45"))
+        self.bgm_enabled = tk.BooleanVar(value=bool(cfg.get("background_music_enabled", False)))
+        self.bgm_path = tk.StringVar(value=str(cfg.get("background_music_path") or ""))
+        self.bgm_volume = tk.IntVar(value=max(0, min(50, int(cfg.get("background_music_volume_percent", 12) or 0))))
+        self.output_check_path = tk.StringVar()
         self.status = tk.StringVar(value="Project settings are local. API keys remain in your private .env file.")
         self._build()
 
@@ -41,9 +49,11 @@ class ProjectToolsTab(ttk.Frame):
         project = ttk.Frame(tabs, padding=12)
         audio = ttk.Frame(tabs, padding=12)
         brand = ttk.Frame(tabs, padding=12)
+        health = ttk.Frame(tabs, padding=12)
         tabs.add(project, text="Project Save / Load")
         tabs.add(audio, text="Audio Waveform")
-        tabs.add(brand, text="Audio & Intro / Outro")
+        tabs.add(brand, text="Audio, Music & Intro / Outro")
+        tabs.add(health, text="Preflight / Storage")
         ttk.Label(project, text="Project files include local editing configuration and file paths; API secrets are never copied.").grid(
             row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
         ttk.Button(project, text="Save Current Project…", command=self._save_project).grid(row=1, column=0, sticky="w", pady=5)
@@ -90,7 +100,37 @@ class ProjectToolsTab(ttk.Frame):
         ttk.Label(brand, text="Silence removal compresses detected silence inside narration clips; Smart Sync recalculates against the shorter audio. "
                   "It is off by default. Try it on a short clip first.",
                   wraplength=800).grid(row=9, column=0, columnspan=3, sticky="w")
+        ttk.Separator(brand).grid(row=10, column=0, columnspan=3, sticky="ew", pady=8)
+        ttk.Checkbutton(brand, text="Mix background music under narration", variable=self.bgm_enabled).grid(
+            row=11, column=0, columnspan=3, sticky="w", pady=4)
+        ttk.Label(brand, text="Music file").grid(row=12, column=0, sticky="w", pady=4)
+        ttk.Entry(brand, textvariable=self.bgm_path).grid(row=12, column=1, sticky="ew", pady=4)
+        ttk.Button(brand, text="Browse", command=self._browse_bgm).grid(row=12, column=2, padx=6, pady=4)
+        ttk.Label(brand, text="Music volume (0–50%)").grid(row=13, column=0, sticky="w", pady=4)
+        ttk.Scale(brand, from_=0, to=50, orient="horizontal", variable=self.bgm_volume).grid(
+            row=13, column=1, sticky="ew", pady=4)
+        ttk.Label(brand, text="Voice stays primary; music loops only for the length of narration. Choose music you have rights to use.",
+                  wraplength=800).grid(row=14, column=0, columnspan=3, sticky="w", pady=(4, 0))
         brand.columnconfigure(1, weight=1)
+
+        health.columnconfigure(0, weight=1)
+        health.rowconfigure(4, weight=1)
+        ttk.Label(health, text="Preflight checks are advisory. Output QC checks file streams and metadata, not translation quality.",
+                  wraplength=900).grid(row=0, column=0, sticky="w", pady=(0, 8))
+        buttons = ttk.Frame(health)
+        buttons.grid(row=1, column=0, sticky="ew", pady=4)
+        ttk.Button(buttons, text="Run Preflight", command=self._run_preflight).pack(side="left")
+        ttk.Button(buttons, text="Scan Storage", command=self._scan_storage).pack(side="left", padx=6)
+        ttk.Button(buttons, text="Clear Safe Cache", command=self._clear_safe_cache).pack(side="left", padx=6)
+        ttk.Label(health, text="Final video for output QC").grid(row=2, column=0, sticky="w", pady=(10, 3))
+        output_row = ttk.Frame(health)
+        output_row.grid(row=3, column=0, sticky="ew", pady=3)
+        output_row.columnconfigure(0, weight=1)
+        ttk.Entry(output_row, textvariable=self.output_check_path).grid(row=0, column=0, sticky="ew")
+        ttk.Button(output_row, text="Browse", command=self._browse_output_check).grid(row=0, column=1, padx=(6, 0))
+        ttk.Button(output_row, text="Validate Output", command=self._validate_output).grid(row=0, column=2, padx=(6, 0))
+        self.health_report = tk.Text(health, height=12, wrap="word", background="#090c12", foreground="#e7eaf0")
+        self.health_report.grid(row=4, column=0, sticky="nsew", pady=(7, 0))
         ttk.Label(self, textvariable=self.status, wraplength=1000).grid(row=3, column=0, sticky="w", pady=(10, 0))
         self._load_pronunciation()
 
@@ -117,6 +157,16 @@ class ProjectToolsTab(ttk.Frame):
             if not isinstance(state, dict):
                 raise ValueError("Invalid Recap project file.")
             self.apply_state(state)
+            self.bgm_enabled.set(bool(self.cfg.get("background_music_enabled", False)))
+            self.bgm_path.set(str(self.cfg.get("background_music_path") or ""))
+            self.bgm_volume.set(max(0, min(50, int(self.cfg.get("background_music_volume_percent", 12) or 0))))
+            self.channel_name.set(str(self.cfg.get("brand_channel_name") or "My Channel"))
+            self.brand_logo.set(str(self.cfg.get("brand_logo_path") or ""))
+            self.enable_brand.set(bool(self.cfg.get("brand_intro_outro_enabled", False)))
+            self.intro_seconds.set(str(self.cfg.get("brand_intro_seconds") or "3"))
+            self.outro_seconds.set(str(self.cfg.get("brand_outro_seconds") or "5"))
+            self.silence_enabled.set(bool(self.cfg.get("smart_silence_removal", False)))
+            self.silence_threshold.set(str(self.cfg.get("smart_silence_threshold_db") or "-45"))
             self.status.set(f"Project loaded: {Path(path).name}")
         except Exception as exc:
             messagebox.showerror("Project", f"Could not load project: {exc}", parent=self)
@@ -214,6 +264,79 @@ class ProjectToolsTab(ttk.Frame):
             text=f"0:00 — {int(duration // 60):02d}:{int(duration % 60):02d}")
         self.wave_status.set(f"Waveform ready · {duration:.1f}s · quiet areas sit near the center line.")
 
+    def _browse_bgm(self):
+        path = filedialog.askopenfilename(
+            title="Select background music",
+            filetypes=(("Audio files", "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.opus *.mp4"), ("All files", "*.*")),
+        )
+        if path:
+            self.bgm_path.set(path)
+
+    def _browse_output_check(self):
+        path = filedialog.askopenfilename(
+            title="Select final video for quality check",
+            filetypes=(("Video files", "*.mp4 *.mkv *.mov *.webm *.avi *.m4v"), ("All files", "*.*")),
+        )
+        if path:
+            self.output_check_path.set(path)
+
+    def _set_health_report(self, text):
+        self.health_report.configure(state="normal")
+        self.health_report.delete("1.0", "end")
+        self.health_report.insert("1.0", str(text))
+        self.health_report.configure(state="disabled")
+
+    def _run_preflight(self):
+        report = preflight_check(
+            self.get_source(), ffmpeg=self.tool("ffmpeg"), ffprobe=self.tool("ffprobe"),
+            env_path=self.env_path(), target_language=str(self.cfg.get("target_language") or "mm"),
+            output_dir=self.cfg.get("final_output_folder") or None,
+        )
+        lines = [f"Preflight: {'PASS' if report['pass'] else 'FAIL'} · {report['warnings']} warning(s)", ""]
+        lines.extend(f"[{item['status']}] {item['name']}: {item['detail']}" for item in report["checks"])
+        self._set_health_report("\n".join(lines))
+        self.status.set("Preflight complete. Warnings are advisory; verify provider access before long jobs.")
+
+    def _validate_output(self):
+        path = Path(self.output_check_path.get().strip())
+        if not path.is_file():
+            messagebox.showwarning("Output QC", "Choose an existing final video first.", parent=self)
+            return
+        try:
+            report = inspect_output_quality(path, ffprobe=self.tool("ffprobe"))
+            report_path = path.with_name(f"{path.stem}_quality_report.json")
+            write_quality_report(report_path, report)
+            lines = [f"Output QC: {'PASS' if report['pass'] else 'FAIL'} · {report['failures']} failure(s), {report['warnings']} warning(s)", ""]
+            lines.extend(f"[{item['status']}] {item['name']}: {item['detail']}" for item in report["checks"])
+            lines.extend(["", f"Report saved: {report_path}"])
+            self._set_health_report("\n".join(lines))
+            self.status.set(f"Output QC report saved: {report_path.name}")
+        except Exception as exc:
+            messagebox.showerror("Output QC", str(exc), parent=self)
+
+    def _scan_storage(self):
+        results = scan_storage(self.root_dir)
+        if not results:
+            self._set_health_report("No jobs, Downloads, logs, or recap_runtime folders were found.")
+            return
+        lines = ["Storage overview (directory sizes are approximate during active jobs):", ""]
+        for item in results:
+            lines.append(f"{item['bytes'] / (1024 ** 3):.2f} GiB · {item['files']} files · {item['path']}"
+                         + (" · scan capped" if item["truncated"] else ""))
+        self._set_health_report("\n".join(lines))
+        self.status.set("Storage scan complete. Completed outputs and checkpoints were not changed.")
+
+    def _clear_safe_cache(self):
+        if not messagebox.askyesno(
+            "Clear Safe Cache",
+            "Remove disposable __pycache__ folders and subtitle/preview renders only? Jobs, checkpoints, downloaded media and outputs will be kept.",
+            parent=self,
+        ):
+            return
+        removed = cleanup_safe_cache(self.root_dir)
+        self._set_health_report("Removed safe cache paths:\n" + ("\n".join(removed) if removed else "Nothing to clear."))
+        self.status.set(f"Cleared {len(removed)} safe cache location(s); media and jobs were preserved.")
+
     def _browse_brand_logo(self):
         path = filedialog.askopenfilename(filetypes=(("Images", "*.png *.jpg *.jpeg *.webp"), ("All files", "*.*")))
         if path:
@@ -231,6 +354,10 @@ class ProjectToolsTab(ttk.Frame):
         if logo and not Path(logo).is_file():
             messagebox.showwarning("Options", "Logo image path was not found.", parent=self)
             return
+        bgm = self.bgm_path.get().strip()
+        if self.bgm_enabled.get() and (not bgm or not Path(bgm).is_file()):
+            messagebox.showwarning("Background Music", "Choose an existing music file or turn background music off.", parent=self)
+            return
         self.cfg.update({
             "brand_intro_outro_enabled": bool(self.enable_brand.get()),
             "brand_channel_name": self.channel_name.get().strip() or "My Channel",
@@ -238,6 +365,9 @@ class ProjectToolsTab(ttk.Frame):
             "brand_intro_seconds": intro, "brand_outro_seconds": outro,
             "smart_silence_removal": bool(self.silence_enabled.get()),
             "smart_silence_threshold_db": threshold,
+            "background_music_enabled": bool(self.bgm_enabled.get()),
+            "background_music_path": bgm,
+            "background_music_volume_percent": max(0, min(50, int(float(self.bgm_volume.get())))),
         })
         self.save()
         self.status.set("Intro/outro and smart silence options saved. They apply to new runs/resumes.")

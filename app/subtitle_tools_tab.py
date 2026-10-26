@@ -69,6 +69,8 @@ class SubtitleToolsTab(ttk.Frame):
         ttk.Button(actions, text="Import / Preview", command=self._import).pack(side="left")
         self.translate_button = ttk.Button(actions, text="Translate", command=self._translate)
         self.translate_button.pack(side="left", padx=8)
+        self.edit_button = ttk.Button(actions, text="Edit Translations…", command=self._edit_translations, state="disabled")
+        self.edit_button.pack(side="left", padx=(8, 0))
         self.export_button = ttk.Button(actions, text="Export translated + bilingual SRT", command=self._export, state="disabled")
         self.export_button.pack(side="left")
         ttk.Label(self, textvariable=self.status, wraplength=1050).grid(
@@ -98,6 +100,7 @@ class SubtitleToolsTab(ttk.Frame):
                 f"{cue.index}. {cue.start} --> {cue.end}\n{cue.text}" for cue in self.cues[:60]))
             self.status.set(f"Imported {len(self.cues)} cues. Whisper is not invoked.")
             self.export_button.configure(state="disabled")
+            self.edit_button.configure(state="disabled")
         except Exception as exc:
             messagebox.showerror("Subtitles", str(exc), parent=self)
 
@@ -155,8 +158,53 @@ class SubtitleToolsTab(ttk.Frame):
                    for cue, translated in list(zip(self.cues, values))[:60]]
         self.preview.delete("1.0", "end")
         self.preview.insert("1.0", "\n\n".join(preview))
+        self.edit_button.configure(state="normal")
         self.export_button.configure(state="normal")
-        self.status.set(f"Translated {len(values)} cues. Export creates translated-only and bilingual SRT files.")
+        self.status.set(f"Translated {len(values)} cues. Use Edit Translations to review one cue per line before export.")
+
+    def _edit_translations(self):
+        if not self.cues or len(self.translations) != len(self.cues):
+            return
+        window = tk.Toplevel(self)
+        window.title("Review / Edit Translated Subtitle Cues")
+        window.transient(self.winfo_toplevel())
+        window.geometry("820x600")
+        window.minsize(560, 400)
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(1, weight=1)
+        ttk.Label(
+            window,
+            text=f"Edit one translated cue per line ({len(self.cues)} lines expected). Keep the same number of lines; timestamps are preserved separately.",
+            wraplength=780,
+        ).grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 6))
+        editor = tk.Text(window, wrap="word", undo=True, font=("Myanmar Text", 11))
+        editor.grid(row=1, column=0, sticky="nsew", padx=12, pady=6)
+        editor.insert("1.0", "\n".join(str(value).replace("\r", " ").replace("\n", " ").strip() for value in self.translations))
+        buttons = ttk.Frame(window, padding=12)
+        buttons.grid(row=2, column=0, sticky="ew")
+        def save_edits():
+            values = [line.strip() for line in editor.get("1.0", "end-1c").splitlines()]
+            if len(values) != len(self.cues):
+                messagebox.showwarning(
+                    "Subtitle review",
+                    f"Expected exactly {len(self.cues)} lines, but found {len(values)}. Keep one line per cue.",
+                    parent=window,
+                )
+                return
+            if any(not value for value in values):
+                messagebox.showwarning("Subtitle review", "Translated cue lines cannot be empty.", parent=window)
+                return
+            self.translations = values
+            preview = [
+                f"{cue.index}. {cue.start} --> {cue.end}\n{cue.text}\n{translated}"
+                for cue, translated in list(zip(self.cues, values))[:60]
+            ]
+            self.preview.delete("1.0", "end")
+            self.preview.insert("1.0", "\n\n".join(preview))
+            self.status.set(f"Applied manual edits to {len(values)} subtitle cues.")
+            window.destroy()
+        ttk.Button(buttons, text="Apply Edits", command=save_edits).pack(side="right")
+        ttk.Button(buttons, text="Cancel", command=window.destroy).pack(side="right", padx=(0, 8))
 
     def _export(self):
         if not self.cues or len(self.translations) != len(self.cues):

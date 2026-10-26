@@ -29,6 +29,8 @@ from studio_tab import StudioTab
 from thumbnail_tab import ThumbnailTab
 from subtitle_tools_tab import SubtitleToolsTab
 from project_tools_tab import ProjectToolsTab
+from recap_queue_tab import RecapQueueTab
+from studio.recap_queue import PersistentRecapQueue
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT_DIR / "config.json"
@@ -166,6 +168,8 @@ class App(tk.Tk):
             pass
         self.configure(bg=BG)
         self.cfg = load_config()
+        self.recap_queue_model = PersistentRecapQueue(JOBS_DIR / "recap_queue.json")
+        self.recap_queue_running = False
         self.msgq: queue.Queue[tuple[str, object]] = queue.Queue()
         self.stop_event = threading.Event()
         self.worker: threading.Thread | None = None
@@ -208,6 +212,7 @@ class App(tk.Tk):
         self.output_ratio = tk.StringVar(value=saved_ratio if saved_ratio in OUTPUT_RATIOS else "16:9")
         self.frame_fill = tk.StringVar(value=FILL_LABELS.get(str(self.cfg.get("frame_fill") or "blur"), FILL_LABELS["blur"]))
         self.quality = tk.StringVar(value=QUALITY_LABELS[video_quality(self.cfg.get("video_quality"))])
+        self.platform_preset = tk.StringVar(value=str(self.cfg.get("platform_preset") or "Custom"))
         self.source_size = (0, 0)
         self.smooth_freeze = tk.BooleanVar(value=bool(self.cfg.get("smooth_freeze_fallback", False)))
         self.max_freeze_hold = tk.StringVar(value=str(self.cfg.get("max_freeze_hold", 0.75)))
@@ -307,6 +312,107 @@ class App(tk.Tk):
         except Exception as exc:
             messagebox.showerror("Studio", f"Could not select downloaded video: {exc}", parent=self)
 
+    def _studio_enqueue_recap(self, video_path: Path) -> int:
+        """Add a completed Studio download to the persistent Recap queue."""
+        added, skipped = self.recap_queue_model.add([video_path])
+        if hasattr(self, "recap_queue_tab"):
+            self.recap_queue_tab.refresh()
+        if added:
+            self._log(f"📥 Added to Recap Queue: {Path(video_path).name}")
+        elif skipped:
+            self._log(f"⏭️ Already in Recap Queue: {Path(video_path).name}")
+        return len(added)
+
+    def _start_recap_queue(self) -> None:
+        if self.worker and self.worker.is_alive():
+            messagebox.showinfo("Recap Queue", "Another Recap job is already running.", parent=self)
+            return
+        items = self.recap_queue_model.pending()
+        if not items:
+            messagebox.showinfo("Recap Queue", "No pending videos in the queue.", parent=self)
+            return
+        valid = []
+        for item in items:
+            if Path(item.path).is_file():
+                valid.append(item)
+            else:
+                self.recap_queue_model.update(item.id, status="failed", error="Source video file is missing.")
+        if not valid:
+            self.recap_queue_tab.refresh()
+            messagebox.showwarning("Recap Queue", "All pending source files are missing. Failed items were marked for review.", parent=self)
+            return
+        self.source.set(valid[0].path)
+        self.source_title.set(Path(valid[0].path).stem)
+        try:
+            settings = self._capture_settings()
+            self._save_cfg(settings)
+        except Exception as exc:
+            messagebox.showerror("Recap Queue setup", str(exc), parent=self)
+            return
+        ffmpeg, ffprobe = _tool_path(self.cfg, "ffmpeg"), _tool_path(self.cfg, "ffprobe")
+        cfg_values = {
+            "translation_batch_max_items": int(self.cfg.get("translation_batch_max_items", 40)),
+            "story_context_batch_max_items": int(self.cfg.get("story_context_batch_max_items", 80)),
+            "context_overlap": int(self.cfg.get("context_overlap", 6)),
+            "lookahead": int(self.cfg.get("lookahead", 6)),
+            "translation_audit": bool(self.cfg.get("translation_audit", True)),
+            "atomic_max_duration": float(self.cfg.get("atomic_max_duration", 5.6)),
+            "atomic_target_duration": float(self.cfg.get("atomic_target_duration", 4.2)),
+            "gemini_request_timeout_seconds": int(self.cfg.get("gemini_request_timeout_seconds", 120)),
+            "gemini_text_model": str(self.cfg.get("gemini_text_model", "gemini-3.5-flash")),
+            "whisper_model_other": str(self.cfg.get("whisper_model_other", "medium")),
+        }
+        self.stop_event.clear()
+        self.recap_queue_running = True
+        self.recap_queue_tab.set_running(True)
+        self._running(True)
+        self.progress["value"] = 0
+        self.status.set("RECAP QUEUE")
+        self.stage.set("Queue preparing")
+        self._log(f"📚 Persistent Recap Queue starting — {len(valid)} pending video(s)")
+        def work() -> None:
+            completed = failed = processed = 0
+            stopped = False
+            for index, item in enumerate(valid, 1):
+                if self.stop_event.is_set():
+                    stopped = True
+                    break
+                source = Path(item.path)
+                self.recap_queue_model.update(item.id, status="processing", error="")
+                self.after(0, self.recap_queue_tab.refresh)
+                self.msgq.put(("job", f"Recap Queue {index}/{len(valid)} · {source.name}"))
+                one = dict(settings)
+                one["source"] = source
+                one["source_title"] = source.stem
+                try:
+                    final, _job = self._run_one_job(one, source, ffmpeg, ffprobe, cfg_values, batch_mode=True)
+                    self.recap_queue_model.update(item.id, status="completed", output_path=final, error="")
+                    completed += 1
+                    self._log(f"✅ Recap Queue {index}/{len(valid)} COMPLETE → {final}")
+                except InterruptedError as exc:
+                    self.recap_queue_model.update(item.id, status="pending", error=f"Stopped safely: {str(exc)[:200]}")
+                    self._log(str(exc))
+                    stopped = True
+                    break
+                except Exception as exc:
+                    first_line = (str(exc).splitlines() or [type(exc).__name__])[0][:240]
+                    self.recap_queue_model.update(item.id, status="failed", error=first_line)
+                    failed += 1
+                    self._log(f"❌ Recap Queue {source.name} FAILED — {first_line}")
+                finally:
+                    processed += 1
+                    self.after(0, self.recap_queue_tab.refresh)
+            remaining = len(valid) - processed
+            summary = (f"Recap Queue {'STOPPED' if stopped else 'FINISHED'}\n"
+                       f"Completed: {completed} · Failed: {failed} · Not started: {remaining}")
+            self.msgq.put(("recap_queue_done", summary))
+        self.worker = threading.Thread(target=work, daemon=True)
+        self.worker.start()
+
+    def _stop_recap_queue(self) -> None:
+        if self.recap_queue_running:
+            self._stop()
+
     def _remember_tool_tab(self, _event=None) -> None:
         try:
             selected = self.tools_tabs.select()
@@ -316,6 +422,7 @@ class App(tk.Tk):
                 str(self.thumbnail_tab): "thumbnail",
                 str(self.subtitle_tools_tab): "subtitles",
                 str(self.project_tools_tab): "project",
+                str(self.recap_queue_tab): "recap_queue",
             }
             self.cfg["last_tool_tab"] = tabs.get(selected, "recap")
             save_config(self.cfg)
@@ -455,6 +562,8 @@ class App(tk.Tk):
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             on_video_ready=self._studio_use_video,
+            on_auto_recap_enqueue=self._studio_enqueue_recap,
+            on_auto_recap_start=self._start_recap_queue,
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
         self.tools_tabs.add(self.studio_tab, text="Studio")
@@ -474,11 +583,18 @@ class App(tk.Tk):
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             get_state=self._project_state, apply_state=self._apply_project_state,
+            get_source=lambda: self.source.get(), env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
         self.tools_tabs.add(self.project_tools_tab, text="Project")
+        self.recap_queue_tab = RecapQueueTab(
+            self.tools_tabs, root_dir=ROOT_DIR, queue_model=self.recap_queue_model,
+            on_start=self._start_recap_queue, on_stop=self._stop_recap_queue,
+        )
+        self.tools_tabs.add(self.recap_queue_tab, text="Recap Queue")
         last_tool_tab = self.cfg.get("last_tool_tab")
         tab_attr = {"splitter": "splitter_tab", "studio": "studio_tab", "thumbnail": "thumbnail_tab",
-                    "subtitles": "subtitle_tools_tab", "project": "project_tools_tab"}.get(last_tool_tab)
+                    "subtitles": "subtitle_tools_tab", "project": "project_tools_tab",
+                    "recap_queue": "recap_queue_tab"}.get(last_tool_tab)
         if tab_attr:
             self.tools_tabs.select(getattr(self, tab_attr))
         self.tools_tabs.bind("<<NotebookTabChanged>>", self._remember_tool_tab, add="+")
@@ -687,6 +803,13 @@ class App(tk.Tk):
                                      state="readonly", width=34)
         quality_combo.grid(row=1, column=1, columnspan=3, sticky="ew", pady=(6, 0))
         quality_combo.bind("<<ComboboxSelected>>", lambda _e: self._quality_changed())
+        ttk.Label(frame_row, text="Platform preset", width=12).grid(row=2, column=0, sticky="w", pady=(7, 0))
+        platform_combo = ttk.Combobox(
+            frame_row, textvariable=self.platform_preset, state="readonly", width=33,
+            values=("Custom", "YouTube 16:9", "Shorts / Reels / TikTok 9:16", "Square Feed 1:1", "Lightweight 720p"),
+        )
+        platform_combo.grid(row=2, column=1, columnspan=3, sticky="ew", pady=(7, 0))
+        platform_combo.bind("<<ComboboxSelected>>", self._apply_platform_preset)
 
         section(3, "Blur Watermark Area")
         blur_row = ttk.Frame(tools)
@@ -980,6 +1103,26 @@ class App(tk.Tk):
         """Size of the final frame for the chosen Ratio (Original follows the loaded video)."""
         return output_canvas(self.output_ratio.get(), *self.source_size)
 
+    def _apply_platform_preset(self, _event=None) -> None:
+        preset = self.platform_preset.get()
+        choices = {
+            "YouTube 16:9": ("16:9", "1080"),
+            "Shorts / Reels / TikTok 9:16": ("9:16", "1080"),
+            "Square Feed 1:1": ("1:1", "1080"),
+            "Lightweight 720p": (self.output_ratio.get(), "720"),
+        }
+        if preset == "Custom":
+            self.cfg["platform_preset"] = preset
+            save_config(self.cfg)
+            return
+        ratio, quality = choices.get(preset, (self.output_ratio.get(), "1080"))
+        self.output_ratio.set(ratio)
+        self.quality.set(QUALITY_LABELS.get(quality, QUALITY_LABELS["1080"]))
+        self.cfg["platform_preset"] = preset
+        self._frame_changed()
+        self._quality_changed()
+        save_config(self.cfg)
+
     def _frame_changed(self) -> None:
         self._redraw_editor_items()
         self._refresh_preview()
@@ -1252,6 +1395,14 @@ class App(tk.Tk):
                     self._redraw_editor_items()
                 elif kind == "job":
                     self.job_display.set(str(payload))
+                elif kind == "recap_queue_done":
+                    self.recap_queue_running = False
+                    self.recap_queue_tab.set_running(False)
+                    self._running(False)
+                    self.status.set("Recap queue finished")
+                    self.stage.set("Queue completed")
+                    self.recap_queue_tab.refresh()
+                    messagebox.showinfo("Recap Queue", str(payload), parent=self)
                 elif kind == "done":
                     self._running(False)
                     self.progress["value"] = 100
@@ -1424,6 +1575,10 @@ class App(tk.Tk):
         self.cfg["extra_text_font_size"] = settings["overlays"].get("extra_text_font_size", 42)
         self.cfg["extra_text_opacity"] = settings["overlays"].get("extra_text_opacity", 0.65)
         self.cfg["preview_seek_seconds"] = float(self.preview_time.get())
+        for name in ("background_music_enabled", "background_music_path", "background_music_volume_percent",
+                     "auto_thumbnail_after_recap", "platform_preset"):
+            if name in settings:
+                self.cfg[name] = settings[name]
         save_config(self.cfg)
 
     def _capture_settings(self) -> dict:
@@ -1474,6 +1629,10 @@ class App(tk.Tk):
         }
         if overlays["logo_path"] and not Path(overlays["logo_path"]).is_file():
             raise ValueError("Logo image path မမှန်ပါ။")
+        bgm_enabled = bool(self.cfg.get("background_music_enabled", False))
+        bgm_path = str(self.cfg.get("background_music_path") or "").strip()
+        if bgm_enabled and (not bgm_path or not Path(bgm_path).is_file()):
+            raise ValueError("Background Music is enabled but its audio file was not found. Choose a valid audio file or turn it off.")
         final_folder = self.final_folder.get().strip()
         if final_folder:
             try:
@@ -1492,6 +1651,11 @@ class App(tk.Tk):
             "brand_outro_seconds": int(self.cfg.get("brand_outro_seconds", 5) or 5),
             "smart_silence_removal": bool(self.cfg.get("smart_silence_removal", False)),
             "smart_silence_threshold_db": int(self.cfg.get("smart_silence_threshold_db", -45) or -45),
+            "background_music_enabled": bgm_enabled,
+            "background_music_path": bgm_path,
+            "background_music_volume_percent": max(0, min(50, int(self.cfg.get("background_music_volume_percent", 12) or 0))),
+            "auto_thumbnail_after_recap": bool(self.cfg.get("auto_thumbnail_after_recap", True)),
+            "platform_preset": str(self.platform_preset.get() if hasattr(self, "platform_preset") else self.cfg.get("platform_preset", "Custom")),
             "source_title": self.source_title.get().strip() or source.stem,
             "edge_tts_voice": voice,
             "edge_tts_rate": _format_edge_rate(self.edge_rate_percent.get()),
@@ -1782,6 +1946,9 @@ class App(tk.Tk):
             "brand_outro_seconds": settings.get("brand_outro_seconds", 5),
             "smart_silence_removal": settings.get("smart_silence_removal", False),
             "smart_silence_threshold_db": settings.get("smart_silence_threshold_db", -45),
+            "background_music_enabled": bool(settings.get("background_music_enabled", False)),
+            "background_music_path": settings.get("background_music_path", ""),
+            "background_music_volume_percent": int(settings.get("background_music_volume_percent", 12) or 0),
             "stop_file": str(stop_file),
         })
         result = self._run_child("render_worker.py", render_cfg, "STEP 2 — Narrator TTS + Smart Sync").get("result") or {}
@@ -1809,6 +1976,47 @@ class App(tk.Tk):
                 shutil.copy2(srt, srt_target)
                 self._log(f"📝 SRT saved to {srt_target}")
             final = str(target)
+        # Post-production: create a local thumbnail and write an objective media QC report.
+        final_path = Path(final)
+        thumbnail_path = None
+        if final_path.is_file() and settings.get("auto_thumbnail_after_recap", True):
+            try:
+                from studio.thumbnail import generate_thumbnail
+                from studio.title_generator import builtin_title_ideas
+                aspect = str(self.cfg.get("studio_thumbnail_aspect") or "16:9")
+                samples = max(4, min(24, int(self.cfg.get("studio_thumbnail_samples") or 8)))
+                style = str(self.cfg.get("studio_thumbnail_title_style") or "Anime Recap")
+                thumb_title = str(self.cfg.get("studio_thumbnail_title") or "").strip() or builtin_title_ideas(source.stem, style)[0]
+                thumbnail_path = final_path.with_name(f"{final_path.stem}_thumbnail.jpg")
+                generate_thumbnail(
+                    final_path, thumbnail_path, title=thumb_title, aspect=aspect, sample_count=samples,
+                    ffmpeg=ffmpeg, ffprobe=ffprobe,
+                    font_path=settings.get("overlays", {}).get("title_font_path"),
+                    logo_path=(settings.get("overlays", {}).get("logo_path")
+                               if settings.get("overlays", {}).get("logo_enabled") else None),
+                )
+                self._log(f"🖼️ Automatic Recap thumbnail saved: {thumbnail_path}")
+            except Exception as exc:
+                self._log(f"⚠️ Automatic Recap thumbnail failed (video remains complete): {str(exc)[:320]}")
+        try:
+            from studio.quality import inspect_output_quality, write_quality_report
+            srt_candidate = Path(str(result.get("srt") or "")) if result.get("srt") else None
+            report = inspect_output_quality(
+                final_path, ffprobe=ffprobe,
+                subtitle_path=srt_candidate if srt_candidate else None,
+                thumbnail_path=thumbnail_path,
+            )
+            report_path = final_path.with_name(f"{final_path.stem}_quality_report.json")
+            write_quality_report(report_path, report)
+            self._log(
+                f"🔎 Output QC: {'PASS' if report['pass'] else 'WARN/FAIL'} · "
+                f"{report['failures']} failure(s), {report['warnings']} warning(s) · {report_path.name}"
+            )
+            for check in report.get("checks", []):
+                if check.get("status") in {"WARN", "FAIL"}:
+                    self._log(f"   {check['status']}: {check['name']} — {check['detail']}")
+        except Exception as exc:
+            self._log(f"⚠️ Output quality report could not be created: {str(exc)[:240]}")
         return str(final), job_dir
 
     def _stop(self) -> None:

@@ -425,3 +425,14 @@ Optional .env variables:
 - fal.ai thumbnails: FAL_KEY, FAL_IMAGE_MODEL
 
 Smart silence removal and branded intro/outro are off by default. Provider quota, voice/language support, downloader-site support, and real long-video sync need testing with your own short samples before large jobs.
+
+
+### Production workflow (feature branch)
+
+The feature branch also includes a separate **Recap Queue** for local files and optional **Download → Recap** automation in Studio. Turn on “Queue downloaded videos for Recap” to add downloaded videos to that queue; “Auto-start Recap after download queue finishes” is an independent opt-in. Jobs run sequentially. The Recap Queue stores queue status on disk and can retry failures.
+
+The **Thumbnail** tab can create three local variants and has an “Auto-thumbnail after Recap” checkbox (on by default). Local thumbnails are built from video frames and do not require fal.ai. A JSON output-quality report is written beside a final video, checking file streams and metadata rather than subjective translation accuracy.
+
+In **Project → Audio, Music & Intro / Outro**, optional background music can be mixed beneath narration at a limited volume. It is off by default. **Project → Preflight / Storage** provides source/tool/disk checks, final-video validation, storage estimates, and safe cache cleanup. The Subtitle tab includes a translation-review dialog that preserves timestamps by requiring one edited translated line per cue.
+
+Platform presets are available in the Recap editor for YouTube 16:9, vertical 9:16, square 1:1 and a lightweight 720p choice. These presets are starting points; verify the final export against each platform’s current requirements.

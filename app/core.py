@@ -798,16 +798,36 @@ def concat_video_parts(ffmpeg: str, parts: list[Path], output: Path, work_dir: P
         raise RuntimeError(f"Video concat failed:\n{result.stderr[-4000:]}")
 
 
-def mux_audio(ffmpeg: str, video: Path, audio: Path, output: Path, volume_percent: int = 100) -> None:
-    # Narration gain (100 = unchanged); the limiter keeps a raised voice from clipping.
-    volume = [] if int(volume_percent) == 100 else [
-        "-af", f"volume={int(volume_percent) / 100.0:.3f},alimiter=limit=0.95:level=disabled"]
-    cmd = [
-        ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
-        "-i", str(video), "-i", str(audio),
-        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", *volume, "-c:a", "aac", "-b:a", "192k",
-        "-shortest", "-movflags", "+faststart", str(output),
-    ]
+def mux_audio(
+    ffmpeg: str, video: Path, audio: Path, output: Path, volume_percent: int = 100,
+    background_music_path: str | Path | None = None, background_music_volume_percent: int = 12,
+) -> None:
+    """Mux narrator audio; optionally mix a looping, low-volume music bed."""
+    voice_volume = max(0, min(300, int(volume_percent))) / 100.0
+    bgm_path = Path(background_music_path).expanduser() if str(background_music_path or "").strip() else None
+    use_bgm = bool(bgm_path and bgm_path.is_file() and int(background_music_volume_percent) > 0)
+    if use_bgm:
+        music_volume = max(0, min(50, int(background_music_volume_percent))) / 100.0
+        cmd = [
+            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+            "-i", str(video), "-i", str(audio), "-stream_loop", "-1", "-i", str(bgm_path),
+            "-filter_complex",
+            f"[1:a]volume={voice_volume:.3f}[narr];"
+            f"[2:a]volume={music_volume:.3f}[music];"
+            "[narr][music]amix=inputs=2:duration=first:dropout_transition=2,"
+            "alimiter=limit=0.95:level=disabled[mixed]",
+            "-map", "0:v:0", "-map", "[mixed]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+            "-shortest", "-movflags", "+faststart", str(output),
+        ]
+    else:
+        volume = [] if int(volume_percent) == 100 else [
+            "-af", f"volume={voice_volume:.3f},alimiter=limit=0.95:level=disabled"]
+        cmd = [
+            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+            "-i", str(video), "-i", str(audio),
+            "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", *volume, "-c:a", "aac", "-b:a", "192k",
+            "-shortest", "-movflags", "+faststart", str(output),
+        ]
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         raise RuntimeError(f"Final mux failed:\n{result.stderr[-4000:]}")
@@ -1214,6 +1234,9 @@ class EdgeSmartSync:
         brand_outro_seconds: int = 5,
         smart_silence_removal: bool = False,
         smart_silence_threshold_db: float = -45.0,
+        background_music_enabled: bool = False,
+        background_music_path: str = "",
+        background_music_volume_percent: int = 12,
         log: LogFn = _noop,
         progress: Callable[[int, int, str], None] | None = None,
         should_stop: Callable[[], bool] | None = None,
@@ -1246,6 +1269,9 @@ class EdgeSmartSync:
         self.brand_outro_seconds = max(1, min(30, int(brand_outro_seconds or 5)))
         self.smart_silence_removal = bool(smart_silence_removal)
         self.smart_silence_threshold_db = max(-70.0, min(-20.0, float(smart_silence_threshold_db)))
+        self.background_music_enabled = bool(background_music_enabled)
+        self.background_music_path = str(background_music_path or "")
+        self.background_music_volume_percent = max(0, min(50, int(background_music_volume_percent)))
         # Short pauses: see trim_edge_silence. Set by render_worker from the UI box.
         self.short_pauses = False
         self.overlays = dict(overlays or {})
@@ -1629,7 +1655,12 @@ class EdgeSmartSync:
         volume_percent = int(getattr(self, "voice_volume_percent", 100) or 100)
         if volume_percent != 100:
             self.log(f"🔊 Voice volume {volume_percent}% applied at final mux (limiter on)")
-        mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
+        bgm_path = self.background_music_path if self.background_music_enabled else ""
+        if bgm_path and Path(bgm_path).is_file() and self.background_music_volume_percent > 0:
+            self.log(f"🎼 Mixing background music at {self.background_music_volume_percent}% volume.")
+        mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent,
+                  background_music_path=bgm_path,
+                  background_music_volume_percent=self.background_music_volume_percent)
         if self.brand_intro_outro_enabled:
             branded = paths.work / "final_branded.mp4"
             self.log("🎬 Adding local branded intro/outro cards…")

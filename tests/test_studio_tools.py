@@ -24,6 +24,8 @@ from studio.thumbnail import (
 from studio.title_generator import ai_title_ideas, builtin_title_ideas, TITLE_STYLES
 import gemini_tts
 from studio.download_queue import PersistentDownloadQueue
+from studio.recap_queue import PersistentRecapQueue
+from studio.quality import inspect_output_quality, preflight_check, write_quality_report
 from recap_runtime.services.ai_service import AIService
 from recap_planner import _user_glossary_context
 
@@ -311,6 +313,65 @@ class PronunciationTests(unittest.TestCase):
         prompt = gemini_tts.narrator_prompt("Hello there.", "gemini:Zephyr — Bright", target_language="en")
         self.assertIn("English narrator", prompt)
         self.assertIn("native English pronunciation", prompt)
+
+
+class PersistentRecapQueueTests(unittest.TestCase):
+    def test_queue_persists_items_and_recovers_interrupted_processing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            queue_path = Path(temp) / "recap_queue.json"
+            item_file = Path(temp) / "video.mp4"
+            item_file.write_bytes(b"video")
+            model = PersistentRecapQueue(queue_path)
+            added, skipped = model.add([item_file, item_file])
+            self.assertEqual(len(added), 1)
+            self.assertEqual(len(skipped), 1)
+            model.update(added[0].id, status="processing")
+            reloaded = PersistentRecapQueue(queue_path)
+            self.assertEqual(reloaded.items()[0].status, "pending")
+            self.assertEqual(reloaded.items()[0].path, str(item_file.resolve()))
+
+    def test_queue_retries_failures_and_removes_only_completed_items(self):
+        with tempfile.TemporaryDirectory() as temp:
+            model = PersistentRecapQueue(Path(temp) / "recap_queue.json")
+            added, _ = model.add(["missing-one.mp4", "missing-two.mp4"])
+            model.update(added[0].id, status="failed", error="bad video")
+            model.update(added[1].id, status="completed", output_path="final.mp4")
+            self.assertEqual(model.retry_failed(), 1)
+            statuses = {Path(item.path).name: item.status for item in model.items()}
+            self.assertEqual(statuses["missing-one.mp4"], "pending")
+            self.assertEqual(statuses["missing-two.mp4"], "completed")
+            self.assertEqual(model.clear_finished(), 1)
+            self.assertEqual(len(model.items()), 1)
+
+
+class QualityCheckTests(unittest.TestCase):
+    def test_missing_video_is_reported_as_output_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            report = inspect_output_quality(Path(temp) / "missing.mp4", ffprobe="ffprobe")
+            self.assertFalse(report["pass"])
+            self.assertGreater(report["failures"], 0)
+            self.assertEqual(report["checks"][0]["status"], "FAIL")
+
+    def test_preflight_reports_missing_source_without_exposing_secrets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            env = Path(temp) / ".env"
+            env.write_text("GEMINI_API_KEY=do-not-disclose\n", encoding="utf-8")
+            report = preflight_check(
+                Path(temp) / "missing.mp4", ffmpeg="missing-ffmpeg", ffprobe="missing-ffprobe",
+                env_path=env, target_language="mm",
+            )
+            serialized = json.dumps(report, ensure_ascii=False)
+            self.assertFalse(report["pass"])
+            self.assertIn("Source video", serialized)
+            self.assertNotIn("do-not-disclose", serialized)
+
+    def test_quality_report_is_written_as_json(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "quality.json"
+            report = {"pass": True, "checks": [{"status": "PASS", "name": "test"}]}
+            self.assertEqual(write_quality_report(path, report), path)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), report)
+
 
 if __name__ == "__main__":
     unittest.main()

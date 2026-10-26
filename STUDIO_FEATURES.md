@@ -51,3 +51,16 @@ Use the local .env file for API secrets. Do not commit .env or local pronunciati
 ## Validation status and limitations
 
 Automated regression tests and Python compilation are run by the feature-branch GitHub Actions workflow. Those tests do not prove that an online provider key/quota works, that every site-specific URL is downloadable, or that a long video finishes without sync issues. Before treating a provider or site as production-ready, test a short real example, inspect the output audio/subtitles and then test a longer video. Do not share API keys when reporting errors.
+
+
+## Production workflow additions
+
+- **Recap Queue:** local files can be queued independently of the URL download queue. Pending items survive app restarts; interrupted items return to pending, failures can be retried, and completed jobs can be cleared from the queue without deleting output media.
+- **One-click Download → Recap:** Studio can optionally enqueue downloaded videos into the Recap Queue. An additional opt-in setting starts that queue after a single download or download queue finishes. It is sequential, not parallel.
+- **Automatic post-Recap thumbnail:** enabled by default in the feature branch. Once a final video is available, the app extracts candidate frames from that output and saves a local JPG thumbnail beside it. Thumbnail generation failure is a warning; it does not invalidate the completed video. This is a local frame/design workflow, not an AI-generated background.
+- **Thumbnail variants:** the Thumbnail tab can create three local versions using different frame sample counts. Each output has a distinct variant filename; no AI credits are consumed by this action.
+- **Platform presets:** Recap editor presets select common aspect-ratio / quality combinations for YouTube, vertical Shorts/Reels/TikTok, square feeds, and lower-weight 720p output. Manual controls remain available.
+- **Background music:** optional local music can loop beneath the narrator with a bounded volume setting; it is off by default. Music can still be subject to copyright or platform claims, so use audio you have permission to publish.
+- **Preflight / output QC:** a preflight report checks the source, FFmpeg/FFprobe, credential presence (not validity), duration/streams and free disk space. After render the app writes a JSON output report checking the file, video/audio streams, duration, resolution, and whether the expected SRT/thumbnail exists. These checks cannot judge translation quality or prove lip-sync is perceptually perfect.
+- **Storage and cache:** view approximate sizes of jobs, Downloads, logs and bundled runtime. Safe cache cleanup removes Python bytecode and known preview-render caches only; it does not remove completed videos, downloads or job checkpoints.
+- **Subtitle review:** after machine translation, a review dialog lets the user edit one translated cue per line while retaining the original cue timestamps. The line count must match the original number of cues.

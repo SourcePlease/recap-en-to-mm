@@ -100,9 +100,32 @@ class StudioAIProviderTests(unittest.TestCase):
         self.assertEqual(post.call_args.args[0], "http://127.0.0.1:11434/v1/chat/completions")
         self.assertNotIn("Authorization", post.call_args.kwargs["headers"])
 
-    def test_provider_catalog_includes_cloudflare_and_nvidia(self):
+    def test_provider_catalog_includes_all_hosted_and_local_providers(self):
         keys = {provider["key"] for provider in provider_options()}
-        self.assertTrue({"groq", "openrouter", "ollama", "cloudflare", "nvidia"}.issubset(keys))
+        self.assertTrue({
+            "groq", "openrouter", "ollama", "cloudflare", "nvidia", "mistral", "cohere",
+        }.issubset(keys))
+
+    def test_mistral_and_cohere_use_openai_compatible_endpoints(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+            def json(self):
+                return {"choices": [{"message": {"content": "OK"}}]}
+
+        for provider, model, endpoint in (
+            ("mistral", "mistral-small-latest", "https://api.mistral.ai/v1/chat/completions"),
+            ("cohere", "command-a-plus-05-2026", "https://api.cohere.ai/compatibility/v1/chat/completions"),
+        ):
+            with self.subTest(provider=provider):
+                post = Mock(return_value=Response())
+                answer = chat_completion(
+                    provider, model, [{"role": "user", "content": "hi"}],
+                    api_key="test-token", post=post,
+                )
+                self.assertEqual(answer, "OK")
+                self.assertEqual(post.call_args.args[0], endpoint)
+                self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer test-token")
 
     def test_cloudflare_uses_account_scoped_openai_compatible_endpoint(self):
         class Response:
@@ -151,8 +174,16 @@ class StudioAIProviderTests(unittest.TestCase):
 
 
 class AIServiceProviderRoutingTests(unittest.TestCase):
-    def test_cloudflare_and_nvidia_are_supported_recap_providers(self):
+    def test_cloudflare_nvidia_mistral_and_cohere_are_supported_recap_providers(self):
         providers = (
+            ("mistral", {
+                "MISTRAL_API_KEY": "test-token",
+                "MISTRAL_MODEL": "mistral-small-latest",
+            }),
+            ("cohere", {
+                "COHERE_API_KEY": "test-token",
+                "COHERE_MODEL": "command-a-plus-05-2026",
+            }),
             ("cloudflare", {
                 "CF_API_TOKEN": "test-token",
                 "CF_ACCOUNT_ID": "test-account",

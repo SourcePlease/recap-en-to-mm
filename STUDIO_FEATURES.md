@@ -20,7 +20,7 @@
 | Splitter | Video တစ်ခုကို အချိန်အလိုက် အပိုင်းခွဲ | Episode အရှည်ကြီးကို အပိုင်းငယ်ခွဲချင်ရင် |
 | Studio | YouTube၊ Facebook စတဲ့ Supported URL များ Download လုပ်၊ AI Provider စမ်း | Online Video ကို Recap လုပ်ဖို့ အရင် Download လုပ်ချင်ရင် |
 | Thumbnail | မူရင်း Video Frame ကနေ Thumbnail ထုတ်၊ Title/Logo တင် | Recap Video အတွက် Cover ပုံလုပ်ချင်ရင် |
-| Subtitles | SRT/VTT တင်သွင်း၊ ဘာသာပြန်၊ စာကြောင်းပြင်၊ Export | Whisper ကို ထပ်မသုံးဘဲ Subtitle သီးသန့်ပြင်ချင်ရင် |
+| Subtitles | SRT/VTT တင်သွင်း၊ ဘာသာပြန်၊ စာကြောင်းပြင်၊ Export | Whisper ကို ထပ်မသုံးဘဲ Subtitle သီးသန့်ပြင်ချင်ရင် |\n| Dubbing | Dialogue Row အလိုက် Speaker / Voice သတ်မှတ်ပြီး Character Dub Render လုပ် | ဇာတ်ကောင်တစ်ယောက်စီကို အသံမတူအောင် ပြန်သွင်းချင်ရင် |
 | Project | Project Save/Load၊ Audio Waveform၊ Pronunciation၊ BGM၊ Intro/Outro၊ QC | Project ကို နောက်မှဆက်လုပ်ချင်ရင် |
 | Recap Queue | Video အများအပြားကို တစ်ခုချင်းစီ အလိုအလျောက်လုပ် | Folder ထဲက Episode အများကြီးကို Batch လုပ်ချင်ရင် |
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import threading
 from pathlib import Path
@@ -121,15 +122,19 @@ class SubtitleToolsTab(ttk.Frame):
                 self.cues, self.translations, bilingual=bool(self.burn_bilingual.get()),
             )
             ffmpeg = str(self.tool("ffmpeg"))
-            if not Path(ffmpeg).is_file():
+            if not (Path(ffmpeg).is_file() or shutil.which(ffmpeg)):
                 raise FileNotFoundError("FFmpeg မတွေ့ပါ။ INSTALL_REQUIREMENTS.bat ကို run လုပ်ပါ။")
+            if not Path(ffmpeg).is_file():
+                ffmpeg = shutil.which(ffmpeg) or ffmpeg
             vf = ffmpeg_subtitle_filter(srt_path, font_name="Myanmar Text", font_size=20)
             output = folder / f"{source.stem}_{target_code}_subbed.mp4"
             command = [
                 ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
                 "-vf", vf, "-map", "0:v:0", "-map", "0:a?",
                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                "-c:a", "copy", "-map_metadata", "0", "-movflags", "+faststart", str(output),
+                # Re-encode audio to AAC for MP4 compatibility (e.g. Opus source tracks).
+                # The source audio content is retained; only the container codec changes.
+                "-c:a", "aac", "-b:a", "192k", "-map_metadata", "0", "-movflags", "+faststart", str(output),
             ]
             self.status.set("Rendering Subbing Mode video… TTS is skipped; source audio is retained.")
             result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")

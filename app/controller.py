@@ -588,6 +588,7 @@ class App(tk.Tk):
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg),
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
+            tool=lambda name: _tool_path(self.cfg, name),
         )
         self.tools_tabs.add(self.subtitle_tools_tab, text="Subtitles")
         self.project_tools_tab = ProjectToolsTab(

@@ -521,35 +521,97 @@ responsible for the rights to the videos you process.
 
 ### ဘာသာစကား၊ AI Provider နဲ့ Voice ရွေးချယ်မှု / Languages, AI Providers & Voices
 
-#### Target Language များ
+#### Text AI / Translation Provider — ဘယ်ဟာကို ဘယ်နေရာမှာ သုံးရမလဲ
 
-**မြန်မာ:** Recap မှာ နောက်ဆုံးထွက်လာမယ့် ဘာသာစကားကို အောက်ပါထဲက ရွေးနိုင်ပါတယ်။ အသုံးပြုတဲ့ TTS Provider က ရွေးထားတဲ့ ဘာသာစကားကို အသံထုတ်ပံ့ပိုးမှု ရှိ/မရှိပေါ် မူတည်ပြီး အသံရွေးချယ်မှု ကွာခြားနိုင်ပါတယ်။
+**မြန်မာ:** ဒီ Provider တွေကို Video ထဲက ဇာတ်လမ်းအကြောင်းအရာကို နားလည်မှတ်သားခြင်း (Story Context)၊ ဘာသာပြန်ခြင်း (Translation)၊ ဘာသာပြန်စာကို ပြန်စစ်ခြင်း (Audit) နဲ့ Thumbnail ခေါင်းစဉ်အကြံပြုခြင်းတို့အတွက် သုံးပါတယ်။ Provider တစ်ခုနဲ့တစ်ခု Free Quota, Model, အမြန်နှုန်းနဲ့ ဘာသာစကားနားလည်နိုင်မှု မတူပါဘူး။
+
+| Provider | အခမဲ့အသုံးပြုနိုင်မှု / ကန့်သတ်ချက် | ဘာအတွက်အသုံးဝင်လဲ | လက်ရှိ App အခြေအနေ |
+|---|---|---|---|
+| **Gemini API** | Google AI Studio မှာ Free Tier ရှိပါတယ်။ ဒါပေမဲ့ Free Tier မှာ Model အချို့ကိုသာ သုံးခွင့်ရှိပြီး Request/Token Limit က Model နဲ့ Account ပေါ်မူတည်ပါတယ်။ | Story Context, Translation, Audit အတွက် မူလ Default Provider ဖြစ်ပါတယ်။ | **ပါပြီးသား / Default** |
+| **Groq** | Free Plan ရှိပါတယ်။ Model တစ်ခုချင်းစီအလိုက် RPM, RPD, TPM, TPD ကွာပါတယ်။ အတိအကျကို ကိုယ့် Groq Console ရဲ့ Limits မှာ စစ်ပါ။ | တုံ့ပြန်မှုမြန်တဲ့ Text AI Provider တစ်ခုဖြစ်ပြီး Translation/Audit အတွက် စမ်းသုံးနိုင်ပါတယ်။ | **ပါပြီးသား** |
+| **OpenRouter** | Free Model တွေ အများအပြားရှိပေမဲ့ Model ID အချို့မှာသာ \`:free\` ပါပါတယ်။ ၂၀၂၆-၁၁-၀၆ စစ်ဆေးချိန်တွင် Free model အတွက် အများဆုံး 20 requests/minute နဲ့ 50 requests/day ကန့်သတ်ချက် ဖော်ပြထားပါတယ်။ Model/Limit တွေ ပြောင်းနိုင်ပါတယ်။ | Provider မျိုးစုံက Free Model တွေကို API တစ်ခုတည်းကနေ ရွေးသုံးနိုင်ပါတယ်။ Free Model ပြောင်းစမ်းဖို့ အဆင်ပြေပါတယ်။ | **ပါပြီးသား** |
+| **Cloudflare Workers AI** | Free Workers Plan မှာ တစ်နေ့လျှင် 10,000 Neurons အထိ အခမဲ့အသုံးပြုနိုင်ပါတယ်။ နေ့စဉ် 00:00 UTC မှာ ပြန်စတင်တွက်ချက်ပါတယ်။ Model အချို့က Paid Plan / Billing လိုနိုင်ပါတယ်။ | OpenAI-compatible API ဖြစ်လို့ Recap ရဲ့ Story Context, Translation, Audit နဲ့ Studio ရဲ့ AI Title Suggestion မှာ သုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
+| **NVIDIA NIM** | NVIDIA Developer Program မှာ API Catalog ကို Prototype/Development အတွက် သုံးနိုင်ပါတယ်။ Model တစ်ခုချင်းစီရဲ့ Access နဲ့ Rate Limit ကို Account/Catalog ထဲမှာ စစ်ရပါမယ်။ | Open-weight Model များကို NVIDIA ရဲ့ Hosted API ကနေ စမ်းသုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
+| **Ollama (Local)** | Cloud API အသုံးခ မရှိပါ။ ဒါပေမဲ့ ကိုယ့် PC ထဲမှာ Model Download လုပ်ပြီး CPU/GPU/RAM/Storage ကို ကိုယ်တိုင် သုံးရပါတယ်။ | Internet မလိုဘဲ Local Model နဲ့ Translation/Context စမ်းချင်တဲ့အခါ အသုံးဝင်ပါတယ်။ စက်စွမ်းဆောင်ရည်ပေါ်မူတည်ပြီး နှေးနိုင်ပါတယ်။ | **ပါပြီးသား** |
+
+**Free API နဲ့ပတ်သက်ပြီး သိထားရန်**
+
+- **အခမဲ့ဆိုတာ အကန့်အသတ်မရှိတာ မဟုတ်ပါ။** Quota ပြည့်သွားရင် 429/Rate Limit Error ရနိုင်ပြီး နောက်နေ့ပြန်စောင့်ရတာ၊ Model ပြောင်းရတာ ဖြစ်နိုင်ပါတယ်။
+- OpenRouter မှာ Model တစ်ခုရဲ့ Free Quota မပြည့်တော့ရင် အခြား \`:free\` Model ID ကို ရွေးနိုင်ပါတယ်။ \`openrouter/free\` က Free Model တစ်ခုကို အလိုအလျောက်ရွေးပေးတဲ့ Router ဖြစ်ပေမဲ့ ရလာတဲ့ Model/အရည်အသွေး မတူနိုင်ပါဘူး။
+- Cloudflare ကို သုံးမယ်ဆိုရင် Free Workers Plan မှာ ခွင့်ပြုထားတဲ့ Model ကို ရွေးပါ။ ဥပမာ Model Catalog မှာ Free Plan အတွက် ဖော်ပြထားတဲ့ Gemma/GLM/Nemotron Model များထဲက ကိုယ့်အကောင့်မှာ ရနိုင်တာကို ရွေးပါ။ Model တစ်ခုချင်းစီရဲ့ နောက်ဆုံးအခြေအနေကို Cloudflare Dashboard မှာ စစ်ပါ။
+- NVIDIA NIM မှာ Model ID ကို ခန့်မှန်းပြီး မထည့်ပါနဲ့။ NVIDIA API Catalog ထဲမှာ ကိုယ့် Key နဲ့ အသုံးပြုခွင့်ရတဲ့ Model ရဲ့ ID အတိအကျကို Copy ကူးထည့်ပါ။
+- Hugging Face Inference Providers မှာ Free User အတွက် လစဉ် $0.10 Credit ရှိတယ်လို့ Pricing စာတမ်းမှာ ဖော်ပြထားပါတယ် (ပြောင်းလဲနိုင်ပါတယ်)။ စမ်းသပ်ဖို့ကောင်းပေမဲ့ Video အရှည်ကြီးတစ်ခုလုံး Recap လုပ်ဖို့ များသောအားဖြင့် မလုံလောက်ပါ။ လက်ရှိ App မှာ သီးခြား Provider အဖြစ် မချိတ်ထားသေးပါ။
+- Cerebras က စမ်းသပ်ဖို့ $5 Promo Credit တစ်ကြိမ် ရနိုင်ပေမဲ့ Verified Payment Method ထည့်ရပြီး Credit က 30 ရက်အတွင်း သက်တမ်းကုန်ပါတယ်။ အမြဲတမ်း Free Tier မဟုတ်လို့ ဒီ App ရဲ့ ပုံမှန် Free Provider စာရင်းထဲ မထည့်ထားပါ။
+- DeepSeek API က Token အလိုက် Billing လုပ်တဲ့ Paid API ဖြစ်ပါတယ်။ အခမဲ့အသုံးပြုနိုင်တဲ့ Model Gateway တချို့မှာ တစ်ခါတစ်ရံ Free Model ရှိနိုင်ပေမဲ့ DeepSeek API ကိုယ်တိုင်ကို Free လို့ မယူဆပါနဲ့။
+
+**English:** These providers power story context, translation, translation audits and AI-assisted thumbnail title ideas. Gemini, Groq, OpenRouter and Ollama were already supported. Cloudflare Workers AI and NVIDIA NIM are now added to the application. Free quotas and available models can change; check each provider's current account dashboard before long jobs.
+
+#### Studio ထဲက API ကို ဘယ်လိုချိတ်မလဲ / How to Configure an AI Provider
+
+1. **Studio Tab** ကိုဖွင့်ပြီး အောက်ပိုင်းရှိ **Optional AI Provider** အပိုင်းကို ရှာပါ။
+2. **Provider** မှာ Gemini မဟုတ်တဲ့ Groq, OpenRouter, Cloudflare Workers AI, NVIDIA NIM သို့မဟုတ် Ollama တစ်ခုကို ရွေးပါ။
+3. **Model ID** အကွက်ထဲမှာ Provider Dashboard မှာ ရတဲ့ Model ID အတိအကျကို ထည့်ပါ။ Free သုံးချင်ရင် Free Plan မှာ အသုံးပြုခွင့်ရှိတဲ့ Model ကိုသာ ရွေးပါ။
+4. **API Key** အကွက်မှာ သက်ဆိုင်ရာ Key ကို ထည့်ပါ။ Ollama Local အတွက်တော့ API Key မလိုပါ။
+5. **Test AI** ကိုနှိပ်ပြီး စမ်းသပ်ပါ။ ဒီအဆင့်က Prompt အသေးတစ်ခု ပို့တာဖြစ်လို့ Provider Quota ကို အနည်းငယ် သုံးနိုင်ပါတယ်။
+6. အလုပ်လုပ်ကြောင်း သေချာမှ **Use for Recap** ကိုနှိပ်ပါ။ နောက်တစ်ကြိမ် **START / RESUME** စတဲ့အခါမှ ရွေးထားတဲ့ Provider/Model ကို Story Context, Translation နဲ့ Audit မှာ သုံးပါမယ်။
+
+**Cloudflare သီးသန့်ပြင်ဆင်ရန်**
+
+- \`CF_API_TOKEN\` = Cloudflare Dashboard က API Token။
+- \`CF_ACCOUNT_ID\` = Cloudflare Account ID။ ဒီတန်ဖိုးကို Studio ထဲက Model/API Key အကွက်မှာ မထည့်ရပါ။ Local \`.env\` ထဲမှာ ကိုယ်တိုင် ထည့်ပါ။
+- \`CF_MODEL\` = Workers AI မှာ လက်ရှိရနိုင်တဲ့ Model ID။
+- ဥပမာ Model ID ပုံစံက \`@cf/google/gemma-4-26b-a4b-it\` လို ဖြစ်နိုင်ပေမဲ့ ကိုယ့် Free Plan မှာ ရ/မရ Dashboard မှာ စစ်ပါ။
+
+**NVIDIA NIM သီးသန့်ပြင်ဆင်ရန်**
+
+- NVIDIA Developer Program ကို ဝင်ပြီး NVIDIA API Catalog ကနေ API Key ထုတ်ပါ။
+- Studio ထဲမှာ **NVIDIA NIM** ကိုရွေးပြီး ကိုယ့် Account မှာ Access ရတဲ့ Model ID ကိုထည့်ပါ။ ဥပမာ \`openai/gpt-oss-120b\` က NIM Catalog မှာရှိတဲ့ Model ID ပုံစံတစ်ခုဖြစ်ပါတယ်။ Catalog ပြောင်းလဲနိုင်တဲ့အတွက် ကိုယ့် Dashboard မှာ ပြန်စစ်ပါ။
+
+**Fallback Provider သုံးရန်**
+
+Provider တစ်ခု Quota ပြည့်တာ၊ 429 Error ဖြစ်တာမျိုးရှိရင် ကိုယ်တိုင်ပြင်ဆင်ထားတဲ့ အခြား Provider တွေကို အစဉ်လိုက် စမ်းနိုင်ပါတယ်။ Local \`.env\` ထဲမှာ ဥပမာ—
+
+\`\`\`ini
+RECAP_AI_PROVIDER=groq
+RECAP_AI_FALLBACKS=cloudflare,nvidia,openrouter
+\`\`\`
+
+ဒီဥပမာမှာ Groq ကို အရင်သုံးပြီး မအောင်မြင်မှ Cloudflare၊ NVIDIA၊ OpenRouter တို့ကို အစဉ်လိုက် စမ်းပါမယ်။ Fallback ထဲမှာ ရေးထားတဲ့ Provider တွေကို အရင် Key/Model ပြင်ဆင်ထားဖို့ လိုပါတယ်။ Provider တစ်ခုက Error ပြန်ပေးတိုင်း နောက် Provider ကို အလိုအလျောက် စမ်းနိုင်ပေမဲ့ Paid Model သို့ အလိုအလျောက် ပြောင်းသုံးတာ မဟုတ်ပါ။ ရွေးထားတဲ့ Model ID တွေရဲ့ Pricing ကို ကိုယ်တိုင် စစ်ထားပါ။
+
+**English:** In Studio, select a provider, enter the exact model ID and API key, then press **Test AI**. When the test succeeds, press **Use for Recap**. The next Recap START/RESUME uses that provider for story context, translation and audit. Cloudflare also requires \`CF_ACCOUNT_ID\` in the local \`.env\`. Optional fallback providers are tried only when listed explicitly in \`RECAP_AI_FALLBACKS\`.
+
+#### Thumbnail / Image API — fal.ai ကို ဘယ်လိုသဘောထားရမလဲ
+
+**မြန်မာ:** \`fal.ai\` ကို Groq လို Text Translation Provider နဲ့ မရောပါနဲ့။ ဒီ App မှာ fal.ai ကို **Thumbnail Background ပုံအသစ် ဖန်တီးဖို့** သုံးတာဖြစ်ပါတယ်။ မူရင်း Video ထဲက Frame ကို ရွေးပြီး မြန်မာခေါင်းစဉ်/Logo တင်တဲ့ Local Thumbnail Mode နဲ့တော့ API Key မလိုပါ။
+
+- **Local Frame Thumbnail:** FFmpeg က မူရင်း Video ထဲက Frame တွေကို ထုတ်ယူပြီး Thumbnail အဖြစ် ပြင်ဆင်ပေးပါတယ်။ AI Credit မလိုပါ။
+- **AI Background (fal.ai):** AI က Background ပုံအသစ် ဖန်တီးပေးပြီး App က မြန်မာ Title/Logo ကို Local မှာ ထပ်တင်ပေးပါတယ်။ \`FAL_KEY\` လိုပါတယ်။
+- fal.ai Model API တွေက အောင်မြင်စွာ ထုတ်ပေးတဲ့ Output အလိုက် Credit ကောက်ခံပါတယ်။ လက်ရှိ Pricing ကို စစ်ပြီးမှ သုံးပါ။ \`FAL_KEY\` ရှိတာနဲ့ Free ဖြစ်သွားတာ မဟုတ်ပါဘူး။
+- Thumbnail ပုံ ၃ မျိုးလိုရင် **Create 3 Local Variants** ကို သုံးပါ။ ဒီ Feature က Local အနေနဲ့ ထုတ်ပေးတာဖြစ်လို့ fal.ai Credit မသုံးပါ။
+
+**English:** fal.ai is an image-generation service in this app, not a translation provider. Local frame-based thumbnails and local variants do not need API credits. AI-generated backgrounds require \`FAL_KEY\` and can consume prepaid fal credits per successful output.
+
+#### Narrator / TTS Voice Provider — ဘယ်အသံက မြန်မာအတွက် အဆင်ပြေလဲ
+
+| Voice Provider | မြန်မာအတွက် အသုံးပြုနိုင်မှု | အခမဲ့ / ကန့်သတ်ချက် | App ထဲက အသုံးပြုပုံ |
+|---|---|---|---|
+| **Microsoft Edge TTS** | \`my-MM-ThihaNeural\` (ယောက်ျား)၊ \`my-MM-NilarNeural\` (မိန်းမ) | သီးခြား API Key မလိုပါ။ Online Service ဖြစ်ပြီး Service/Network ကန့်သတ်ချက် ရှိနိုင်ပါတယ်။ | **အလွယ်ဆုံး Free Myanmar Voice**။ Narrator Voice မှာ ရွေးပါ။ |
+| **Azure Speech** | Myanmar Standard Voice နှစ်မျိုးအတွက် Azure ရဲ့ \`my-MM\` Voice Support ရှိပါတယ်။ | Free F0 Resource မှာ Request Limit ရှိပါတယ် (လက်ရှိ Docs အရ 20 transactions/60 seconds၊ Request တစ်ခုအတွက် Audio အများဆုံး 10 minutes)။ Region/Quota ကို စစ်ပါ။ | \`AZURE_SPEECH_KEY\` နဲ့ \`AZURE_SPEECH_REGION\` ထည့်ပြီး Narrator Voice မှာ Azure Voice ကို ရွေးပါ။ |
+| **ElevenLabs** | App ရဲ့ မူလ \`eleven_multilingual_v2\` Model က ပံ့ပိုးတဲ့ ဘာသာစကား 29 မျိုးစာရင်းထဲ Myanmar မပါပါ။ | Free Plan မှာ 10,000 Credits/Month ရှိပြီး API သုံးနိုင်သော်လည်း သုံးသမျှ Credit လျော့ပါတယ်။ | Myanmar Voice အတွက် မူလ Model ကို တိုက်ရိုက်မအကြံပြုပါ။ အခြားဘာသာစကားအတွက်သာ သုံးမယ်ဆိုရင် သက်ဆိုင်ရာ Model/Voice ကို အရင်စမ်းပါ။ |
+| **Gemini TTS** | Voice Style အမျိုးမျိုး ရှိပါတယ်။ ဒါတွေကို Native Myanmar Voice 30 မျိုးလို့ မယူဆရပါ။ | Google ရဲ့ TTS Pricing/Model အလိုက် အခမဲ့အသုံးပြုခွင့် မရှိနိုင်ပါ။ | Gemini TTS ကို ရွေးမယ်ဆိုရင် Voice Style ကို စမ်းပြီး Quota/Pricing ကို စစ်ပါ။ |
+
+**အရေးကြီး:** Myanmar Recap အတွက် ပထမဆုံး စမ်းသင့်တာက Edge TTS ဖြစ်ပါတယ်။ အသံအရည်အသွေး/သတ်မှတ်ချက် ပိုလိုရင် Azure F0 ကို စမ်းနိုင်ပါတယ်။ ElevenLabs Free Plan ရှိတာနဲ့ Myanmar ဘာသာကို လက်ရှိရွေးထားတဲ့ TTS Model က ပံ့ပိုးတယ်လို့ မဆိုလိုပါဘူး။
+
+**English:** Edge TTS is the simplest no-key Burmese narrator option. Azure Speech supports the \`my-MM\` Nilar and Thiha standard voices and has an F0 free resource with strict request limits. The app's current ElevenLabs default model, \`eleven_multilingual_v2\`, does not list Burmese among its 29 supported languages; verify a different model before using it for Myanmar narration.
+
+#### Target Language များ / Supported Target Languages
+
+**မြန်မာ:** Recap မှာ နောက်ဆုံးထွက်လာမယ့် ဘာသာစကားကို အောက်ပါထဲက ရွေးနိုင်ပါတယ်။ TTS Provider တစ်ခုချင်းစီရဲ့ Voice ရနိုင်မှုကတော့ မတူပါဘူး။
 
 Myanmar (Burmese), English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino (Tagalog), Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu နဲ့ Urdu။
 
-**English:** Recap supports the target languages listed above. Available narration voices depend on the language and capabilities of the selected TTS provider.
+**English:** The app can translate to the target languages listed above. Narrator voice availability depends on the selected TTS provider and its language support.
 
-#### Text / Translation AI Provider များ
-
-| Provider | မြန်မာလို ရှင်းပြချက် | English |
-|---|---|---|
-| Gemini | မူလ Default Provider ဖြစ်ပါတယ်။ Story Context, Translation နဲ့ Audit အတွက် သုံးပါတယ်။ Google API Key လိုပါတယ်။ | Default provider for story context, translation and audit; requires a Google API key. |
-| Groq | ရွေးချယ်အသုံးပြုနိုင်တဲ့ Cloud AI Provider ဖြစ်ပါတယ်။ Groq API Key နဲ့ အသုံးပြုခွင့်ရှိတဲ့ Model ID လိုပါတယ်။ | Optional cloud provider; requires a Groq API key and an available model ID. |
-| OpenRouter | Model အမျိုးမျိုးကို Gateway တစ်ခုကနေ ရွေးသုံးနိုင်ပါတယ်။ ရွေးထားတဲ့ Model အလိုက် ဈေးနှုန်းနဲ့ Quota ကွာခြားနိုင်ပါတယ်။ | Optional model gateway; pricing and limits depend on the selected model. |
-| Ollama | ကိုယ့် Computer ထဲမှာ Model ကို Local အနေနဲ့ ထည့်သွင်းပြီး သုံးနိုင်ပါတယ်။ Ollama ကို အရင် Install လုပ်ထားပြီး Model ကို Download လုပ်ထားဖို့ လိုပါတယ်။ | Local provider; Ollama and a suitable local model must already be installed. |
-
-**အရေးကြီး:** Provider တစ်ခုကို ရွေးထားရုံနဲ့ အခမဲ့ဖြစ်မယ်လို့ မဆိုလိုပါဘူး။ Free Quota, Rate Limit, Model Availability နဲ့ Pricing တွေဟာ Provider Account နဲ့ Model ပေါ်မူတည်ပြီး ပြောင်းနိုင်ပါတယ်။ App မှာ ထည့်ထားတဲ့ Provider တစ်ခုချင်းစီအတွက် ကိုယ့် Key နဲ့ Quota ရှိဖို့ လိုပါတယ်။
-
-**English:** Selecting a provider does not guarantee free usage. Free quotas, rate limits, model availability and pricing depend on the provider and selected model.
-
-#### Narrator / TTS Provider များ
-
-| Voice Provider | မြန်မာလို ရှင်းပြချက် | English |
-|---|---|---|
-| Microsoft Edge TTS | Myanmar အတွက် Thiha (ယောက်ျားသံ) နဲ့ Nilar (မိန်းမသံ) လို Edge Voice တွေ ပါဝင်ပါတယ်။ Online Service ဖြစ်လို့ Internet လိုပါတယ်။ | Includes available Edge voices such as Myanmar Thiha and Nilar; requires internet access. |
-| Gemini TTS | Gemini ရဲ့ Prebuilt Voice တွေထဲက ရွေးနိုင်ပါတယ်။ Voice Style အမျိုးမျိုး ရှိပေမဲ့ အားလုံးကို Native Myanmar Voice လို့ မယူဆသင့်ပါဘူး။ | Offers Gemini prebuilt voice choices and styles; these are not all native Burmese voices. |
-| Azure Speech | သက်ဆိုင်ရာ Language နဲ့ Voice ကို Azure က ပံ့ပိုးထားရင် သုံးနိုင်ပါတယ်။ API Key နဲ့ Region သတ်မှတ်ချက် လိုပါတယ်။ | Optional Azure voices require a Speech key and region and depend on Azure language/voice support. |
-| ElevenLabs | သက်ဆိုင်ရာ Multilingual Model နဲ့ Voice ကို ရွေးသုံးနိုင်ပါတယ်။ API Key, Voice ID နဲ့ Account Quota လိုပါတယ်။ | Optional multilingual TTS requiring an API key, voice ID and account quota. |
 
 ### API Key ထည့်သွင်းရမည့်နေရာ / API Keys and Environment Variables
 

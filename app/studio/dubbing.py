@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
+from .compute import run_demucs
+
 
 @dataclass(frozen=True)
 class DialogueRow:
@@ -159,8 +161,8 @@ def render_character_dubbing(
         if not no_vocals.is_file() or no_vocals.stat().st_size < 1000:
             separation.mkdir(parents=True, exist_ok=True)
             log("🎚️ Separating source instrumental bed with Demucs…")
-            _run([sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals",
-                  "-o", str(separation), str(source_video)])
+            run_demucs([sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals",
+                        "-o", str(separation), str(source_video)], log=log)
         if not no_vocals.is_file():
             raise RuntimeError("Demucs did not create no_vocals.wav. Install Demucs or choose Keep/Mute source audio.")
         source_bed = no_vocals

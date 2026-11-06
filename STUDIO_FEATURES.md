@@ -103,7 +103,9 @@ This document describes the feature/studio-expansion branch of SourcePlease/reca
 |---|---|
 | Gemini | Default story-context, translation and audit provider. Free access is limited to selected models and account-specific quotas. |
 | Groq | OpenAI-compatible text provider. A free plan is available with per-model RPM/RPD/TPM/TPD limits. |
-| OpenRouter | OpenAI-compatible model gateway. Choose current `:free` models; free limits and model availability change. |
+| OpenRouter | OpenAI-compatible model gateway. Choose current `:free` variants; limits and model availability change. |
+| Mistral AI | OpenAI-compatible La Plateforme provider. Free mode is for evaluation/prototyping, has the lowest limits, and may use prompts/outputs to train models. Requires `MISTRAL_API_KEY` and `MISTRAL_MODEL`. |
+| Cohere | OpenAI-compatible Compatibility API. Free trial keys currently have up to 1,000 calls/month and model-specific rate limits. Requires `COHERE_API_KEY` and `COHERE_MODEL`. |
 | Cloudflare Workers AI | OpenAI-compatible Recap/Studio provider. Free Workers allocation: 10,000 Neurons/day; `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_MODEL` required. Some models require paid billing. |
 | NVIDIA NIM | OpenAI-compatible Recap/Studio provider via NVIDIA Developer Program API Catalog; requires `NVIDIA_API_KEY` and `NVIDIA_MODEL`. Model access/rate limits vary. |
 | Ollama | Local model endpoint; no hosted API fee, but a local model and sufficient CPU/GPU/RAM/storage are required. |

@@ -798,36 +798,101 @@ def concat_video_parts(ffmpeg: str, parts: list[Path], output: Path, work_dir: P
         raise RuntimeError(f"Video concat failed:\n{result.stderr[-4000:]}")
 
 
+def atempo_filter(speed: float) -> str:
+    """Return an FFmpeg atempo chain for any positive playback speed."""
+    value = float(speed)
+    if value <= 0:
+        raise ValueError("Audio sync speed must be greater than zero.")
+    stages: list[float] = []
+    while value > 2.0:
+        stages.append(2.0)
+        value /= 2.0
+    while value < 0.5:
+        stages.append(0.5)
+        value /= 0.5
+    stages.append(value)
+    return ",".join(f"atempo={stage:.8f}" for stage in stages)
+
+
+def has_audio_stream(ffprobe: str, source: Path) -> bool:
+    result = subprocess.run(
+        [ffprobe, "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=index",
+         "-of", "csv=p=0", str(source)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Could not inspect source audio: {result.stderr[-1200:]}")
+    return bool(result.stdout.strip())
+
+
+def render_source_audio_part(
+    ffmpeg: str, source: Path, output: Path, seg: dict[str, Any],
+    target_duration: float, applied_speed: float,
+) -> Path:
+    """Extract one source-dialogue segment and align it to the Smart Sync video segment."""
+    start = float(seg["video_start"])
+    source_duration = float(seg["video_end"]) - start
+    if source_duration <= 0.01 or target_duration <= 0.01:
+        raise ValueError("Source audio segment duration invalid.")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    filters = (
+        f"{atempo_filter(applied_speed)},"
+        f"apad=pad_dur={max(0.0, target_duration):.6f},"
+        f"atrim=duration={target_duration:.6f},asetpts=PTS-STARTPTS"
+    )
+    cmd = [
+        ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+        "-ss", f"{start:.6f}", "-t", f"{source_duration:.6f}", "-i", str(source),
+        "-map", "0:a:0", "-vn", "-af", filters,
+        "-ar", "48000", "-ac", "2", "-c:a", "pcm_s16le", str(output),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if result.returncode != 0 or not output.is_file() or output.stat().st_size < 1000:
+        output.unlink(missing_ok=True)
+        raise RuntimeError(f"Source audio segment render failed: {(result.stderr or '')[-2000:]}")
+    return output
+
+
 def mux_audio(
     ffmpeg: str, video: Path, audio: Path, output: Path, volume_percent: int = 100,
     background_music_path: str | Path | None = None, background_music_volume_percent: int = 12,
+    original_audio_path: str | Path | None = None, original_audio_volume_percent: int = 70,
 ) -> None:
-    """Mux narrator audio; optionally mix a looping, low-volume music bed."""
+    """Mix narration, optional ducked source dialogue, and optional external music."""
     voice_volume = max(0, min(300, int(volume_percent))) / 100.0
+    original_path = Path(original_audio_path).expanduser() if str(original_audio_path or "").strip() else None
+    use_original = bool(original_path and original_path.is_file() and int(original_audio_volume_percent) > 0)
     bgm_path = Path(background_music_path).expanduser() if str(background_music_path or "").strip() else None
     use_bgm = bool(bgm_path and bgm_path.is_file() and int(background_music_volume_percent) > 0)
+
+    inputs = ["-i", str(video), "-i", str(audio)]
+    graph: list[str] = [f"[1:a]volume={voice_volume:.3f}[narr]"]
+    mix_inputs = ["[narr]"]
+    input_index = 2
+    if use_original:
+        inputs += ["-i", str(original_path)]
+        original_volume = max(0, min(150, int(original_audio_volume_percent))) / 100.0
+        graph.append(
+            f"[{input_index}:a]volume={original_volume:.3f}[src];"
+            f"[src][1:a]sidechaincompress=threshold=0.025:ratio=6:attack=20:release=350[ducked]"
+        )
+        mix_inputs.append("[ducked]")
+        input_index += 1
     if use_bgm:
+        inputs += ["-stream_loop", "-1", "-i", str(bgm_path)]
         music_volume = max(0, min(50, int(background_music_volume_percent))) / 100.0
-        cmd = [
-            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
-            "-i", str(video), "-i", str(audio), "-stream_loop", "-1", "-i", str(bgm_path),
-            "-filter_complex",
-            f"[1:a]volume={voice_volume:.3f}[narr];"
-            f"[2:a]volume={music_volume:.3f}[music];"
-            "[narr][music]amix=inputs=2:duration=first:dropout_transition=2,"
-            "alimiter=limit=0.95:level=disabled[mixed]",
-            "-map", "0:v:0", "-map", "[mixed]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-            "-shortest", "-movflags", "+faststart", str(output),
-        ]
-    else:
-        volume = [] if int(volume_percent) == 100 else [
-            "-af", f"volume={voice_volume:.3f},alimiter=limit=0.95:level=disabled"]
-        cmd = [
-            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
-            "-i", str(video), "-i", str(audio),
-            "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", *volume, "-c:a", "aac", "-b:a", "192k",
-            "-shortest", "-movflags", "+faststart", str(output),
-        ]
+        graph.append(f"[{input_index}:a]volume={music_volume:.3f}[music]")
+        mix_inputs.append("[music]")
+    graph.append(
+        "".join(mix_inputs) + f"amix=inputs={len(mix_inputs)}:duration=first:dropout_transition=2,"
+        "alimiter=limit=0.95:level=disabled[mixed]"
+    )
+    cmd = [
+        ffmpeg, "-y", "-hide_banner", "-loglevel", "error", *inputs,
+        "-filter_complex", ";".join(graph),
+        "-map", "0:v:0", "-map", "[mixed]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-shortest", "-movflags", "+faststart", str(output),
+    ]
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         raise RuntimeError(f"Final mux failed:\n{result.stderr[-4000:]}")
@@ -1237,6 +1302,9 @@ class EdgeSmartSync:
         background_music_enabled: bool = False,
         background_music_path: str = "",
         background_music_volume_percent: int = 12,
+        original_audio_enabled: bool = True,
+        source_bgm_enabled: bool = True,
+        original_audio_volume_percent: int = 70,
         log: LogFn = _noop,
         progress: Callable[[int, int, str], None] | None = None,
         should_stop: Callable[[], bool] | None = None,
@@ -1272,6 +1340,9 @@ class EdgeSmartSync:
         self.background_music_enabled = bool(background_music_enabled)
         self.background_music_path = str(background_music_path or "")
         self.background_music_volume_percent = max(0, min(50, int(background_music_volume_percent)))
+        self.original_audio_enabled = bool(original_audio_enabled)
+        self.source_bgm_enabled = bool(source_bgm_enabled)
+        self.original_audio_volume_percent = max(0, min(150, int(original_audio_volume_percent)))
         # Short pauses: see trim_edge_silence. Set by render_worker from the UI box.
         self.short_pauses = False
         self.overlays = dict(overlays or {})
@@ -1344,6 +1415,35 @@ class EdgeSmartSync:
         self.log(f"🎙️ TTS: {tts_label} | Voice: {self.voice}"
                  + (" · one narrator for the whole video" if provider == "gemini" else ""))
         self.log(f"🎞️ Smart Sync: Exact Recap timing — distributed freeze fallback={'ON' if self.smooth_freeze_fallback else 'OFF'}")
+        source_audio_input: Path | None = None
+        source_audio_available = False
+        if self.original_audio_enabled:
+            source_audio_available = has_audio_stream(self.ffprobe, source)
+            if not source_audio_available:
+                self.log("ℹ️ Original Audio: source video has no audio stream; continuing without it.")
+            else:
+                source_audio_input = source
+                if not self.source_bgm_enabled:
+                    separation_dir = paths.work / "source_audio_separation"
+                    vocals_path = separation_dir / "htdemucs" / source.stem / "vocals.wav"
+                    if not vocals_path.is_file() or vocals_path.stat().st_size < 1000:
+                        separation_dir.mkdir(parents=True, exist_ok=True)
+                        self.log("🎚️ BGM OFF: separating dialogue/vocals with Demucs (first run can take a while).")
+                        command = [
+                            sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals",
+                            "-o", str(separation_dir), str(source),
+                        ]
+                        separated = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
+                        if separated.returncode != 0 or not vocals_path.is_file():
+                            raise RuntimeError(
+                                "Original BGM ကိုပိတ်ပြီး Dialogue ကိုထိန်းဖို့ Demucs လိုအပ်ပါတယ်။ "
+                                "Python environment ထဲမှာ 'pip install -U demucs' လုပ်ပြီး ပြန်စမ်းပါ။\n"
+                                + (separated.stderr or separated.stdout or "")[-2500:]
+                            )
+                    source_audio_input = vocals_path
+                    self.log("✅ BGM separation ready — source dialogue/vocals only will be kept.")
+                else:
+                    self.log("🔊 Original Audio ON — source dialogue + original BGM will be kept.")
         try:
             source_w, source_h = probe_video_size(self.ffprobe, source)
         except Exception as exc:  # only the frame shape depends on it: Original falls back to 16:9
@@ -1534,6 +1634,10 @@ class EdgeSmartSync:
         remembered = str(checkpoint.get("selected_encoder") or "")
         encoder = remembered if remembered in {"h264_nvenc", "libx264"} else preferred
         video_parts: list[Path] = []
+        source_audio_parts: list[Path] = []
+        source_audio_dir = paths.work / "source_audio_parts"
+        if source_audio_input is not None:
+            source_audio_dir.mkdir(parents=True, exist_ok=True)
         # Cumulative frame lock: each part gets round(audio_end*30) - frames_so_far
         # frames, so video never drifts more than half a frame from the narration.
         audio_cursor = 0.0
@@ -1625,7 +1729,26 @@ class EdgeSmartSync:
                 checkpoint["selected_encoder"] = encoder
                 atomic_write_json(paths.checkpoint, checkpoint)
             video_parts.append(dst)
+            if source_audio_input is not None:
+                _, source_sync = _sync_filter(
+                    float(seg["video_end"]) - float(seg["video_start"]), target,
+                    max_video_speed=self.max_video_speed, max_video_slow=self.max_video_slow,
+                    smooth_freeze_fallback=self.smooth_freeze_fallback, max_freeze_hold=self.max_freeze_hold,
+                )
+                source_part = source_audio_dir / f"{base}.wav"
+                render_source_audio_part(
+                    self.ffmpeg, source_audio_input, source_part, seg, target,
+                    float(source_sync["applied_factor"]),
+                )
+                source_audio_parts.append(source_part)
             self.progress(idx, len(segments), f"Video {idx}/{len(segments)}")
+
+        source_audio_track: Path | None = None
+        if source_audio_parts:
+            source_audio_track = paths.work / "original_audio_aligned.wav"
+            self.log("🔗 Smart Sync aligned original dialogue audio concat...")
+            concat_audio(self.ffmpeg, source_audio_parts, source_audio_track, paths.work)
+            self.log(f"✅ Original Audio aligned: {probe_duration(self.ffprobe, source_audio_track):.2f}s")
 
         self.log("🔗 Smart Sync video parts concat...")
         concat_video_parts(self.ffmpeg, video_parts, paths.synced_video_noaudio, paths.work)
@@ -1661,17 +1784,25 @@ class EdgeSmartSync:
             if not music_file.is_file():
                 raise RuntimeError(f"Background music file was not found: {music_file}")
             if self.background_music_volume_percent > 0:
-                self.log(f"🎼 Mixing background music at {self.background_music_volume_percent}% volume.")
-                mux_audio(
-                    self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent,
-                    background_music_path=music_file,
-                    background_music_volume_percent=self.background_music_volume_percent,
-                )
+                self.log(f"🎼 Mixing external background music at {self.background_music_volume_percent}% volume.")
             else:
-                mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
+                music_file = None
         else:
-            # Preserve the historical call shape for existing integrations and mocks.
-            mux_audio(self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent)
+            music_file = None
+        if source_audio_track is not None:
+            self.log(
+                f"🔊 Original Audio ON · source dialogue {'+ original BGM' if self.source_bgm_enabled else 'only'} "
+                f"({self.original_audio_volume_percent}% base, ducked under narration)."
+            )
+        else:
+            self.log("🔇 Original Audio OFF or unavailable.")
+        mux_audio(
+            self.ffmpeg, video_for_mux, paths.voice, paths.final, volume_percent,
+            background_music_path=music_file,
+            background_music_volume_percent=self.background_music_volume_percent,
+            original_audio_path=source_audio_track,
+            original_audio_volume_percent=self.original_audio_volume_percent,
+        )
         if self.brand_intro_outro_enabled:
             branded = paths.work / "final_branded.mp4"
             self.log("🎬 Adding local branded intro/outro cards…")

@@ -45,7 +45,7 @@ ElevenLabs ကို ရွေးထားပြီး Target Language က Myanm
 | FFmpeg | `ffmpeg.exe` + `ffprobe.exe` — မရှိရင် `INSTALL_REQUIREMENTS.bat` က အလိုလို download လုပ်ပေးတယ် ([gyan.dev builds](https://www.gyan.dev/ffmpeg/builds/)) |
 | Gemini API key | အခမဲ့ ရတယ် — [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 | Internet | Gemini နဲ့ Edge TTS အတွက် |
-| NVIDIA GPU | မဖြစ်မနေ မလိုဘူး။ ရှိရင် Whisper နဲ့ video render ပိုမြန်တယ် (NVENC)။ မရှိရင် CPU နဲ့ အလိုလို လုပ်တယ် |
+| NVIDIA GPU | မဖြစ်မနေ မလိုဘူး။ CUDA ရှိရင် Whisper၊ Demucs နဲ့ NVENC video encoding ကို GPU သုံးတယ်။ GPU မရရင် သက်ဆိုင်ရာနေရာတွေမှာ CPU fallback လုပ်တယ် |
 
 ## ထည့်သွင်းနည်း (တစ်ခါပဲ လုပ်ရ)
 

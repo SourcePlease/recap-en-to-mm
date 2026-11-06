@@ -182,7 +182,9 @@ def render_character_dubbing(
         start_ms = max(0, round(timestamp_seconds(row.start) * 1000))
         slot = timestamp_seconds(row.end) - timestamp_seconds(row.start)
         clip_duration = _duration(ffprobe, clip)
-        tempo = max(0.75, min(1.5, clip_duration / slot))
+        tempo = max(1.0, min(1.5, clip_duration / slot))
+        if clip_duration / slot > 1.5:
+            log(f"⚠️ Dialogue row {index} is longer than its cue; it may be trimmed after the 1.5x speed cap.")
         label = f"dlg{index}"
         graph.append(
             f"[{index}:a]atempo={tempo:.6f},apad,atrim=duration={slot:.6f},"

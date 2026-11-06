@@ -64,6 +64,22 @@ def target_language_name(code: str) -> str:
     return TARGET_LANGUAGES.get(str(code or "mm").strip().lower(), str(code or "mm"))
 
 
+RECAP_STYLE_GUIDES = {
+    "storytelling": "Tell the events naturally in chronological order, like a fluent narrator explaining the story to an audience. Keep a smooth beginning-to-end flow.",
+    "documentary": "Use a calm, objective documentary voice. Explain what happened clearly and accurately; avoid hype, jokes, melodrama, and unsupported judgments.",
+    "cinematic": "Use a cinematic, engaging narration rhythm with varied sentence openings and carefully controlled suspense. Never invent danger, emotion, or events that are not supported by the source.",
+    "casual": "Use friendly, everyday spoken language that is easy to follow. Keep it polished and respectful; do not add slang or filler to every sentence.",
+    "character_focus": "Keep character motivations, relationships, decisions, reactions, and changes especially clear. Preserve who did and said each thing; do not turn the narrator into a character voice actor.",
+    "anime_recap": "Use an energetic anime-recap delivery: clear action flow, consistent Japanese character-name spellings, readable technique names, and lively but restrained transitions. Do not exaggerate powers or invent fan commentary.",
+    "educational": "Explain cause and effect, rules, clues, and consequences in a clear step-by-step way when the source establishes them. Do not add outside explanations or facts.",
+}
+
+
+def recap_style_guide(style: str) -> str:
+    key = str(style or "storytelling").strip().lower()
+    return RECAP_STYLE_GUIDES.get(key, RECAP_STYLE_GUIDES["storytelling"])
+
+
 def _target_narration_style_guide(target_language: str) -> str:
     """Return native, spoken-style guidance for the selected narration language."""
     if str(target_language or "").strip().lower() != "mm":
@@ -1362,6 +1378,7 @@ def translate_batch(
     _split_depth: int = 0,
     source_language: str = "English",
     target_language: str = "mm",
+    recap_style: str = "storytelling",
 ) -> list[dict[str, Any]]:
     target_language = str(target_language or "mm").strip().lower()
     target_name = "Burmese" if target_language == "mm" else target_language_name(target_language)
@@ -1385,6 +1402,9 @@ NATIVE {target_name.upper()} NARRATOR STYLE:
 - Avoid stiff word-for-word translation; restructure wording and clause order INSIDE THE SAME ID when needed.
 - Keep target-language pronouns, kinship terms, honorifics, self-reference, names, and relationships contextually correct.
 - Keep dialogue intent and social register natural without turning ordinary speech into unnecessarily formal wording.
+
+SELECTED RECAP STYLE:
+{recap_style_guide(recap_style)}
 
 {target_style_guide}
 
@@ -1511,6 +1531,7 @@ CRITICAL OUTPUT ID PROTOCOL:
             _split_depth=_split_depth + 1,
             source_language=source_language,
             target_language=target_language,
+            recap_style=recap_style,
         )
         right_prev = (list(previous_context or []) + translated_left)[-context_limit:]
         translated_right = translate_batch(
@@ -1523,6 +1544,7 @@ CRITICAL OUTPUT ID PROTOCOL:
             _split_depth=_split_depth + 1,
             source_language=source_language,
             target_language=target_language,
+            recap_style=recap_style,
         )
         combined = translated_left + translated_right
         _assert_no_adjacent_translation_duplicates(combined, list(previous_context or []))
@@ -1788,11 +1810,15 @@ class RecapPlanBuilder:
         gemini_text_model: str = "gemini-3.5-flash",
         source_language: str = "auto",
         target_language: str = "mm",
+        recap_style: str = "storytelling",
         whisper_model_other: str = WHISPER_MODEL_OTHER,
     ):
         self.source_language = str(source_language or "auto").strip().lower()
         target_code = str(target_language or "mm").strip().lower()
         self.target_language = target_code if target_code in TARGET_LANGUAGES else "mm"
+        self.recap_style = str(recap_style or "storytelling").strip().lower()
+        if self.recap_style not in RECAP_STYLE_GUIDES:
+            self.recap_style = "storytelling"
         self.whisper_model_other = str(whisper_model_other or WHISPER_MODEL_OTHER).strip()
         self.runtime_root = Path(runtime_root).resolve()
         self.gemini_env_path = Path(gemini_env_path).expanduser().resolve() if str(gemini_env_path or "").strip() else None
@@ -1902,7 +1928,7 @@ class RecapPlanBuilder:
         transcript_file = job_dir / "whisper_transcript.json"
         whisper_model, whisper_language = self._pick_whisper(source, job_dir, transcript_file, reuse)
         language_name = source_language_name(whisper_language)
-        direction = f"{whisper_language}_to_{self.target_language}"
+        direction = f"{whisper_language}_to_{self.target_language}|style:{self.recap_style}"
         # A changed Burmese style guide must not silently reuse narration translated by the older,
         # more generic prompt. Keep the Whisper transcript reusable; only invalidate translation/context plans.
         if str(self.target_language).strip().lower() == "mm":
@@ -2210,6 +2236,7 @@ class RecapPlanBuilder:
                         log=self.log,
                         source_language=language_name,
                         target_language=self.target_language,
+                        recap_style=self.recap_style,
                     )
                 except GeminiKeyPoolExhaustedError as exc:
                     saved = len(translated_all)

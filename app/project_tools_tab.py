@@ -34,6 +34,9 @@ class ProjectToolsTab(ttk.Frame):
         self.bgm_enabled = tk.BooleanVar(value=bool(cfg.get("background_music_enabled", False)))
         self.bgm_path = tk.StringVar(value=str(cfg.get("background_music_path") or ""))
         self.bgm_volume = tk.IntVar(value=max(0, min(50, int(cfg.get("background_music_volume_percent", 12) or 0))))
+        self.original_audio_enabled = tk.BooleanVar(value=bool(cfg.get("original_audio_enabled", True)))
+        self.source_bgm_enabled = tk.BooleanVar(value=bool(cfg.get("source_bgm_enabled", True)))
+        self.original_audio_volume = tk.IntVar(value=max(0, min(150, int(cfg.get("original_audio_volume_percent", 70) or 0))))
         self.output_check_path = tk.StringVar()
         self.status = tk.StringVar(value="Project settings are local. API keys remain in your private .env file.")
         self._build()
@@ -111,6 +114,17 @@ class ProjectToolsTab(ttk.Frame):
             row=13, column=1, sticky="ew", pady=4)
         ttk.Label(brand, text="Voice stays primary; music loops only for the length of narration. Choose music you have rights to use.",
                   wraplength=800).grid(row=14, column=0, columnspan=3, sticky="w", pady=(4, 0))
+        ttk.Separator(brand).grid(row=15, column=0, columnspan=3, sticky="ew", pady=8)
+        ttk.Checkbutton(brand, text="Original Audio ON — keep source dialogue + source BGM",
+                        variable=self.original_audio_enabled).grid(row=16, column=0, columnspan=3, sticky="w", pady=3)
+        ttk.Checkbutton(brand, text="Source BGM ON — turn OFF to keep dialogue only (requires Demucs)",
+                        variable=self.source_bgm_enabled).grid(row=17, column=0, columnspan=3, sticky="w", pady=3)
+        ttk.Label(brand, text="Original audio volume (0–150%; automatically ducked under narration)").grid(
+            row=18, column=0, sticky="w", pady=4)
+        ttk.Scale(brand, from_=0, to=150, orient="horizontal", variable=self.original_audio_volume).grid(
+            row=18, column=1, sticky="ew", pady=4)
+        ttk.Label(brand, text="BGM separation is optional and can be CPU-intensive. If Demucs is unavailable, the app stops with an install hint instead of silently muting dialogue.",
+                  wraplength=800).grid(row=19, column=0, columnspan=3, sticky="w", pady=(4, 0))
         brand.columnconfigure(1, weight=1)
 
         health.columnconfigure(0, weight=1)
@@ -160,6 +174,9 @@ class ProjectToolsTab(ttk.Frame):
             self.bgm_enabled.set(bool(self.cfg.get("background_music_enabled", False)))
             self.bgm_path.set(str(self.cfg.get("background_music_path") or ""))
             self.bgm_volume.set(max(0, min(50, int(self.cfg.get("background_music_volume_percent", 12) or 0))))
+            self.original_audio_enabled.set(bool(self.cfg.get("original_audio_enabled", True)))
+            self.source_bgm_enabled.set(bool(self.cfg.get("source_bgm_enabled", True)))
+            self.original_audio_volume.set(max(0, min(150, int(self.cfg.get("original_audio_volume_percent", 70) or 0))))
             self.channel_name.set(str(self.cfg.get("brand_channel_name") or "My Channel"))
             self.brand_logo.set(str(self.cfg.get("brand_logo_path") or ""))
             self.enable_brand.set(bool(self.cfg.get("brand_intro_outro_enabled", False)))
@@ -368,6 +385,9 @@ class ProjectToolsTab(ttk.Frame):
             "background_music_enabled": bool(self.bgm_enabled.get()),
             "background_music_path": bgm,
             "background_music_volume_percent": max(0, min(50, int(float(self.bgm_volume.get())))),
+            "original_audio_enabled": bool(self.original_audio_enabled.get()),
+            "source_bgm_enabled": bool(self.source_bgm_enabled.get()),
+            "original_audio_volume_percent": max(0, min(150, int(float(self.original_audio_volume.get())))),
         })
         self.save()
         self.status.set("Intro/outro and smart silence options saved. They apply to new runs/resumes.")

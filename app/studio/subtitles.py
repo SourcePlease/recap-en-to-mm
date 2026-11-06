@@ -18,6 +18,25 @@ class SubtitleCue:
     text: str
 
 
+def _natural_language_style_guide(target_language: str) -> str:
+    """Return concise human-sounding style guidance for imported subtitle translation."""
+    target = str(target_language or "").strip().lower()
+    if target not in {"mm", "myanmar", "burmese"} and "myanmar" not in target and "burmese" not in target:
+        return (
+            "Write as a fluent native speaker would naturally speak. Avoid literal word-for-word "
+            "translation and preserve the source speaker's tone and register.\n"
+        )
+    return """NATIVE MYANMAR BURMESE QUALITY — MANDATORY:
+- Write like a real Myanmar person would naturally say it, not like a machine-translated sentence, textbook, official notice, or news article.
+- Use clear contemporary spoken Burmese. Keep it polished and concise for subtitles, but do not make it slang-heavy.
+- Prefer natural spoken grammar and endings such as “တယ်”, “ခဲ့တယ်”, “နေတယ်” when they fit. Avoid unnecessary formal written forms such as repeated “သည်”, “၏”, “၌”, “ဖြစ်သည်”, and “ပြုလုပ်ခဲ့သည်”.
+- Use Burmese word order and everyday word combinations. Translate idioms by meaning, not word-for-word. Do not repeat pronouns mechanically when the subject is already clear.
+- Keep the speaker's personality, emotion, politeness and dialogue register. Do not add filler such as “နော်”, “ဗျာ”, or “ပေါ့” unless it is actually present in the source.
+- Read each subtitle silently as spoken Burmese and rewrite any awkward or overly literal phrase. Keep the meaning; do not invent or omit information.
+- Style example: stiff “သူသည် အလွန်စိတ်ပျက်မှုကို ခံစားခဲ့ရသည်။” → natural “သူ အတော်လေး စိတ်ပျက်သွားတယ်။”
+"""
+
+
 def format_subtitle_glossary(glossary: dict | None) -> str:
     """Flatten Recap's local glossary schema into compact subtitle translation rules."""
     if not isinstance(glossary, dict):
@@ -115,6 +134,7 @@ def _translate_gemini_batch(rows: list[SubtitleCue], *, model: str, target_langu
         "Keep meaning, names, tone and concise subtitle phrasing. Never summarize. "
         'Return JSON only: {"items":[{"id":1,"translation":"..."}]}. '
         "Return exactly one translated item for each supplied ID, in order. No explanations or timestamps.\n\n"
+        + _natural_language_style_guide(target_language)
         + (f"Must-follow glossary and style rules:\n{glossary_context}\n\n" if glossary_context else "")
         + json.dumps([{"id": row.index, "text": row.text} for row in rows], ensure_ascii=False)
     )
@@ -158,6 +178,7 @@ def translate_subtitles(
                 "Keep meaning, names, emotional tone and short subtitle phrasing. Never summarize. "
                 'Return JSON only: {"items":[{"id":1,"translation":"..."}]}. '
                 "Keep every ID exactly once and in order; no explanations or timestamps.\n\n"
+                + _natural_language_style_guide(target)
                 + (f"Must-follow glossary and style rules:\n{glossary_context}\n\n" if glossary_context else "")
                 + json.dumps([{"id": row.index, "text": row.text} for row in rows], ensure_ascii=False)
             )

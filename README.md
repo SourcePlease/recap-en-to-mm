@@ -530,6 +530,8 @@ responsible for the rights to the videos you process.
 | **[Gemini API](https://ai.google.dev/gemini-api/docs/pricing)** | Google AI Studio မှာ Free Tier ရှိပါတယ်။ ဒါပေမဲ့ Free Tier မှာ Model အချို့ကိုသာ သုံးခွင့်ရှိပြီး Request/Token Limit က Model နဲ့ Account ပေါ်မူတည်ပါတယ်။ | Story Context, Translation, Audit အတွက် မူလ Default Provider ဖြစ်ပါတယ်။ | **ပါပြီးသား / Default** |
 | **[Groq](https://console.groq.com/docs/rate-limits)** | Free Plan ရှိပါတယ်။ Model တစ်ခုချင်းစီအလိုက် RPM, RPD, TPM, TPD ကွာပါတယ်။ အတိအကျကို ကိုယ့် Groq Console ရဲ့ Limits မှာ စစ်ပါ။ | တုံ့ပြန်မှုမြန်တဲ့ Text AI Provider တစ်ခုဖြစ်ပြီး Translation/Audit အတွက် စမ်းသုံးနိုင်ပါတယ်။ | **ပါပြီးသား** |
 | **[OpenRouter](https://openrouter.ai/collections/free-models)** | Free Model တွေရှိပြီး Free Variant တစ်ခုချင်းရဲ့ Model ID အဆုံးမှာ `:free` ပါပါတယ်။ ၂၀၂၆-၁၁-၀၆ စစ်ဆေးချိန်တွင် `:free` Variant များအတွက် 20 requests/minute နဲ့ 50 requests/day ကန့်သတ်ချက် ဖော်ပြထားပါတယ်။ အခြား $0 Model တွေမှာ Provider-specific Limit သီးခြား ရှိနိုင်ပါတယ်။ | Provider မျိုးစုံက Free Model တွေကို API တစ်ခုတည်းကနေ ရွေးသုံးနိုင်ပါတယ်။ Free Model ပြောင်းစမ်းဖို့ အဆင်ပြေပါတယ်။ | **ပါပြီးသား** |
+| **[Mistral AI](https://help.mistral.ai/en/articles/698531-why-am-i-hitting-api-rate-limits-and-how-do-i-increase-them)** | La Plateforme ရဲ့ Free mode ကို Evaluation/Prototype အတွက် အခမဲ့စမ်းနိုင်ပါတယ်။ Free mode က Limit အနိမ့်ဆုံးဖြစ်ပြီး RPS/Token ကန့်သတ်ချက်က Organization ပေါ်မူတည်ပါတယ်။ Free mode မှာ Prompt/Output ကို Model Training အတွက် အသုံးပြုနိုင်ပါတယ်။ | Text Translation/Context/Audit အတွက် OpenAI-compatible endpoint နဲ့ သုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
+| **[Cohere](https://docs.cohere.com/v2/docs/rate-limits)** | Trial API Key က အခမဲ့ဖြစ်ပြီး လက်ရှိ Docs အရ တစ်လ 1,000 API Calls အထိသာ အသုံးပြုနိုင်ပါတယ်။ Chat Model အချို့မှာ 20 requests/minute Limit ရှိပါတယ်။ | Command Model တွေကို Translation/Context/Audit အတွက် စမ်းနိုင်ပါတယ်။ OpenAI-compatible API လည်း ရှိပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
 | **[Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)** | Free Workers Plan မှာ တစ်နေ့လျှင် 10,000 Neurons အထိ အခမဲ့အသုံးပြုနိုင်ပါတယ်။ နေ့စဉ် 00:00 UTC မှာ ပြန်စတင်တွက်ချက်ပါတယ်။ Model အချို့က Paid Plan / Billing လိုနိုင်ပါတယ်။ | OpenAI-compatible API ဖြစ်လို့ Recap ရဲ့ Story Context, Translation, Audit နဲ့ Studio ရဲ့ AI Title Suggestion မှာ သုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
 | **[NVIDIA NIM](https://build.nvidia.com/explore/discover)** | NVIDIA Developer Program မှာ API Catalog ကို Prototype/Development အတွက် သုံးနိုင်ပါတယ်။ Model တစ်ခုချင်းစီရဲ့ Access နဲ့ Rate Limit ကို Account/Catalog ထဲမှာ စစ်ရပါမယ်။ | Open-weight Model များကို NVIDIA ရဲ့ Hosted API ကနေ စမ်းသုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
 | **[Ollama (Local)](https://ollama.com/download)** | Cloud API အသုံးခ မရှိပါ။ ဒါပေမဲ့ ကိုယ့် PC ထဲမှာ Model Download လုပ်ပြီး CPU/GPU/RAM/Storage ကို ကိုယ်တိုင် သုံးရပါတယ်။ | Internet မလိုဘဲ Local Model နဲ့ Translation/Context စမ်းချင်တဲ့အခါ အသုံးဝင်ပါတယ်။ စက်စွမ်းဆောင်ရည်ပေါ်မူတည်ပြီး နှေးနိုင်ပါတယ်။ | **ပါပြီးသား** |
@@ -537,6 +539,8 @@ responsible for the rights to the videos you process.
 **Free API နဲ့ပတ်သက်ပြီး သိထားရန်**
 
 - **အခမဲ့ဆိုတာ အကန့်အသတ်မရှိတာ မဟုတ်ပါ။** Quota ပြည့်သွားရင် 429/Rate Limit Error ရနိုင်ပြီး နောက်နေ့ပြန်စောင့်ရတာ၊ Model ပြောင်းရတာ ဖြစ်နိုင်ပါတယ်။
+- Mistral Free mode က Evaluation/Prototype အတွက်သာ ရည်ရွယ်ထားပြီး Limit အနိမ့်ဆုံးဖြစ်ပါတယ်။ Mistral Free mode မှာ Prompt နဲ့ Output ကို Model Training အတွက် အသုံးပြုနိုင်တဲ့အတွက် ကိုယ်ရေးကိုယ်တာ/လျှို့ဝှက် Video Transcript တွေကို မပို့ခင် Privacy Setting ကို စစ်ပါ။
+- Cohere Trial Key က တစ်လ 1,000 API Calls အထိသာ ရပြီး Model အလိုက် Request/Minute Limit သီးခြားရှိပါတယ်။ အမြဲတမ်း unlimited Free API မဟုတ်ပါ။
 - OpenRouter မှာ Model ID အဆုံးမှာ `:free` ပါတဲ့ Free Variant တွေကို ရွေးနိုင်ပါတယ်။ ၂၀၂၆-၁၁-၀၆ စစ်ဆေးချိန်တွင် အဲဒီ `:free` Variant တွေအတွက် 20 requests/minute နဲ့ 50 requests/day Limit ရှိပါတယ်။ `openrouter/free` က Free Model တစ်ခုကို အလိုအလျောက်ရွေးပေးတဲ့ Router ဖြစ်ပေမဲ့ ရလာတဲ့ Model/အရည်အသွေး မတူနိုင်ပါဘူး။
 - Cloudflare ကို သုံးမယ်ဆိုရင် Free Workers Plan မှာ ခွင့်ပြုထားတဲ့ Model ကို ရွေးပါ။ ဥပမာ Model Catalog မှာ Free Plan အတွက် ဖော်ပြထားတဲ့ Gemma/GLM/Nemotron Model များထဲက ကိုယ့်အကောင့်မှာ ရနိုင်တာကို ရွေးပါ။ Model တစ်ခုချင်းစီရဲ့ နောက်ဆုံးအခြေအနေကို Cloudflare Dashboard မှာ စစ်ပါ။
 - NVIDIA NIM မှာ Model ID ကို ခန့်မှန်းပြီး မထည့်ပါနဲ့။ NVIDIA API Catalog ထဲမှာ ကိုယ့် Key နဲ့ အသုံးပြုခွင့်ရတဲ့ Model ရဲ့ ID အတိအကျကို Copy ကူးထည့်ပါ။
@@ -544,16 +548,28 @@ responsible for the rights to the videos you process.
 - Cerebras က စမ်းသပ်ဖို့ $5 Promo Credit တစ်ကြိမ် ရနိုင်ပေမဲ့ Verified Payment Method ထည့်ရပြီး Credit က 30 ရက်အတွင်း သက်တမ်းကုန်ပါတယ်။ အမြဲတမ်း Free Tier မဟုတ်လို့ ဒီ App ရဲ့ ပုံမှန် Free Provider စာရင်းထဲ မထည့်ထားပါ။
 - DeepSeek API က Token အလိုက် Billing လုပ်တဲ့ Paid API ဖြစ်ပါတယ်။ အခမဲ့အသုံးပြုနိုင်တဲ့ Model Gateway တချို့မှာ တစ်ခါတစ်ရံ Free Model ရှိနိုင်ပေမဲ့ DeepSeek API ကိုယ်တိုင်ကို Free လို့ မယူဆပါနဲ့။
 
-**English:** These providers power story context, translation, translation audits and AI-assisted thumbnail title ideas. Gemini, Groq, OpenRouter and Ollama were already supported. Cloudflare Workers AI and NVIDIA NIM are now added to the application. Free quotas and available models can change; check each provider's current account dashboard before long jobs.
+**English:** These providers power story context, translation, translation audits and AI-assisted thumbnail title ideas. Gemini, Groq, OpenRouter and Ollama were already supported. Cloudflare Workers AI, NVIDIA NIM, Mistral and Cohere are now added to the application. Free quotas and available models can change; check each provider's current account dashboard before long jobs.
 
 #### Studio ထဲက API ကို ဘယ်လိုချိတ်မလဲ / How to Configure an AI Provider
 
 1. **Studio Tab** ကိုဖွင့်ပြီး အောက်ပိုင်းရှိ **Optional AI Provider** အပိုင်းကို ရှာပါ။
-2. **Provider** မှာ Gemini မဟုတ်တဲ့ Groq, OpenRouter, Cloudflare Workers AI, NVIDIA NIM သို့မဟုတ် Ollama တစ်ခုကို ရွေးပါ။
+2. **Provider** မှာ Groq, OpenRouter, Mistral AI, Cohere, Cloudflare Workers AI, NVIDIA NIM သို့မဟုတ် Ollama တစ်ခုကို ရွေးပါ။
 3. **Model ID** အကွက်ထဲမှာ Provider Dashboard မှာ ရတဲ့ Model ID အတိအကျကို ထည့်ပါ။ Free သုံးချင်ရင် Free Plan မှာ အသုံးပြုခွင့်ရှိတဲ့ Model ကိုသာ ရွေးပါ။
 4. **API Key** အကွက်မှာ သက်ဆိုင်ရာ Key ကို ထည့်ပါ။ Ollama Local အတွက်တော့ API Key မလိုပါ။
 5. **Test AI** ကိုနှိပ်ပြီး စမ်းသပ်ပါ။ ဒီအဆင့်က Prompt အသေးတစ်ခု ပို့တာဖြစ်လို့ Provider Quota ကို အနည်းငယ် သုံးနိုင်ပါတယ်။
 6. အလုပ်လုပ်ကြောင်း သေချာမှ **Use for Recap** ကိုနှိပ်ပါ။ နောက်တစ်ကြိမ် **START / RESUME** စတဲ့အခါမှ ရွေးထားတဲ့ Provider/Model ကို Story Context, Translation နဲ့ Audit မှာ သုံးပါမယ်။
+
+**Mistral AI သီးသန့်ပြင်ဆင်ရန်**
+
+- [Mistral La Plateforme](https://console.mistral.ai/) မှာ Account ဖွင့်ပြီး API Key ထုတ်ပါ။
+- `MISTRAL_API_KEY` ထဲ Key ထည့်ပါ။
+- `MISTRAL_MODEL` အတွက် Model Catalog မှာ ရတဲ့ Model ID ကို ရွေးပါ။ Free mode မှာ Rate Limit အနိမ့်ဆုံးဖြစ်ပြီး Evaluation/Prototype အတွက်သာ သင့်တော်ပါတယ်။ Free mode က Prompt/Output ကို Training အတွက် အသုံးပြုနိုင်ပါတယ်။
+
+**Cohere သီးသန့်ပြင်ဆင်ရန်**
+
+- [Cohere Dashboard](https://dashboard.cohere.com/api-keys) မှာ Trial API Key ထုတ်ပါ။
+- `COHERE_API_KEY` ထဲ Key ထည့်ပါ။
+- `COHERE_MODEL` ထဲ Dashboard မှာ Trial Key နဲ့ ခေါ်ခွင့်ရှိတဲ့ Chat Model ID ကို ထည့်ပါ။ Cohere Trial က တစ်လ 1,000 API Calls အထိသာ ရပါတယ်။
 
 **Cloudflare သီးသန့်ပြင်ဆင်ရန်**
 
@@ -573,10 +589,10 @@ Provider တစ်ခု Quota ပြည့်တာ၊ 429 Error ဖြစ်�
 
 ```ini
 RECAP_AI_PROVIDER=groq
-RECAP_AI_FALLBACKS=cloudflare,nvidia,openrouter
+RECAP_AI_FALLBACKS=cloudflare,nvidia,mistral,cohere,openrouter
 ```
 
-ဒီဥပမာမှာ Groq ကို အရင်သုံးပြီး မအောင်မြင်မှ Cloudflare၊ NVIDIA၊ OpenRouter တို့ကို အစဉ်လိုက် စမ်းပါမယ်။ Fallback ထဲမှာ ရေးထားတဲ့ Provider တွေကို အရင် Key/Model ပြင်ဆင်ထားဖို့ လိုပါတယ်။ Provider တစ်ခုက Error ပြန်ပေးတိုင်း နောက် Provider ကို အလိုအလျောက် စမ်းနိုင်ပေမဲ့ Paid Model သို့ အလိုအလျောက် ပြောင်းသုံးတာ မဟုတ်ပါ။ ရွေးထားတဲ့ Model ID တွေရဲ့ Pricing ကို ကိုယ်တိုင် စစ်ထားပါ။
+ဒီဥပမာမှာ Groq ကို အရင်သုံးပြီး မအောင်မြင်မှ Cloudflare၊ NVIDIA၊ Mistral၊ Cohere နဲ့ OpenRouter တို့ကို အစဉ်လိုက် စမ်းပါမယ်။ Fallback ထဲမှာ ရေးထားတဲ့ Provider တွေကို အရင် Key/Model ပြင်ဆင်ထားဖို့ လိုပါတယ်။ Provider တစ်ခုက Error ပြန်ပေးတိုင်း နောက် Provider ကို အလိုအလျောက် စမ်းနိုင်ပေမဲ့ Paid Model သို့ အလိုအလျောက် ပြောင်းသုံးတာ မဟုတ်ပါ။ ရွေးထားတဲ့ Model ID တွေရဲ့ Pricing ကို ကိုယ်တိုင် စစ်ထားပါ။
 
 **English:** In Studio, select a provider, enter the exact model ID and API key, then press **Test AI**. When the test succeeds, press **Use for Recap**. The next Recap START/RESUME uses that provider for story context, translation and audit. Cloudflare also requires `CF_ACCOUNT_ID` in the local `.env`. Optional fallback providers are tried only when listed explicitly in `RECAP_AI_FALLBACKS`.
 
@@ -623,6 +639,8 @@ Myanmar (Burmese), English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, 
 | Gemini | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) က API Key။ Story Context, Translation နဲ့ Audit အတွက်။ |
 | Groq | `GROQ_API_KEY`, `GROQ_MODEL` | [Groq Console](https://console.groq.com/keys) က Key နဲ့ Model ID။ |
 | OpenRouter | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | [OpenRouter Keys](https://openrouter.ai/keys) က Key နဲ့ လက်ရှိ Free Model ID။ |
+| Mistral AI | `MISTRAL_API_KEY`, `MISTRAL_MODEL` | [Mistral La Plateforme](https://console.mistral.ai/) က Key နဲ့ Free mode Model ID။ |
+| Cohere | `COHERE_API_KEY`, `COHERE_MODEL` | [Cohere API Keys](https://dashboard.cohere.com/api-keys) က Trial Key နဲ့ Model ID။ |
 | Cloudflare Workers AI | `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_MODEL` | [Cloudflare Dashboard](https://dash.cloudflare.com/) က Token, Account ID နဲ့ Free Plan မှာရနိုင်တဲ့ Model။ |
 | NVIDIA NIM | `NVIDIA_API_KEY`, `NVIDIA_MODEL` | [NVIDIA API Catalog](https://build.nvidia.com/) က Developer Key နဲ့ ကိုယ့် Account မှာရတဲ့ Model ID။ |
 | Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | [Ollama](https://ollama.com/download) ကို စက်ထဲ Install လုပ်ပြီး Local Model Download လုပ်ပါ။ API Key မလိုပါ။ |

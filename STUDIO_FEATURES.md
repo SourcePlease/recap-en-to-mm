@@ -1,147 +1,592 @@
-# Recap Studio — Feature Documentation / Feature စာတမ်း
+# Recap Studio — အသုံးပြုနည်း၊ Feature လမ်းညွှန်နှင့် PC Test Checklist
 
-ဤစာတမ်းသည် SourcePlease/recap-en-to-mm repository ၏ feature/studio-expansion branch အတွက် ဖြစ်သည်။ main branch နှင့် မူရင်း upstream repository ကို သီးခြားထားသည်။
+ဤစာတမ်းက Recap Studio ထဲမှာ ဘာတွေပါသလဲ၊ Feature တစ်ခုချင်းစီက ဘာအတွက် အသုံးဝင်သလဲ၊ ဘယ်လိုသုံးရမလဲဆိုတာကို မြန်မာလို အဓိကထားပြီး ရှင်းပြထားပါတယ်။ လိုအပ်တဲ့နေရာတွေမှာ English အမည်နဲ့ Technical အကြောင်းအရာကိုပါ တွဲရေးထားပါတယ်။
 
-This document describes the feature/studio-expansion branch of SourcePlease/recap-en-to-mm. The upstream repository and the fork's main branch remain separate.
+ဒီစာတမ်းက SourcePlease/recap-en-to-mm ရဲ့ feature/studio-expansion branch အတွက် ဖြစ်ပါတယ်။ မူရင်း Windows App နဲ့ main branch ကို မထိခိုက်စေဘဲ သီးခြားပြင်ဆင်ထားပါတယ်။
 
-## 1. Application Tabs / App ထဲက Tab များ
+> **အရေးကြီး:** စာတမ်းထဲမှာ “အသုံးပြုနိုင်ပြီ” လို့ ဖော်ပြထားတာက Code ထဲမှာ အကောင်အထည်ဖော်ထားတဲ့အရာကို ဆိုလိုတာပါ။ သင့် PC ပေါ်မှာ Run ပြီး လက်တွေ့စမ်းသပ်ပြီးမှသာ အလုပ်လုပ်ကြောင်း အတည်ပြုနိုင်ပါတယ်။ “စမ်းသပ်ရန် / Planned” လို့ ဖော်ပြထားတဲ့အရာတွေကို လက်ရှိအလုပ်လုပ်နေတဲ့ Feature လို့ မယူဆပါနဲ့။
 
-- **Recap — Video Recap / ဘာသာပြန်အသံဖြင့် Video ထုတ်လုပ်ခြင်း။** မူရင်း Video ကို Whisper ဖြင့် စာသားပြောင်း၊ Target Language ကို ဘာသာပြန်၊ Narrator အသံထုတ်ပြီး Smart Sync ဖြင့် Video နဲ့ အချိန်ညှိပေးသည်။ မြန်မာဘာသာသည် မူလ Default ဖြစ်သည်။  
-  **English:** Local Whisper transcription, context-aware translation, narrator TTS and timestamp-aware Smart Sync. Myanmar/Burmese remains the default target.
+---
 
-- **Splitter — Video Part Splitting / Video အပိုင်းခွဲခြင်း။** Video တစ်ခု သို့မဟုတ် အများအပြားကို ကြာချိန်အလိုက် ခွဲပြီး Ratio, Fill, Text နှင့် Part Number များ သတ်မှတ်နိုင်သည်။ Smart Cut သည် စကားပြောနေချိန်တွင် ဖြတ်မိခြင်းကို လျှော့ချရန် စကားခဏရပ်သည့်နေရာကို ရှာနိုင်သည်။  
-  **English:** Split one or many videos by duration, configure ratio/fill/text/part numbering, preview cut positions and optionally use Smart Cut around speech pauses.
+## 1. App ကို ဘယ်လိုအသုံးပြုမလဲ
 
-- **Studio — Downloader & AI Tools / Download နှင့် AI Tools။** yt-dlp ကို အသုံးပြုပြီး ပံ့ပိုးထားသော Public URL များမှ Video သို့မဟုတ် Audio ကို Download လုပ်နိုင်သည်။ Queue, Provider Test, Glossary Editor နှင့် Recap Queue သို့ လွှဲပို့ခြင်းတို့ ပါဝင်သည်။  
-  **English:** A yt-dlp downloader for supported public URLs, persistent URL queue, AI provider tester, glossary editor and hand-off to the Recap queue.
+ဒီ App ကို Video Recap တစ်ခုတည်းလုပ်ဖို့ မဟုတ်ဘဲ Video ကို Download လုပ်ခြင်း၊ စာတန်းထိုးပြင်ခြင်း၊ Thumbnail ဖန်တီးခြင်း၊ Video အပိုင်းခွဲခြင်း၊ Project သိမ်းခြင်းနဲ့ Batch အလုပ်လုပ်ခြင်းတို့အတွက်ပါ စုစည်းထားပါတယ်။
 
-- **Thumbnail — Thumbnail Studio / Thumbnail ဖန်တီးခြင်း။** မူရင်း Video Frame များမှ Local Thumbnail ထုတ်ခြင်း၊ Frame ကို ကိုယ်တိုင်ရွေးခြင်း၊ Local Variant ၃ မျိုးဖန်တီးခြင်း၊ မြန်မာခေါင်းစဉ်နှင့် Logo တင်ခြင်း၊ ရွေးချယ်လိုပါက fal.ai ဖြင့် AI Background ဖန်တီးခြင်းတို့ ပါဝင်သည်။  
-  **English:** Local frame-based thumbnails, manual frame selection, three local variants, Burmese title/logo composition and optional fal.ai image backgrounds.
+### App ထဲက အဓိက Tab များ
 
-- **Subtitles — Subtitle Import & Translation / Subtitle တင်သွင်းပြီး ဘာသာပြန်ခြင်း။** ရှိပြီးသား SRT/VTT ကို Whisper ထပ်မသုံးဘဲ ဘာသာပြန်ပြီး Timestamp များကို ထိန်းထားကာ Translated-only သို့မဟုတ် Bilingual SRT ထုတ်နိုင်သည်။ Export မလုပ်မီ စာသားကို တစ်ကြောင်းချင်း ပြင်နိုင်သည်။  
-  **English:** Import SRT/VTT without rerunning Whisper, translate cues while preserving timestamps, review translated lines and export translated-only or bilingual SRT.
+| Tab | ဘာလုပ်ပေးသလဲ | ဘယ်အချိန်မှာ သုံးမလဲ |
+|---|---|---|
+| Recap | Video ကို နားထောင်၊ စာသားထုတ်၊ ဘာသာပြန်၊ Narrator အသံထုတ်ပြီး Video ပြန်တည်ဆောက် | Anime / Movie / Documentary Recap လုပ်မယ်ဆိုရင် |
+| Splitter | Video တစ်ခုကို အချိန်အလိုက် အပိုင်းခွဲ | Episode အရှည်ကြီးကို အပိုင်းငယ်ခွဲချင်ရင် |
+| Studio | YouTube၊ Facebook စတဲ့ Supported URL များ Download လုပ်၊ AI Provider စမ်း | Online Video ကို Recap လုပ်ဖို့ အရင် Download လုပ်ချင်ရင် |
+| Thumbnail | မူရင်း Video Frame ကနေ Thumbnail ထုတ်၊ Title/Logo တင် | Recap Video အတွက် Cover ပုံလုပ်ချင်ရင် |
+| Subtitles | SRT/VTT တင်သွင်း၊ ဘာသာပြန်၊ စာကြောင်းပြင်၊ Export | Whisper ကို ထပ်မသုံးဘဲ Subtitle သီးသန့်ပြင်ချင်ရင် |
+| Project | Project Save/Load၊ Audio Waveform၊ Pronunciation၊ BGM၊ Intro/Outro၊ QC | Project ကို နောက်မှဆက်လုပ်ချင်ရင် |
+| Recap Queue | Video အများအပြားကို တစ်ခုချင်းစီ အလိုအလျောက်လုပ် | Folder ထဲက Episode အများကြီးကို Batch လုပ်ချင်ရင် |
 
-- **Project — Project, Audio & Storage / Project၊ Audio နှင့် Storage Tools။** Project Save/Load, Audio Waveform Overview, Pronunciation Dictionary, Intro/Outro Branding, Background Music, Smart Silence Removal, Preflight Check, Output Quality Check နှင့် Storage/Cache Tools ပါဝင်သည်။  
-  **English:** Project save/load, waveform overview, pronunciation substitutions, branded intro/outro, optional background music, smart silence removal, preflight, output QC and safe storage/cache tools.
+**English:** Recap Studio combines video recap, splitting, downloading, thumbnail generation, subtitle translation, project tools and a persistent batch queue in one Windows desktop application.
 
-- **Recap Queue — Batch Recap / Recap Queue ဖြင့် အများအပြားလုပ်ဆောင်ခြင်း။** Local Video များကို Queue ထဲထည့်၊ App ပြန်ဖွင့်သည့်အခါ Pending Jobs များကို ပြန်ရယူ၊ Failed Jobs ကို Retry လုပ်ပြီး အလုပ်များကို တစ်ခုချင်း ဆက်တိုက်လုပ်နိုင်သည်။  
-  **English:** A persistent local-file queue that recovers interrupted jobs, retries failures and processes videos sequentially.
+---
 
-## 2. Recap & Editing / Recap နှင့် Editor
+## 2. Recap Mode များ — Storytelling တစ်မျိုးတည်း မဟုတ်တော့ပါ
 
-**ပါဝင်သည့်အရာများ / Included**
-- Whisper ဖြင့် Source Audio ကို Local Transcription လုပ်ခြင်း (Model ပထမဆုံးအသုံးပြုချိန်တွင် Download လိုနိုင်သည်)။
-- Gemini ကို Default သုံးပြီး Story Context, Translation နှင့် Translation Audit လုပ်ခြင်း။ Groq, OpenRouter နှင့် Local Ollama ကို ရွေးချယ်သုံးနိုင်သည်။
-- Source Language နဲ့ Target Language ကို သီးခြားရွေးခြင်း။ Target Options များတွင် Myanmar, English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, Indonesian, Malay, Filipino, Spanish, Portuguese, French, German, Italian, Russian, Turkish, Arabic, Bengali, Tamil, Telugu နှင့် Urdu ပါဝင်သည်။
-- Edge TTS, Gemini TTS နှင့် Optional Azure Speech/ElevenLabs TTS Provider များ။
-- Smart Sync, TTS Segment Cache, Safe Stop/Resume, Log/Progress နှင့် Folder Batch Processing။
-- Preview Frame ရွှေ့ကြည့်ခြင်း၊ Title/Logo/Extra Text ကို Drag လုပ်ခြင်း၊ Blur Box ဆွဲခြင်း၊ Zoom/Mirror, Ratio/Fill, 1080p/720p/480p Quality။
-- Subtitle ကို Video ထဲ Burn-in လုပ်ခြင်းနှင့် Upload အတွက် SRT ထုတ်ခြင်း။
+Recap မှာ အဓိကအားဖြင့် “ဘာသာပြန်ပြီး ဘယ်လိုပြောပြမလဲ” ဆိုတာကို ရွေးနိုင်ဖို့ Narration Style များ ထည့်ထားပါတယ်။ အောက်ပါ Style များဟာ Narrator ပြောပုံပြောင်းပေးတာဖြစ်ပြီး မူရင်းဇာတ်လမ်းထဲက အချက်အလက်တွေကို ကိုယ်တိုင်ဖြည့်စွက်ဖန်တီးခွင့် မပေးပါဘူး။
 
-**English:** The Recap pipeline combines local Whisper transcription, context-aware translation and audit, selectable target language and TTS providers, cached narration segments, Smart Sync, safe Stop/Resume, folder batch processing, draggable preview overlays, blur boxes, video layout/quality controls and subtitle/SRT output.
+### လက်ရှိ UI မှာ ရွေးနိုင်တဲ့ Narration Style များ
 
-### Native Burmese Narration Quality / သဘာဝကျတဲ့ မြန်မာဇာတ်ကြောင်းပြောပုံ
+| Style | ဘယ်လိုပြောမလဲ | သင့်တော်တဲ့ Video |
+|---|---|---|
+| **Storytelling** | ဇာတ်လမ်းကို အစမှအဆုံး သဘာဝကျကျ ဆက်စပ်ပြောပြမယ်။ လက်ရှိ Default Style ဖြစ်တယ်။ | Anime / Movie Recap အများစု |
+| **Documentary** | တည်ငြိမ်ပြီး အချက်အလက်ကို ဦးစားပေးပြောမယ်။ အလွန်အကျွံ စိတ်လှုပ်ရှားစေတဲ့ စကားမသုံးဘူး။ | Documentary / History / True Story |
+| **Cinematic** | ရုပ်ရှင်ဆန်တဲ့ စကားပြောစီးဆင်းမှုနဲ့ Suspense ကို ထိန်းပြီး ပြောမယ်။ မူရင်းမှာမရှိတဲ့ အန္တရာယ်၊ စိတ်ခံစားချက်ကို မတီထွင်ဘူး။ | Action / Thriller / Mystery |
+| **Casual** | ပေါ့ပေါ့ပါးပါး နားလည်လွယ်တဲ့ စကားပြောပုံစံ သုံးမယ်။ Slang နဲ့ အပိုစကားတွေ အလွန်အကျွံ မထည့်ဘူး။ | Comedy / Slice of Life |
+| **Character Focus** | ဇာတ်ကောင်တစ်ယောက်ချင်းစီရဲ့ ဆုံးဖြတ်ချက်၊ ဆက်ဆံရေး၊ ရည်ရွယ်ချက်နဲ့ ပြောင်းလဲမှုကို ပိုရှင်းအောင် ပြောမယ်။ | Character Drama / Romance |
+| **Anime Recap** | Anime Recap လို တက်ကြွတဲ့ စကားပြောစီးဆင်းမှု သုံးမယ်။ ဂျပန်နာမည်နဲ့ Technique အမည်တွေကို တစ်သမတ်တည်း ထိန်းမယ်။ | Anime / Manga Adaptation |
+| **Explainer** | အကြောင်းရင်း၊ အကျိုးဆက်၊ စည်းမျဉ်းနဲ့ ဇာတ်လမ်းထဲက Clue တွေကို အဆင့်လိုက် နားလည်လွယ်အောင် ရှင်းမယ်။ | Sci-fi / Fantasy / Mystery |
 
-**မြန်မာ:** Recap ၏ Myanmar Target Language အတွက် သီးသန့် Native Burmese Style Guide ထည့်ထားသည်။ မြန်မာလူတစ်ယောက်က ပရိသတ်ကို ဇာတ်လမ်းပြောပြနေသလို ရှင်းလင်းပြီး သဘာဝကျသော စကားပြောပုံစံကို ဦးစားပေးသည်။ English ဝါကျအစီအစဉ်ကို တိုက်ရိုက်မကူးရန်၊ အဓိပ္ပာယ်တူသည့် မြန်မာစကားအသုံးအနှုန်းဖြင့် ပြန်ရေးရန်၊ မလိုအပ်သော “သူက” ထပ်သုံးခြင်းနှင့် “နော်/ဗျာ/ပေါ့” ကဲ့သို့ ဖြည့်စွက်စကားများကို မထည့်ရန် ညွှန်ကြားထားသည်။ “သည်/၏/၌/ပြုလုပ်ခဲ့သည်” စသည့် စာပေ/ရုံးသုံးပုံစံများကို လိုအပ်မှသာ သုံးပြီး စကားပြောသံနဲ့ ကိုက်ညီသည့် အသုံးအနှုန်းကို ရွေးရန် သတ်မှတ်ထားသည်။
+**သုံးနည်း**
+1. Recap Tab ကိုဖွင့်ပါ။
+2. Source Video နဲ့ Source Language ကို ရွေးပါ။
+3. Target Language ကို Myanmar (Burmese) ရွေးပါ။
+4. Narration Style မှာ ကိုယ်လိုချင်တဲ့ပုံစံကို ရွေးပါ။
+5. Narrator Voice နဲ့ Speed ကို ရွေးပါ။
+6. Preview စစ်ပြီး START / RESUME ကိုနှိပ်ပါ။
 
-**English:** Myanmar output uses a dedicated native-style guide: clear contemporary spoken Burmese, natural Burmese word order, meaning-based idiom translation, varied sentence rhythm, and restrained pronoun/connector use. It avoids stiff literary/official phrasing and unnecessary filler while preserving all story facts.
+**သတိပြုရန်:** Style ပြောင်းလိုက်ရင် Translation Plan အသစ်တည်ဆောက်ရပါမယ်။ အရင် Style နဲ့ ရေးထားတဲ့ Translation ကို မမှားယွင်းစွာ ပြန်သုံးမိစေဖို့ Style ကို Job Checkpoint ထဲမှာပါ ထည့်သွင်းခွဲထားပါတယ်။ Whisper Transcript ကိုတော့ Source Video မပြောင်းလဲသရွေ့ ပြန်သုံးနိုင်ပါတယ်။
 
-**မြန်မာ:** Translation Audit က မူရင်းအချက်အလက် ပြည့်စုံမှု၊ စာကြောင်းပိုင်ဆိုင်ရာ ID၊ ထပ်နေမှုတို့နဲ့အတူ မြန်မာစကားပြောသံ သဘာဝကျမှုကိုပါ စစ်ဆေးပြီး မသဘာဝကျသော စာကြောင်းကို လိုအပ်လျှင် ပြန်ရေးသည်။ အရင် Version ဘာသာပြန်ထားသော Myanmar Job ကို Resume လုပ်သောအခါ Whisper Transcript ကို ပြန်မလုပ်ဘဲ Translation/Context Plan ကို ပြန်တည်ဆောက်မည်။ Gemini quota ပိုသုံးနိုင်ပြီး လူကိုယ်တိုင် စာဖတ်စစ်ဆေးမှုကို အစားမထိုးနိုင်ပါ။
+### နောက်ထပ် Production Mode များ — ဒီဇိုင်းသတ်မှတ်ထားပြီး အကောင်အထည်ဖော်ရန် ကျန်သေးသည်
 
-**English:** The audit also checks whether Burmese lines sound natural when spoken and repairs awkward wording when necessary. Older Myanmar jobs refresh their translation/context plan on resume but reuse the Whisper transcript. This can consume additional Gemini quota; native human review is still recommended.
+အောက်ပါ Mode များကို Storytelling Style နဲ့ မရောထွေးစေဘဲ သီးခြား Processing Mode အဖြစ် ထည့်သွင်းဖို့ ရည်ရွယ်ထားပါတယ်။ လက်ရှိ UI မှာ ရွေးလို့ရတဲ့ Style မဟုတ်သေးပါ။
 
-## 3. Downloader & Automated Workflow / Downloader နှင့် အလိုအလျောက် Workflow
+#### A. Original Audio + Subtitle Only — မူရင်းအသံမပြောင်းဘဲ စာတန်းထိုးမယ်
 
-- Quality ရွေးချယ်မှု၊ MP3-only, Playlist Download, ရနိုင်သော Subtitle Download, Progress နှင့် Authorized Cookie File ပံ့ပိုးမှု။
-- URL အများကြီးကို Persistent Queue ထဲထည့်ခြင်း၊ Interrupted Download များကို Pending အဖြစ် ပြန်ရယူခြင်း၊ Failed URL များကို Retry လုပ်ခြင်း။
-- Download ပြီးသော Video ကို Recap Queue ထဲ အလိုအလျောက်ထည့်နိုင်သည်။ Option သီးခြားဖွင့်ပါက Download Queue ပြီးနောက် Recap Queue ကို အလိုအလျောက် စတင်နိုင်သည်။
-- Download ပြီးချိန်မှာ Thumbnail ကို အလိုအလျောက်ဖန်တီးနိုင်သည်။
+ဒီ Mode က သင်ပြောထားတဲ့ပုံစံနဲ့ အနီးစပ်ဆုံးပါ။
 
-**English:** Download options include quality selection, MP3-only, playlists, available subtitles, progress and authorized cookies. URLs persist across restarts, failed downloads can be retried, and downloads may be automatically enqueued for Recap. Auto-starting Recap after the download queue is an independent opt-in setting.
+- မူရင်းဇာတ်ကောင်တွေရဲ့ အသံကို မဖျက်ဘူး။
+- Narrator TTS မထုတ်ဘူး။
+- မူရင်းစကားပြောသံကို ထားပြီး Myanmar Subtitle သာ ထည့်မယ်။
+- Subtitle ကို SRT အဖြစ်လည်း သီးခြား Export လုပ်နိုင်ရမယ်။
+- Original Audio ကို Keep / Mute လုပ်နိုင်ရမယ်။
+- မူရင်း BGM နဲ့ Dialogue ကို သီးခြားခွဲထားတဲ့ Audio Track ရှိမှ BGM တစ်ခုတည်းကို သီးခြား On/Off လုပ်နိုင်မယ်။
 
-**ကန့်သတ်ချက် / Limitations:** yt-dlp သည် ပံ့ပိုးထားသော Extractor များပေါ် မူတည်သည်။ Website ပြောင်းလဲမှု၊ Login/Region/CAPTCHA/URL Removed အခြေအနေများကြောင့် URL တစ်ခုချင်းစီ အလုပ်လုပ်မည်ဟု အာမမခံနိုင်ပါ။ DRM သို့မဟုတ် Access Control ကို ကျော်ဖြတ်ရန် မရည်ရွယ်ထားပါ။  
-**English:** Site support changes over time; some links may fail because of extractor changes, login, regional restrictions, CAPTCHA or removed media. This app does not bypass DRM or access controls.
+**အရေးကြီးတဲ့ နည်းပညာကန့်သတ်ချက်:** Video တစ်ခုထဲမှာ Dialogue နဲ့ BGM ကို Track တစ်ခုတည်းအဖြစ် ရောထားရင် “BGM ပဲပိတ်ပြီး စကားသံကို ဆက်ထား” လို့ FFmpeg တစ်ခုတည်းနဲ့ သန့်သန့်ရှင်းရှင်း မလုပ်နိုင်ပါဘူး။ Demucs / UVR လို Source Separation နည်းပညာနဲ့ BGM နဲ့ Speech ကို ခွဲရပါမယ်။ Separation မအောင်မြင်ရင် မူရင်းစကားသံပါ ပျက်နိုင်လို့ Preview နဲ့ Quality Check လိုပါတယ်။
 
-## 4. Thumbnail Studio / Thumbnail ဖန်တီးခြင်း
+#### B. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ်
 
-- FFmpeg ဖြင့် မူရင်း Video ထဲမှ Frame များထုတ်ပြီး Contrast/Detail အပေါ်အခြေခံကာ Frame ရွေးပေးသည်။
-- **Choose Frame** ဖြင့် Contact Sheet ထဲမှ မိမိလိုချင်သည့် Video အချိန်နားက Frame ကိုရွေးနိုင်သည်။ Automatic Best Frame သို့လည်း ပြန်ပြောင်းနိုင်သည်။
-- **Create 3 Local Variants** သည် Frame, Title Idea နှင့် Layout မတူသော Thumbnail ၃ မျိုး ဖန်တီးသည်။ Local Mode သည် AI Credits မသုံးပါ။
-- **Auto-thumbnail after Recap** သည် Default အားဖြင့် ဖွင့်ထားသည်။ Recap Final Video ထွက်ပြီးနောက် Original Source Video မှ Frame များကို အသုံးပြုပြီး Final Output ဘေးတွင် JPG သိမ်းပေးသည်။
-- 16:9, 9:16, 1:1 Aspect Ratio များ၊ မြန်မာ Title Styles နှင့် Logo Overlay ပါဝင်သည်။
-- **AI generated (fal.ai)** ကိုရွေးပါက AI Background ကို ဖန်တီးပြီး Title/Logo ကို Local မှာ ထပ်တင်သည်။ FAL_KEY နှင့် Account Credits လိုနိုင်သည်။
+- မိန်းကလေးဇာတ်ကောင်၊ ယောကျာ်းလေးဇာတ်ကောင် စသည်ဖြင့် Character/Speaker ကို ခွဲမယ်။
+- Character တစ်ယောက်ချင်းစီအတွက် Voice ကို ကိုယ်တိုင်ရွေးသတ်မှတ်နိုင်မယ်။
+- ဥပမာ Female Character → Female Voice၊ Male Character → Male Voice။
+- Character တစ်ယောက်တည်းက Scene အများကြီးမှာ ပြန်ပေါ်လာရင် သတ်မှတ်ထားတဲ့ Voice တစ်မျိုးတည်းကို ဆက်သုံးမယ်။
+- Subtitle ကိုလည်း Character အမည်နဲ့ ချိတ်ထားနိုင်ရမယ်။
+- Original Dialogue ကို ဖယ်ပြီး Dub အသံကို ထည့်မယ်ဆိုရင် BGM ကို သီးခြားထိန်းဖို့ Source Separation လိုတယ်။
 
-**English:** Thumbnail Studio supports source-frame analysis, manual frame selection, three local variants, Burmese title templates, local logo/text composition, 16:9/9:16/1:1 layouts and automatic thumbnail generation after Recap. Optional fal.ai mode generates an image background and may consume paid credits.
+**ဒီ Mode မှာ အရေးကြီးတာ:** AI က အသံကြားရုံနဲ့ Character ရဲ့ Gender ကို အမြဲမှန်မှန် မခန့်မှန်းနိုင်ပါဘူး။ Voice ကို AI က အလိုအလျောက် ခန့်မှန်းပေးနိုင်တဲ့အဆင့်ရှိလာရင်တောင် User က Character နဲ့ Voice ကို ပြန်စစ်ပြီး ပြင်နိုင်တဲ့ Manual Voice Casting စနစ် ထည့်သင့်ပါတယ်။ အသံအမျိုးအစားကို လူတစ်ယောက်ရဲ့ Gender နဲ့ တစ်ထပ်တည်း သတ်မှတ်မထားဘဲ Voice Profile အဖြစ်သာ သုံးမယ်။
 
-## 5. Subtitle Tools / Subtitle ပြုပြင်ရေး
+#### C. Original Dialogue + Translated Subtitle — မူရင်းစကားသံနဲ့ ဘာသာပြန်စာတန်း
 
-- SRT/VTT ကို Import လုပ်ခြင်း၊ Timestamp နှင့် မူရင်းစာသားကို Preview ကြည့်ခြင်း။
-- ရှိပြီးသား Cue များကို AI Provider ဖြင့် Translate လုပ်ခြင်း၊ Whisper ကို ထပ်မခေါ်ခြင်း။
-- Local glossary.json သို့မဟုတ် ရှိလျှင် glossary.example.json မှ Character Names, Terms, Places နှင့် Style Notes များကို ဘာသာပြန်ရာတွင် အသုံးပြုနိုင်ခြင်း။
-- ဘာသာပြန်စာကို Cue တစ်ခုစီ ပြင်ပြီး Original Cue Count နှင့် ကိုက်ညီသည့်အခါ Translated-only နှင့် Bilingual SRT Export လုပ်ခြင်း။
+- မူရင်းဇာတ်ကောင်အသံကို ထားမယ်။
+- စကားသံကို မြန်မာလို Dub မလုပ်ဘူး။
+- မူရင်းစကားကို မြန်မာစာတန်းအဖြစ် ပြမယ်။
+- မူရင်း Audio Track ကို မပျက်စီးစေဘဲ Video ထဲ Subtitle Burn-in လုပ်မယ်။
+- BGM ကို သီးခြားဖယ်/ထိန်းချင်ရင် Source Separation လိုမယ်။
 
-**English:** Subtitle import/translation preserves cue timing and can reuse the same glossary as Recap. A review step allows one edited target-language line per cue before exporting translated-only and bilingual SRT files.
+#### D. Scene-by-Scene Recap — ဇာတ်ဝင်ခန်းလိုက် Recap
 
-## 6. Project, Audio, Preflight & Storage / Project၊ Audio၊ စစ်ဆေးမှုနှင့် Storage
+- Video ကို Scene အလိုက် ခွဲမယ်။
+- Scene တစ်ခုချင်းစီမှာ သက်ဆိုင်တဲ့ Subtitle Cue / Transcript ကို ချိတ်မယ်။
+- Scene အစ/အဆုံးကို Preview ကြည့်ပြီး ကိုယ်တိုင်ပြင်နိုင်မယ်။
+- Narration တစ်ပိုင်းချင်းစီနဲ့ Source Clip ကို တွဲစစ်နိုင်မယ်။
 
-- Project Settings နဲ့ File Paths များကို Save/Load လုပ်သည်။ API Secret တန်ဖိုးကို Project JSON ထဲ မကူးပါ။
-- Audio Waveform ကို အကြမ်းဖျဉ်းပြသည်။ ၎င်းသည် Multitrack Timeline Editor မဟုတ်ပါ။
-- Pronunciation Dictionary ဖြင့် TTS ထွက်လာမည့် အသံထွက်ကို ပြင်သည်။ မြင်ရသော Subtitle စာသားကို မပြင်ပါ။
-- Channel Name/Logo ပါသော Intro/Outro Card များကို ထည့်နိုင်သည်။ Default ပိတ်ထားသည်။
-- Optional Background Music ကို Narration အောက်တွင် Loop လုပ်ပြီး Volume ကို 0–50% အတွင်း ချိန်နိုင်သည်။ Default ပိတ်ထားသည်။
-- Smart Silence Removal သည် Narration ထဲက Silence ကို လျှော့နိုင်သော်လည်း အသံတိုးတိုးပြောထားသည့်နေရာများကို ထိခိုက်နိုင်သောကြောင့် Default ပိတ်ထားသည်။
-- Preflight သည် Source File, FFmpeg/FFprobe, Credential ရှိ/မရှိ (Key မှန်/မမှန်ကို မစစ်နိုင်), Duration/Streams နှင့် Disk Space ကို စစ်သည်။
-- Output Quality Report သည် Final Video ရှိ/မရှိ၊ Audio/Video Stream, Duration, Resolution နှင့် မျှော်လင့်ထားသော SRT/Thumbnail ရှိ/မရှိ စစ်သည်။ Report ကို JSON အဖြစ် သိမ်းနိုင်သည်။
-- Storage Scan က Jobs, Downloads, Logs နှင့် Runtime Folder အရွယ်အစားကို ခန့်မှန်းပြသည်။ Safe Cache Cleanup သည် __pycache__ နှင့် သတ်မှတ်ထားသော Preview/Subtitle Render Cache များကိုသာ ဖယ်ရှားပြီး Final Video, Download, Checkpoint များကို မဖျက်ပါ။
-- Platform Presets: YouTube 16:9, Shorts/Reels/TikTok 9:16, Square Feed 1:1 နှင့် Lightweight 720p။
+#### E. Highlights / Trailer Mode — အဓိကအခန်းများကို ရွေးထုတ်မယ်
 
-**English:** Project tools include save/load, a low-memory waveform overview, pronunciation mappings, optional branded cards/music/silence compression, advisory preflight checks, objective media QC reports, storage estimates, safe cache cleanup and platform-oriented ratio/quality presets.
+- ဇာတ်လမ်းထဲက အရေးကြီးတဲ့ Scene တွေကို ရွေးထုတ်မယ်။
+- Spoiler Level နဲ့ Target Duration ကို User က သတ်မှတ်နိုင်ရမယ်။
+- Original Ending ကို ဖော်ပြမလား၊ မဖော်ပြဘူးလား ရွေးနိုင်ရမယ်။
+- ဒီ Mode က ဇာတ်လမ်းအချက်အလက်ကို ချန်လှပ်နိုင်တဲ့ Summary Task ဖြစ်တဲ့အတွက် ပုံမှန် Storytelling ရဲ့ “အချက်အလက်မချန်ရ” စည်းမျဉ်းနဲ့ သီးခြား Planner Logic လိုအပ်တယ်။
 
-## 7. AI / TTS Providers & API Keys / Provider များနှင့် API Key များ
+---
 
-| Provider / ဝန်ဆောင်မှု | အသုံးပြုပုံ / Usage |
-|---|---|
-| Gemini | Default story-context, translation and audit provider. Free access is limited to selected models and account-specific quotas. |
-| Groq | OpenAI-compatible text provider. A free plan is available with per-model RPM/RPD/TPM/TPD limits. |
-| OpenRouter | OpenAI-compatible model gateway. Choose current `:free` variants; limits and model availability change. |
-| Mistral AI | OpenAI-compatible La Plateforme provider. Free mode is for evaluation/prototyping, has the lowest limits, and may use prompts/outputs to train models. Requires `MISTRAL_API_KEY` and `MISTRAL_MODEL`. |
-| Cohere | OpenAI-compatible Compatibility API. Free trial keys currently have up to 1,000 calls/month and model-specific rate limits. Requires `COHERE_API_KEY` and `COHERE_MODEL`. |
-| Cloudflare Workers AI | OpenAI-compatible Recap/Studio provider. Free Workers allocation: 10,000 Neurons/day; `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_MODEL` required. Some models require paid billing. |
-| NVIDIA NIM | OpenAI-compatible Recap/Studio provider via NVIDIA Developer Program API Catalog; requires `NVIDIA_API_KEY` and `NVIDIA_MODEL`. Model access/rate limits vary. |
-| Ollama | Local model endpoint; no hosted API fee, but a local model and sufficient CPU/GPU/RAM/storage are required. |
-| Microsoft Edge TTS | Online Myanmar TTS (Thiha/Nilar); no API key configured by this app. Service/network restrictions may apply. |
-| Azure Speech | Supports Myanmar `my-MM` standard voices. Requires `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION`; F0 has strict request limits. |
-| ElevenLabs | Requires `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID`. The app's default `eleven_multilingual_v2` model does not list Burmese among its 29 supported languages; verify another model before using for Myanmar. |
-| fal.ai | Optional AI thumbnail background; requires `FAL_KEY` and prepaid/account credits may be consumed. It is not a text-translation provider. |
+## 3. AI Text Provider — အခမဲ့ Provider ကို ဦးစားပေးပြီး အလိုအလျောက်ရွေးမယ်
 
-API key များကို Local .env ထဲတွင်သာ ထည့်ပါ။ .env, Personal glossary.json, pronunciation.json နဲ့ ကိုယ်ရေးကိုယ်တာ Path ပါသော Project ဖိုင်များကို GitHub ပေါ် မတင်ပါနှင့်။  
-**English:** Keep credentials in the local .env. Do not commit .env, personal glossary/pronunciation files, or project files containing private paths.
+Text AI Provider တွေကို အဓိကအားဖြင့် Story Context, Translation နဲ့ Translation Audit အတွက် သုံးပါတယ်။ Whisper က Audio ကို စာသားပြောင်းပေးတာဖြစ်ပြီး Text AI Provider နဲ့ မတူပါဘူး။
 
-## 8. Testing Status / စမ်းသပ်မှုအခြေအနေ
+### Auto / Free-first Rotation
 
-Feature branch GitHub Actions သည် Python compilation နှင့် automated regression tests ကို လုပ်ဆောင်သည်။ နောက်ဆုံး Commit အတွက် စစ်ဆေးမှုအခြေအနေကို [GitHub Actions](https://github.com/SourcePlease/recap-en-to-mm/actions) မှာ ကြည့်ပါ။  
-**မြန်မာ:** Automated Tests အောင်မြင်ထားခြင်းသည် Windows GUI, သင့် API Key/Quota, Website တစ်ခုချင်းစီ သို့မဟုတ် Video အရှည်ကြီး၏ အသံ/ရုပ် Sync အားလုံး အောင်မြင်ကြောင်း မဆိုလိုပါ။
+လက်ရှိပြင်ဆင်ထားတဲ့ Auto Mode ရဲ့ အလုပ်လုပ်ပုံက ဒီလိုပါ။
 
-**အသုံးပြုသူ စမ်းသပ်ရန် အကြံပြုအစီအစဉ် / Suggested user test order**
-1. Video အတိုတစ်ခု (၁–၃ မိနစ်) နဲ့ Recap ကို စမ်းပါ။
-2. Target Language, Narrator Voice, Subtitle နှင့် Smart Sync ကို စစ်ပါ။
-3. Auto Thumbnail၊ JPG နဲ့ JSON Quality Report ဖန်တီးထားခြင်းကို စစ်ပါ။
-4. Stop/Resume နဲ့ Recap Queue ကို Video အတိုများနဲ့ စမ်းပါ။
-5. Download URL များကို တစ်ခုချင်း စမ်းပါ။ YouTube/Facebook/TikTok/RedNote က URL တိုင်း အမြဲအလုပ်လုပ်မယ်လို့ မယူဆပါနှင့်။
-6. Background Music, Intro/Outro, Smart Silence Removal တို့ကို တစ်ခုပြီးတစ်ခု စမ်းပါ။
-7. နောက်ဆုံးမှ Video အရှည်ကြီးကို အစအဆုံးလုပ်ပြီး Audio/Video Sync, Disk Space နှင့် Memory ကို စစ်ပါ။
+1. RECAP_AI_PROVIDER ကို auto ထားမယ်။
+2. App က RECAP_AI_AUTO_ORDER ထဲက Provider တွေကို အစဉ်လိုက် စစ်မယ်။
+3. API Key လိုတဲ့ Provider ဆိုရင် Key ရှိရမယ်။ Model ID လည်း သတ်မှတ်ထားရမယ်။
+4. ပထမဆုံး ပြည့်စုံတဲ့ Provider ကို အသုံးပြုမယ်။
+5. Request မအောင်မြင်ရင် RECAP_AI_FALLBACKS ထဲမှာ ပါပြီး Key/Model ပြည့်စုံတဲ့ Provider နောက်တစ်ခုကို စမ်းမယ်။
+6. Hosted Free Provider တစ်ခုမှ မပြည့်စုံရင် Gemini ကို Default အဖြစ် သုံးမယ်။
 
-Error ပြန်ပို့မယ်ဆိုရင် Log/Traceback နဲ့ ဘာလုပ်နေချိန်မှာ ဖြစ်တယ်ဆိုတာ ပို့ပါ။ API Key သို့မဟုတ် Cookie အချက်အလက်ကို မပို့ပါနှင့်။  
-**English:** Report the error message/log and the operation that failed, but never share API keys or cookies.
+**သိထားရန်:** Auto Rotation ဆိုတာ Model အားလုံးကို အလိုအလျောက် Download လုပ်ပေးတာ မဟုတ်ပါဘူး။ API Key နဲ့ Model ID ထည့်ထားတဲ့ Provider တွေကြားမှာသာ ပြောင်းသုံးနိုင်ပါတယ်။ OpenRouter ရဲ့ openrouter/free ကို သုံးရင် Free Model ရနိုင်တဲ့အထဲက တစ်ခုကို OpenRouter ဘက်က ရွေးပေးနိုင်ပါတယ်။
 
-## 9. Optional Future Ideas / နောက်ပိုင်း ထပ်တိုးနိုင်သည့် အကြံပြုချက်များ
+### Free-first Provider အစီအစဉ်
 
-အောက်ပါအရာများသည် လက်ရှိ Features အဖြစ် မကြေညာထားသေးဘဲ နောက်ပိုင်းတိုးချဲ့နိုင်သည့် အကြံပြုချက်များဖြစ်သည်။
+| အစဉ် | Provider | အသုံးပြုပုံ | Free သုံးရာမှာ သတိထားရန် |
+|---:|---|---|---|
+| 1 | Groq | မြန်ဆန်တဲ့ Text Generation / Translation | Model အလိုက် RPM, RPD, TPM, TPD ကန့်သတ်ချက်ရှိတယ်။ |
+| 2 | OpenRouter | Model မျိုးစုံကို API တစ်ခုနဲ့ သုံးနိုင်တယ် | openrouter/free သို့မဟုတ် :free Model ကို ရွေးပါ။ Free Variant တွေမှာ Rate Limit ရှိတယ်။ |
+| 3 | Cloudflare Workers AI | Text Generation / Translation | Free Daily Neurons ရှိပေမဲ့ Model တိုင်း Free မဟုတ်ဘူး။ |
+| 4 | NVIDIA NIM | Hosted Open Model များ စမ်းသပ်ရန် | Developer API Catalog မှာ Model Access နဲ့ Limit ပြောင်းနိုင်တယ်။ |
+| 5 | Mistral AI | Translation / Text Generation | Free Mode က Evaluation/Prototyping အတွက်ဖြစ်ပြီး Limit နည်းတယ်။ Data Terms ကိုဖတ်ပါ။ |
+| 6 | Cohere | Text Generation / Translation | Trial Key က Free ဖြစ်ပေမဲ့ Call Limit နဲ့ Model Limit ရှိတယ်။ |
+| 7 | Ollama | Local AI Model | API Bill မရှိဘူး။ ဒါပေမဲ့ PC ရဲ့ RAM/CPU/GPU ကို အသုံးပြုမယ်။ |
+| Fallback | Gemini | Story Context, Translation, Audit | Selected Models မှာ Free Tier ရှိတယ်။ Quota က Account အလိုက် ကွာတယ်။ |
 
-These are future extension ideas, not claims about currently implemented functionality.
+**လက်တွေ့အကြံပြုချက်**
+- Free Model ကို ရွေးချင်ရင် OpenRouter Model ID ကို openrouter/free ထားနိုင်တယ်။
+- Groq Model ID ကို ရွေးတဲ့အခါ Groq Console ရဲ့ လက်ရှိ Model Catalog နဲ့ Free Developer Limit ကို စစ်ပါ။
+- Cloudflare / NVIDIA / Mistral / Cohere တို့မှာလည်း ကိုယ့် Account မှာ ရရှိနိုင်တဲ့ Model ID ကိုပဲ သုံးပါ။
+- Free Tier ရှိတယ်ဆိုတာ အကန့်အသတ်မရှိ သုံးလို့ရတယ်လို့ မဆိုလိုပါဘူး။
+- Provider တစ်ခုချင်းစီရဲ့ Quota ပြည့်သွားရင် နောက် Provider ကို ပြောင်းစမ်းနိုင်ပေမဲ့ အားလုံး Limit ပြည့်နေရင် Job ရပ်နိုင်တယ်။
 
-- AI Scene/Subject-Aware Reframing — စကားပြောသူ/ဇာတ်ကောင်ကို အခြေခံပြီး Vertical Video Crop ကို အလိုအလျောက်ရွေးခြင်း။
-- Audio Source Separation — မူရင်း Background Music ကို Narration မှ ခွဲထုတ်ပြီး ထိန်းသိမ်းနိုင်ရေး။
-- Chapter/Scene Markers — ဇာတ်လမ်းအခန်းလိုက် Timestamp နှင့် Export Chapter များ။
-- Publish Integrations — YouTube သို့မဟုတ် အခြား Platform များသို့ Upload လုပ်ခြင်း (OAuth/API Setup လိုအပ်နိုင်သည်)။
-- Advanced Timeline Editor — Video, Voice, BGM, Subtitle Track များကို အချိန်လိုက် ခွဲပြင်ခြင်း။
+### Paid / Usage-based Provider များ
+
+အောက်ပါ Provider တွေကို လက်ရှိ Free-first Default Rotation ထဲ မထည့်ထားပါဘူး။ လိုအပ်မှသာ သီးခြားထည့်သွင်းစဉ်းစားသင့်ပါတယ်။
+
+| Provider / Model Family | ဘာအတွက် အသုံးဝင်လဲ | ကုန်ကျစရိတ်သတိပြုရန် |
+|---|---|---|
+| # OpenAI GPT API | အရည်အသွေးမြင့် Translation / Reasoning | Token အလိုက် ပေးချေရတယ်။ |
+| # Anthropic Claude API | Long Context / Natural Writing | Token အလိုက် ပေးချေရတယ်။ |
+| # DeepSeek API | Reasoning / Translation | API က Usage-based ဖြစ်ပြီး အမြဲတမ်း Free မဟုတ်ဘူး။ |
+| # Paid Gemini Models | Context / Translation / Audit | Free Tier ကျော်ရင် Billing သက်ရောက်နိုင်တယ်။ |
+| # Paid OpenRouter Models | Model အမျိုးမျိုး ရွေးချယ်သုံးရန် | Model တစ်ခုချင်းစီ ဈေးနှုန်းမတူဘူး။ |
+| # fal.ai | AI Thumbnail Background / Image Generation | Image တစ်ပုံချင်းစီအလိုက် Credits ကုန်နိုင်တယ်။ |
+| # ElevenLabs | Premium TTS | Free Credits ကန့်သတ်ထားပြီး Burmese Support ကို Model အလိုက် စစ်ရမယ်။ |
+| # Azure Speech | Burmese TTS | Free Quota ကျော်ရင် Paid ဖြစ်နိုင်တယ်။ |
+
+# နဲ့ စထားတဲ့အရာတွေကို Paid / Usage-based အဖြစ် သတ်မှတ်ထားတာပါ။ လက်ရှိ Free-first Rotation ထဲ အလိုအလျောက် မထည့်ထားပါဘူး။
+
+### API Key ထည့်နည်း
+
+1. App Folder ထဲက .env.example ကို Copy လုပ်ပြီး .env အမည်နဲ့ သိမ်းပါ။
+2. ကိုယ်သုံးမယ့် Provider ရဲ့ API Key ကို သက်ဆိုင်ရာ Variable ထဲ ထည့်ပါ။
+3. Model ID ကိုလည်း သတ်မှတ်ပါ။
+4. .env ကို GitHub ပေါ် မတင်ပါနဲ့။
+5. Studio Tab ထဲက Provider Test ကို အသုံးပြုပြီး Key/Model အလုပ်လုပ်မလုပ် စမ်းပါ။
+6. Recap ကို START မလုပ်ခင် Provider နဲ့ Model ရွေးချယ်မှုကို စစ်ပါ။
+
+ဥပမာ — OpenRouter Free Router:
+
+~~~dotenv
+RECAP_AI_PROVIDER=auto
+RECAP_AI_AUTO_ORDER=groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama
+RECAP_AI_FALLBACKS=groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama
+
+OPENROUTER_API_KEY=your_key_here
+OPENROUTER_MODEL=openrouter/free
+~~~
+
+---
+
+## 4. TTS — အသံထုတ်ပေးတဲ့ Provider များ
+
+TTS ဆိုတာ Text-to-Speech ဖြစ်ပြီး ဘာသာပြန်ထားတဲ့ စာသားကို အသံဖိုင်အဖြစ် ပြောင်းပေးတာပါ။
+
+| Provider | အသုံးပြုပုံ | အခမဲ့အခြေအနေ |
+|---|---|---|
+| Microsoft Edge TTS | Myanmar Thiha / Nilar အသံထုတ်နိုင်တယ် | API Key မလိုဘဲ သုံးနိုင်ပေမဲ့ Network / Service ကန့်သတ်ချက်ရှိတယ်။ |
+| Gemini TTS | Voice Style / Natural Speech | Account / Model / Billing အလိုက် ကွာတယ်။ |
+| Azure Speech | my-MM-ThihaNeural / my-MM-NilarNeural | F0 Free Quota ကန့်သတ်ချက်ရှိတယ်။ |
+| ElevenLabs | Premium Multilingual Voice | Free Credit ရှိပေမဲ့ Default Multilingual v2 မှာ Burmese ပါမပါကို အရင်စစ်ရမယ်။ |
+
+**အကြံပြုချက်:** မြန်မာအသံကို အဓိကသုံးမယ်ဆိုရင် Edge TTS ရဲ့ Thiha / Nilar ကို ပထမဆုံးစမ်းပါ။ Voice ရွေးချယ်မှုက Output Language နဲ့ ကိုက်ညီရပါမယ်။
+
+### Character Voice Dub အတွက် နောက်ထပ်လိုအပ်မယ့်အရာ
+
+Narrator Voice တစ်မျိုးတည်းနဲ့ ဇာတ်ကောင်အားလုံးကို ပြောစေတာနဲ့ Character Voice Dub က မတူပါဘူး။ Character Voice Dub အတွက် အောက်ပါအဆင့်တွေ လိုပါတယ်။
+
+1. Speaker Diarization — ဘယ်အချိန်မှာ ဘယ်သူပြောသလဲ ခွဲခြားခြင်း။
+2. Speaker Review — Speaker A / B ကို Character အမည်နဲ့ User က ချိတ်ပေးခြင်း။
+3. Voice Casting — Character တစ်ယောက်စီအတွက် အသံရွေးပေးခြင်း။
+4. Dialogue Translation — Character ရဲ့ စကားပြောပုံနဲ့ ကိုက်ညီအောင် ဘာသာပြန်ခြင်း။
+5. Audio Separation — မူရင်းစကားသံနဲ့ BGM ကို ခွဲထုတ်ခြင်း။
+6. Voice Mixing — Dub အသံကို မူရင်း BGM နဲ့ အချိန်ညှိပေါင်းခြင်း။
+
+Speaker Diarization နဲ့ Source Separation ကို Free Local Model တွေနဲ့ လုပ်နိုင်တဲ့နည်းလမ်းတွေရှိပေမဲ့ Model Download, RAM/VRAM နဲ့ Processing Time လိုအပ်ပါတယ်။ Optional Feature အဖြစ် ထည့်ပြီး Default မှာ မဖွင့်ထားတာ ပိုကောင်းပါတယ်။
+
+---
+
+## 5. Recap — Video ကို ဘာသာပြန်အသံနဲ့ ပြန်တည်ဆောက်ခြင်း
+
+### အလုပ်လုပ်ပုံ
+
+1. Source Video ကို ရွေးတယ်။
+2. Whisper က မူရင်းအသံကို နားထောင်ပြီး Timestamp ပါတဲ့ Transcript ထုတ်တယ်။
+3. AI က Story Context တည်ဆောက်ပြီး Character Name, Relationship, Place နဲ့ Term တွေကို မှတ်ထားတယ်။
+4. Transcript ကို Target Language သို့ ပြန်ဆိုတယ်။
+5. Translation Audit က အဓိပ္ပာယ်မပျောက်၊ စာကြောင်းမထပ်၊ သဘာဝကျမကျ စစ်တယ်။
+6. TTS က Narration Audio ထုတ်တယ်။
+7. Smart Sync က Narration နဲ့ Video Clip ကို အချိန်ညှိတယ်။
+8. FFmpeg က Final Video, Subtitle နဲ့ Audio ကို ပေါင်းစပ်တယ်။
+
+### Recap ထဲမှာ ပါဝင်တဲ့ Tools
+
+- Source Language / Target Language ကို သီးခြားရွေးနိုင်တယ်။
+- Myanmar Native Narration Style ကို အသုံးပြုတယ်။
+- Story Context / Glossary နဲ့ Character Name တစ်သမတ်တည်း ထိန်းတယ်။
+- Narrator Voice / Speed ကို ရွေးနိုင်တယ်။
+- Smart Sync နဲ့ Segment တစ်ခုချင်းစီကို Video အချိန်နဲ့ ချိန်တယ်။
+- Stop / Resume လုပ်နိုင်တယ်။
+- TTS Segment Cache ကို ပြန်သုံးနိုင်တယ်။
+- Folder Batch Processing နဲ့ Video အများအပြား လုပ်နိုင်တယ်။
+- Preview Frame ကို ရွှေ့ကြည့်နိုင်တယ်။
+- Title / Logo / Extra Text ကို Drag လုပ်နိုင်တယ်။
+- Blur Box ကို Preview ပေါ်မှာ ဆွဲသတ်မှတ်နိုင်တယ်။
+- Zoom / Mirror / Ratio / Fill / Output Quality ကို ချိန်နိုင်တယ်။
+- Subtitle Burn-in နဲ့ SRT Export ကို အသုံးပြုနိုင်တယ်။
+
+### Myanmar Narration အရည်အသွေး
+
+မြန်မာစာကို English ဝါကျအစီအစဉ်အတိုင်း တိုက်ရိုက်ပြန်တာမျိုး မလုပ်ဖို့ သတ်မှတ်ထားပါတယ်။ မြန်မာလူတစ်ယောက်က ပရိသတ်ကို ပြောပြနေသလို နားလည်လွယ်ပြီး သဘာဝကျတဲ့ စကားပြောပုံစံကို ဦးစားပေးပါတယ်။
+
+- “သည် / ၏ / ၌ / ပြုလုပ်ခဲ့သည်” လို စာပေသုံးပုံစံကို မလိုအပ်ဘဲ မသုံးဘူး။
+- “သူက” ကို စာကြောင်းတိုင်းမှာ ထပ်မသုံးဘူး။
+- “နော် / ဗျာ / ပေါ့” လို ဖြည့်စွက်စကားကို မလိုအပ်ဘဲ မထည့်ဘူး။
+- ဇာတ်ကောင်အမည်၊ နေရာအမည်၊ Technique အမည်ကို တစ်သမတ်တည်း သုံးတယ်။
+- အဓိပ္ပာယ်၊ အဖြစ်အပျက်နဲ့ အချက်အလက်ကို မပြောင်းဘူး။
+
+---
+
+## 6. Splitter — Video အပိုင်းခွဲခြင်း
+
+Splitter က Video တစ်ခုတည်းကို အပိုင်းငယ်တွေ ခွဲပေးတယ်။
+
+- Split Duration သတ်မှတ်နိုင်တယ်။
+- Video အများအပြားကို Batch Split လုပ်နိုင်တယ်။
+- Output Ratio / Fill / Text / Part Number ကို သတ်မှတ်နိုင်တယ်။
+- Smart Cut က စကားပြောနေတဲ့အချိန်ကို ဖြတ်မိတာ လျှော့ချဖို့ Speech Pause ကို ရှာနိုင်တယ်။
+- Output ဖိုင်တစ်ခုချင်းစီကို Preview စစ်နိုင်တယ်။
+
+**သုံးနည်း**
+1. Splitter Tab ကို ဖွင့်ပါ။
+2. Video တစ်ခု သို့မဟုတ် Folder ထဲက Video များကို ရွေးပါ။
+3. အပိုင်းတစ်ခုစီ ကြာချိန် သတ်မှတ်ပါ။
+4. Ratio / Fill / Part Number ကို ရွေးပါ။
+5. Smart Cut ကို လိုအပ်မှ ဖွင့်ပါ။
+6. Output Folder ကို သတ်မှတ်ပြီး Split လုပ်ပါ။
+
+---
+
+## 7. Studio Downloader — Online Video Download
+
+yt-dlp ကို အသုံးပြုပြီး Supported Website တွေက Video / Audio ကို Download လုပ်နိုင်ပါတယ်။
+
+- Best Available / 1080p / 720p / 480p Quality။
+- Audio Only (MP3)။
+- Playlist Download။
+- ရနိုင်တဲ့ Subtitle Download။
+- Authorized cookies.txt ကို အသုံးပြုနိုင်တယ်။
+- Download Progress ကို ကြည့်နိုင်တယ်။
+- URL အများကြီးကို Persistent Queue ထဲ ထည့်နိုင်တယ်။
+- Stop after current / Retry Failed / Clear Finished။
+- Download ပြီးတဲ့ Video ကို Recap Queue ထဲ အလိုအလျောက် ထည့်နိုင်တယ်။
+- Download ပြီးရင် Thumbnail ကို အလိုအလျောက် ဖန်တီးနိုင်တယ်။
+
+**Supported Site သတိပြုရန်:** YouTube, Facebook, TikTok, Instagram, Reddit, X/Twitter စတာတွေကို yt-dlp Extractor ရှိသလောက် အသုံးပြုနိုင်ပါတယ်။ RedNote / Xiaohongshu အတွက် Generic Extractor က အမြဲအလုပ်လုပ်မယ်လို့ မအာမခံနိုင်ပါဘူး။ Login, Region Restriction, CAPTCHA, Website Update နဲ့ Removed URL ကြောင့် Download မရနိုင်ပါ။ DRM / Access Control ကို ကျော်ဖြတ်ဖို့ မရည်ရွယ်ထားပါဘူး။
+
+---
+
+## 8. Thumbnail Studio — Thumbnail သီးသန့်ဖန်တီးခြင်း
+
+Thumbnail ကို Recap ပြီးမှသာ ဖန်တီးရတာ မဟုတ်ပါဘူး။ Thumbnail Tab ကို သီးခြားဖွင့်ပြီး မူရင်း Video ကနေ Cover ပုံ ထုတ်နိုင်ပါတယ်။
+
+- FFmpeg နဲ့ Video Frame အများအပြား ထုတ်တယ်။
+- Contrast / Detail ကို အခြေခံပြီး Best Frame ရွေးတယ်။
+- Choose Frame နဲ့ ကိုယ်ကြိုက်တဲ့ Frame ကို ရွေးနိုင်တယ်။
+- Local Variant ၃ မျိုး ထုတ်နိုင်တယ်။
+- မြန်မာ Title Style တွေ ထည့်နိုင်တယ်။
+- Logo / Channel Name ကို ထည့်နိုင်တယ်။
+- 16:9 / 9:16 / 1:1 Ratio ကို ရွေးနိုင်တယ်။
+- Auto-thumbnail after Recap နဲ့ Final Video ထွက်ပြီးနောက် Original Source Video က Frame ကို အသုံးပြုပြီး JPG ထုတ်နိုင်တယ်။
+- Optional fal.ai AI Background ကို အသုံးပြုနိုင်တယ်။
+
+**Local Mode** က PC ပေါ်မှာပဲ Frame / Text / Logo ကို ပေါင်းစပ်တာဖြစ်လို့ AI Image API Credits မလိုပါဘူး။ **fal.ai Mode** က AI Background Generate လုပ်တာဖြစ်ပြီး Account Credit ကုန်နိုင်ပါတယ်။
+
+---
+
+## 9. Subtitle Tools — SRT / VTT တင်သွင်းပြီး ဘာသာပြန်ခြင်း
+
+Whisper ကို ထပ်မသုံးချင်တဲ့အခါ ဒီ Tab ကို သုံးပါ။
+
+1. Subtitle Tab ကို ဖွင့်ပါ။
+2. SRT သို့မဟုတ် VTT ဖိုင်ကို Import လုပ်ပါ။
+3. Source / Target Language ကို ရွေးပါ။
+4. Glossary ကို သုံးချင်ရင် ထည့်ပါ။
+5. Translate ကို နှိပ်ပါ။
+6. Cue တစ်ကြောင်းချင်းစီကို စစ်ပြီး လိုအပ်ရင် ပြင်ပါ။
+7. Translated-only သို့မဟုတ် Bilingual SRT ကို Export လုပ်ပါ။
+
+Timestamp တွေကို ထိန်းထားပြီး Subtitle Text ကိုပဲ ဘာသာပြန်ပေးပါတယ်။ Bilingual SRT မှာ Original နဲ့ Translation ကို တွဲထုတ်နိုင်ပါတယ်။
+
+---
+
+## 10. Project & Audio Tools
+
+### Project Save / Load
+- Project Settings နဲ့ File Path တွေကို သိမ်းထားနိုင်တယ်။
+- နောက်မှ Project ကို ပြန်ဖွင့်ပြီး ဆက်လုပ်နိုင်တယ်။
+- API Key / Secret ကို Project File ထဲ မကူးဘူး။
+
+### Audio Waveform
+- Audio ကို အပိုင်းငယ်စီ ဖတ်ပြီး RMS Waveform ဆွဲပြတယ်။
+- RAM အများကြီး မသုံးအောင် Block အလိုက် စစ်တယ်။
+- ဒီ Feature က Full Multitrack Timeline Editor မဟုတ်ဘူး။
+
+### Pronunciation Dictionary
+- TTS က နာမည်၊ ဂျပန်စကား၊ English Abbreviation တွေကို မှားဖတ်တဲ့အခါ အသံထွက်ကို ပြင်ပေးတယ်။
+- ဥပမာ Source Term တစ်ခုကို ဘယ်လိုဖတ်စေချင်တယ်ဆိုတာ Mapping လုပ်နိုင်တယ်။
+- ဒီ Dictionary က TTS အသံထွက်ကိုသာ ပြင်တယ်။ Subtitle စာသားကို မပြောင်းဘူး။
+
+### Intro / Outro
+- Channel Name / Logo ပါတဲ့ Intro / Outro Card ထည့်နိုင်တယ်။
+- Intro / Outro Duration ကို သတ်မှတ်နိုင်တယ်။
+- Default အနေနဲ့ ပိတ်ထားတယ်။
+
+### Background Music (BGM)
+- Narration အောက်မှာ Music File ကို Loop လုပ်ပြီး ထည့်နိုင်တယ်။
+- Volume ကို 0–50% အတွင်း ချိန်နိုင်တယ်။
+- Default ပိတ်ထားတယ်။
+- ကိုယ်ပိုင်အသုံးပြုခွင့်ရှိတဲ့ Music ကိုသာ သုံးပါ။
+
+### Smart Silence Removal
+- Narration ထဲက တိတ်ဆိတ်နေတဲ့အချိန်တွေကို လျှော့ပေးနိုင်တယ်။
+- အသံတိုးတိုးပြောထားတဲ့ စကားလုံးတွေကို မှားဖယ်နိုင်တဲ့အတွက် Default ပိတ်ထားတယ်။
+- Video အတိုနဲ့ အရင်စမ်းပါ။
+
+### Preflight / Output Quality Check
+- Source File / FFmpeg / FFprobe / Disk Space ကို စစ်တယ်။
+- API Credential ရှိမရှိကို စစ်နိုင်ပေမဲ့ Key မှန်မမှန်ကို Preflight တစ်ခုတည်းနဲ့ အာမမခံနိုင်ဘူး။
+- Final Video ရှိမရှိ၊ Audio/Video Stream, Duration, Resolution, SRT နဲ့ Thumbnail ကို စစ်နိုင်တယ်။
+- Quality Report ကို JSON အဖြစ် သိမ်းနိုင်တယ်။
+
+### Storage / Safe Cache Cleanup
+- Jobs / Downloads / Logs / Runtime Folder အရွယ်အစားကို ကြည့်နိုင်တယ်။
+- Safe Cleanup က သတ်မှတ်ထားတဲ့ Cache File တွေကိုသာ ဖယ်ရှားတယ်။
+- Final Video, Download, Job Checkpoint တွေကို မဖျက်ဘူး။
+
+---
+
+## 11. Recap Queue — Video အများကြီးကို တစ်ခုပြီးတစ်ခုလုပ်ခြင်း
+
+- Local Video အများအပြားကို Queue ထဲ ထည့်နိုင်တယ်။
+- Queue ကို Disk ပေါ်မှာ သိမ်းထားတယ်။
+- App ပိတ်သွားရင် Pending Job တွေကို ပြန်ရယူနိုင်တယ်။
+- Failed Job ကို Retry လုပ်နိုင်တယ်။
+- Job တစ်ခုချင်းစီရဲ့ Progress / Status ကို ကြည့်နိုင်တယ်။
+- Job တစ်ခုရဲ့ Result ကို နောက် Job နဲ့ မရောအောင် သီးခြား Folder ခွဲထားတယ်။
+
+**အကြံပြုချက်:** ပထမဆုံး ၁–၃ မိနစ် Video နဲ့ စမ်းပါ။ Queue အလုပ်လုပ်ကြောင်း သေချာမှ Episode အများကြီး ထည့်ပါ။
+
+---
+
+## 12. PC မှာ Run ပြီးမှ စစ်ရန် — Test Checklist
+
+အောက်က Checklist တွေကို PC မှာ App ကို Run ပြီးမှသာ Check လုပ်ပါ။ GitHub Actions အောင်မြင်တာနဲ့ PC မှာ GUI / API / Video အားလုံး အလုပ်လုပ်တယ်လို့ မဆိုလိုပါဘူး။
+
+### A. Install & Startup
+
+- [ ] Windows မှာ INSTALL_REQUIREMENTS.bat အောင်မြင်စွာ ပြီးသွားတယ်။
+- [ ] RUN.bat နဲ့ App ဖွင့်လို့ရတယ်။
+- [ ] App ဖွင့်ချိန်မှာ Python Error မတက်ဘူး။
+- [ ] FFmpeg နဲ့ FFprobe ကို App က ရှာတွေ့တယ်။
+- [ ] Myanmar Font ကို Preview / Subtitle မှာ မှန်မှန်ပြတယ်။
+- [ ] App ပိတ်ပြီး ပြန်ဖွင့်တဲ့အခါ Config မပျောက်ဘူး။
+
+### B. AI Provider & Free Rotation
+
+- [ ] .env ကို ဖတ်နိုင်တယ်။
+- [ ] Provider မရွေးထားဘဲ Auto Mode နဲ့ Gemini Fallback အလုပ်လုပ်တယ်။
+- [ ] Groq Key + Model ထည့်ပြီး Auto Mode က Groq ကို ရွေးတယ်။
+- [ ] OpenRouter Key + openrouter/free ထည့်ပြီး Free Router ကို စမ်းလို့ရတယ်။
+- [ ] Groq ကို မရနိုင်အောင်လုပ်ပြီး နောက် Free Provider ကို Fallback လုပ်တယ်။
+- [ ] Model ID မရှိတဲ့ Provider ကို Auto Mode က ကျော်သွားတယ်။
+- [ ] API Key မမှန်ရင် Error Message က ဘယ် Provider မှာ ပြဿနာဖြစ်တယ်ဆိုတာ ဖော်ပြတယ်။
+- [ ] Key ကို Log ထဲမှာ အပြည့်အစုံ မဖော်ပြဘူး။
+- [ ] Provider တစ်ခု Quota ပြည့်ရင် အခြား Provider ကို ပြောင်းသုံးနိုင်တယ်။
+
+### C. Recap Narration Styles
+
+- [ ] Storytelling Style နဲ့ ၁–၃ မိနစ် Video စမ်းပြီး အလုပ်လုပ်တယ်။
+- [ ] Documentary Style နဲ့ စမ်းပြီး စကားပြောပုံ တည်ငြိမ်လာတယ်။
+- [ ] Cinematic Style နဲ့ စမ်းပြီး မူရင်းမှာမရှိတဲ့ အဖြစ်အပျက် မတီထွင်ဘူး။
+- [ ] Casual Style နဲ့ စမ်းပြီး မြန်မာစကားပြောပုံ သဘာဝကျတယ်။
+- [ ] Character Focus Style နဲ့ စမ်းပြီး ဇာတ်ကောင်အမည် / ဆက်ဆံရေး မလွဲဘူး။
+- [ ] Anime Recap Style နဲ့ စမ်းပြီး Japanese Name / Technique တွေ တစ်သမတ်တည်း ရှိတယ်။
+- [ ] Explainer Style နဲ့ စမ်းပြီး Cause / Effect ကို နားလည်လွယ်တယ်။
+- [ ] Style ပြောင်းပြီး Resume လုပ်တဲ့အခါ အရင် Style ရဲ့ Translation ကို မမှားဘဲ ပြန်မသုံးဘူး။
+- [ ] Whisper Transcript ကို မလိုအပ်ဘဲ ထပ်မလုပ်ဘူး။
+
+### D. Voice / TTS / Audio
+
+- [ ] Myanmar Thiha Voice နဲ့ အသံထွက်တယ်။
+- [ ] Myanmar Nilar Voice နဲ့ အသံထွက်တယ်။
+- [ ] Narrator Speed ကို ပြောင်းလို့ရတယ်။
+- [ ] TTS Segment Cache ကို ပြန်သုံးနိုင်တယ်။
+- [ ] Edge TTS 403 / Network Error ဖြစ်ရင် Log မှာ အကြောင်းရင်းပြတယ်။
+- [ ] Narration နဲ့ Video Sync မလွဲဘူး။
+- [ ] Background Music ပိတ်ထားရင် မထည့်ဘူး။
+- [ ] Background Music ဖွင့်ထားရင် Voice ကို မဖုံးဘူး။
+- [ ] Intro / Outro ဖွင့်ထားရင် Duration မှန်တယ်။
+- [ ] Smart Silence Removal ပိတ်/ဖွင့် နှိုင်းယှဉ်ပြီး စကားလုံး မပျောက်ဘူး။
+
+### E. Subtitle / Preview / Editor
+
+- [ ] SRT Import လုပ်လို့ရတယ်။
+- [ ] VTT Import လုပ်လို့ရတယ်။
+- [ ] Subtitle Translation က Timestamp မပြောင်းဘူး။
+- [ ] Bilingual SRT မှာ Original + Myanmar စာသား နှစ်မျိုးပါလာတယ်။
+- [ ] Subtitle Text ကို ကိုယ်တိုင်ပြင်လို့ရတယ်။
+- [ ] Preview Frame ရွှေ့ကြည့်လို့ရတယ်။
+- [ ] Title ကို Drag လုပ်ရွှေ့လို့ရတယ်။
+- [ ] Logo ကို Drag လုပ်ရွှေ့လို့ရတယ်။
+- [ ] Blur Box ကို ဆွဲသတ်မှတ်လို့ရတယ်။
+- [ ] Myanmar Font / Outline / Shadow မှန်တယ်။
+
+### F. Thumbnail / Downloader
+
+- [ ] Local Thumbnail ကို API Key မပါဘဲ ထုတ်လို့ရတယ်။
+- [ ] Choose Frame နဲ့ ကိုယ်ကြိုက်တဲ့ Frame ရွေးလို့ရတယ်။
+- [ ] Local Variant ၃ မျိုး ထွက်တယ်။
+- [ ] Burmese Title / Logo မှန်တယ်။
+- [ ] Auto-thumbnail after Recap အလုပ်လုပ်တယ်။
+- [ ] YouTube URL တစ်ခု Download လုပ်လို့ရတယ်။
+- [ ] Facebook / TikTok URL တစ်ခုချင်းစီ စမ်းတယ်။
+- [ ] RedNote URL ကို သီးခြားစမ်းပြီး Support ရှိမရှိ မှတ်တမ်းတင်တယ်။
+- [ ] Playlist Download စမ်းတယ်။
+- [ ] MP3-only Download စမ်းတယ်။
+- [ ] Download Queue ပိတ်ပြီးပြန်ဖွင့်ရင် Pending Item မပျောက်ဘူး။
+- [ ] Failed Download ကို Retry လုပ်လို့ရတယ်။
+
+### G. Splitter / Project / Queue
+
+- [ ] Splitter က Video ကို သတ်မှတ်ထားတဲ့ Duration အတိုင်း ခွဲတယ်။
+- [ ] Smart Cut က Speech Pause ကို သင့်တော်တဲ့နေရာမှာ ရွေးတယ်။
+- [ ] Project Save လုပ်လို့ရတယ်။
+- [ ] Project Load လုပ်ပြီး Setting ပြန်ရတယ်။
+- [ ] Project JSON ထဲ API Key မပါဘူး။
+- [ ] Audio Waveform ထွက်တယ်။
+- [ ] Pronunciation Dictionary Save / Load လုပ်လို့ရတယ်။
+- [ ] Preflight Report မှန်တယ်။
+- [ ] Output Quality Report မှန်တယ်။
+- [ ] Safe Cache Cleanup က Final Video / Checkpoint မဖျက်ဘူး။
+- [ ] Recap Queue ထဲ Video အတို ၂ ခု ထည့်ပြီး တစ်ခုပြီးတစ်ခု လုပ်တယ်။
+- [ ] Job တစ်ခု Fail ဖြစ်ရင် နောက် Job ကို မပျက်စီးစေဘူး။
+- [ ] Stop / Resume လုပ်ပြီး အရင်ပြီးထားတဲ့အပိုင်းတွေကို ပြန်သုံးတယ်။
+
+### H. Long Video / Final Quality
+
+- [ ] ၁၀ မိနစ် Video တစ်ခု အစအဆုံး စမ်းပြီးတယ်။
+- [ ] ၃၀ မိနစ် Video တစ်ခု စမ်းပြီးတယ်။
+- [ ] Video အရှည်ကြီးမှာ RAM / CPU / Disk Usage ကို စစ်တယ်။
+- [ ] Final Video မှာ Audio / Video Sync မလွဲဘူး။
+- [ ] Subtitle အချိန်မရွေ့ဘူး။
+- [ ] Video အဆုံးထိ Audio မဖြတ်သွားဘူး။
+- [ ] Output Resolution / Ratio မှန်တယ်။
+- [ ] Final Video ကို Windows Media Player / VLC မှာ ဖွင့်လို့ရတယ်။
+
+### Test လုပ်တဲ့အခါ မှတ်တမ်းတင်ရန်
+
+- [ ] App Version / Commit SHA ကို မှတ်ထားတယ်။
+- [ ] ဘယ် Tab / ဘယ် Feature မှာ Error ဖြစ်တယ်ဆိုတာ ရေးထားတယ်။
+- [ ] Error Log / Traceback ကို သိမ်းထားတယ်။
+- [ ] Source Video ရဲ့ Format / Duration ကို မှတ်ထားတယ်။
+- [ ] API Key / Cookies / Private Path တွေကို မျှဝေမိအောင် ဖယ်ထားတယ်။
+
+---
+
+## 13. mmnext-recap Repo မှာ အသုံးဝင်တဲ့ အယူအဆများ
+
+Reference Repo: https://github.com/thihakyaw-leo/mmnext-recap
+
+ဒီ Repo ကို စစ်ကြည့်တဲ့အခါ React + TypeScript + Vite + Tauri Desktop UI အခြေခံကို တွေ့ရပါတယ်။ Product Design စာတမ်းမှာ အောက်ပါ Workflow တွေကို အကြံပြုထားပါတယ်။
+
+- Video နဲ့ Subtitle ကို အရင် Import လုပ်ခြင်း။
+- Proxy Preview ဖန်တီးပြီး Original Video အကြီးကြီးကို အမြဲမဖတ်ရအောင် လုပ်ခြင်း။
+- Glossary / Story Marker ကို လူကိုယ်တိုင် စစ်ခြင်း။
+- Narration Segment တစ်ခုချင်းစီကို Source Clip Range နဲ့ ချိတ်ခြင်း။
+- Clip-to-Script Mapping ကို Render မလုပ်ခင် Review လုပ်ခြင်း။
+- SQLite လို Local Database နဲ့ Project Metadata ကို ထိန်းသိမ်းခြင်း။
+
+**သို့သော် အရေးကြီးတဲ့အချက်:** ဒီ Repo ရဲ့ လက်ရှိ App.tsx မှာ Open Source ရွေးတာနဲ့ UI Status ပြတာကိုသာ ချိတ်ထားပြီး AI Script Generation, Subtitle Import, Timeline Editing နဲ့ FFmpeg Render Pipeline ကို မချိတ်ဆက်ရသေးကြောင်း UI မှာကိုယ်တိုင် ဖော်ပြထားပါတယ်။ ဒါကြောင့် အဲဒီ Repo ကို Ready-made Feature Code အဖြစ် တိုက်ရိုက်ကူးယူဖို့ မသင့်ပါဘူး။
+
+### လက်ရှိ App ထဲ ထည့်သင့်တဲ့ အယူအဆများ
+
+| Reference Idea | ဘာကြောင့် အသုံးဝင်လဲ | လုပ်ဆောင်ရန် |
+|---|---|---|
+| Clip-to-Script Mapping | Narration ဘယ်စာကြောင်းက ဘယ် Scene ကို ပြောတာလဲ စစ်လို့ရမယ် | Timeline / Editor ထဲ ထည့်ရန် |
+| Proxy Preview | Video အရှည်ကြီးကို Preview ကြည့်တဲ့အခါ PC ပေါ့ပါးမယ် | Low-resolution proxy option |
+| Story Markers | အရေးကြီးတဲ့ Scene / Character / Twist ကို မှတ်ထားနိုင်မယ် | Manual Marker + AI Suggestion |
+| Subtitle + Scene Link | Subtitle Cue နဲ့ Scene အချိန်ကို တွဲကြည့်နိုင်မယ် | Cue-to-Clip review |
+| Project Database | Project အများကြီးကို ပြန်ဖွင့်၊ ရှာဖွေ၊ ဆက်လုပ်နိုင်မယ် | SQLite / local metadata |
+| Script Review Before Render | မှားနေတဲ့ စာသားကို Render မလုပ်ခင် ပြင်နိုင်မယ် | Final Review Gate |
+
+---
+
+## 14. နောက်ထပ် ထည့်သင့်တဲ့ Feature အကြံပြုချက်များ
+
+ဒီအပိုင်းက လက်ရှိ Feature လို့ မဆိုလိုပါဘူး။ အရင်ဆုံး Free / Local ကို ဦးစားပေးပြီး အောက်ပါအတိုင်း အဆင့်လိုက် တိုးချဲ့သင့်ပါတယ်။
+
+### Priority 1 — Free / Local နဲ့ အကျိုးရှိဆုံး
+
+1. **Original Audio + Subtitle Only** — TTS မထုတ်ဘဲ Original Audio ကို ထားပြီး Subtitle သာထည့်ခြင်း။
+2. **Subtitle Timing Editor** — Cue အချိန်ကို Preview နဲ့ တိုက်စစ်ပြီး ပြင်ခြင်း။
+3. **Scene Marker / Clip Mapping** — ဇာတ်ဝင်ခန်းအလိုက် Script နဲ့ Clip ချိတ်ခြင်း။
+4. **Proxy Preview** — Video အရှည်ကြီး Preview ကို ပေါ့ပါးစေခြင်း။
+5. **Manual Speaker / Character Voice Assignment** — Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်ခြင်း။
+6. **BGM Track Control** — Original Audio, Separated BGM, Dub Voice ကို သီးခြား Track အဖြစ် ထိန်းခြင်း။
+7. **Project Library** — Project အများကြီးကို ရှာဖွေပြီး ပြန်ဖွင့်နိုင်ခြင်း။
+
+### Priority 2 — Optional Local AI
+
+1. **Speaker Diarization** — Speaker တစ်ယောက်ချင်းစီကို ခွဲခြားခြင်း။
+2. **Demucs / UVR Source Separation** — Dialogue နဲ့ BGM ခွဲခြင်း။
+3. **Scene Detection** — Scene Change ကို အလိုအလျောက်ရှာခြင်း။
+4. **Face / Character Tracking** — Scene ထဲက Character ကို လိုက်ကြည့်ခြင်း။
+5. **Auto Reframe** — 16:9 ကနေ 9:16 ပြောင်းတဲ့အခါ Subject ကို အလယ်မှာ ထိန်းခြင်း။
+
+### Priority 3 — Optional Cloud / Paid
+
+1. Premium TTS Voice များ။
+2. AI Thumbnail Image Generation။
+3. Premium Long-context Translation Model များ။
+4. Cloud Storage / Team Project Sync။
+5. Social Platform Upload Integration။
+
+**အကြံပြုချက်:** Default မှာ Local / Free Mode ကိုပဲ ဖွင့်ထားပါ။ Cloud / Paid Feature တွေကို User က ကိုယ်တိုင်ဖွင့်မှသာ API Request ပို့ပါ။ Paid Model ကို Free Rotation ထဲ မတော်တဆ မထည့်မိစေဖို့ Allowlist သီးခြားထားသင့်ပါတယ်။
+
+---
+
+## 15. Known Limitations / လက်ရှိသိထားရမယ့် ကန့်သတ်ချက်များ
+
+- Free API Provider တစ်ခုချင်းစီရဲ့ Quota / Model Availability က အချိန်နဲ့အမျှ ပြောင်းနိုင်တယ်။
+- Auto Provider က Key နဲ့ Model ID ပြည့်စုံတဲ့ Provider ကိုသာ ရွေးနိုင်တယ်။
+- OpenRouter Free Model Router သုံးရင်လည်း Rate Limit ရှိတယ်။
+- Whisper Model ကို ပထမဆုံးသုံးတဲ့အခါ Download လုပ်ရနိုင်တယ်။
+- Video အရှည်ကြီးကို Processing လုပ်တဲ့အခါ CPU / RAM / Disk Space လိုတယ်။
+- yt-dlp Website Support က Website ပြောင်းလဲမှုအပေါ် မူတည်တယ်။
+- fal.ai Image Generation က Free Local Thumbnail နဲ့ မတူဘဲ Credits သုံးနိုင်တယ်။
+- Edge TTS က Network / VPN / Proxy ကြောင့် 403 ဖြစ်နိုင်တယ်။
+- Character Voice Dub အတွက် Speaker Diarization နဲ့ Audio Separation မရှိသေးရင် Gender အလိုက် အသံကို အလိုအလျောက် မှန်မှန်ခွဲမပေးနိုင်ဘူး။
+- Original BGM ကို Dialogue ကနေ ခွဲထိန်းဖို့ Source Separation လိုတယ်။
+- mmnext-recap ထဲက Timeline / AI / Render UI ကို အလုပ်လုပ်ပြီးသား Code လို့ မယူဆရဘူး။
+
+---
+
+## 16. Bug Report ပို့နည်း
+
+Test လုပ်ပြီး Error ဖြစ်ရင် အောက်ပါအချက်တွေကို ပို့ပေးပါ။
+
+1. ဘယ် Tab / Feature မှာ ဖြစ်တာလဲ။
+2. ဘယ်အဆင့်မှာ Error ဖြစ်တာလဲ။
+3. Error Message / Log / Traceback။
+4. Source Video Format နဲ့ Duration။
+5. သုံးထားတဲ့ AI Provider / TTS Provider အမည် (API Key မပါစေရ)။
+6. မျှော်လင့်ထားတဲ့ Result နဲ့ တကယ်ထွက်လာတဲ့ Result။
+
+**API Key, cookies.txt, Password, Private Token နဲ့ ကိုယ်ရေးကိုယ်တာ File Path တွေကို မပို့ပါနဲ့။**
+
+**English:** When reporting a bug, include the feature, exact step, error log, source format/duration and provider name. Never share credentials or cookies.

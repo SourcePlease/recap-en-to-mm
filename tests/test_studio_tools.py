@@ -29,7 +29,7 @@ from studio.download_queue import PersistentDownloadQueue
 from studio.recap_queue import PersistentRecapQueue
 from studio.quality import inspect_output_quality, preflight_check, write_quality_report
 from recap_runtime.services.ai_service import AIService
-from recap_planner import _target_narration_style_guide, _user_glossary_context
+from recap_planner import _target_narration_style_guide, _user_glossary_context, recap_style_guide
 
 
 class StudioDownloaderTests(unittest.TestCase):
@@ -223,6 +223,29 @@ class AIServiceProviderRoutingTests(unittest.TestCase):
             self.assertEqual(response.text, "OK")
             self.assertEqual(service._last_provider, "ollama")
 
+
+    def test_auto_provider_selects_first_configured_free_first_provider(self):
+        env = {
+            "RECAP_AI_PROVIDER": "auto",
+            "RECAP_AI_AUTO_ORDER": "groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama",
+            "GROQ_API_KEY": "",
+            "GROQ_MODEL": "",
+            "OPENROUTER_API_KEY": "test-token",
+            "OPENROUTER_MODEL": "openrouter/free",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            service = AIService()
+        self.assertEqual(service.provider, "openrouter")
+        self.assertEqual(service.text_model, "openrouter/free")
+
+    def test_auto_provider_falls_back_to_gemini_when_no_free_provider_is_configured(self):
+        with patch.dict(os.environ, {
+            "RECAP_AI_PROVIDER": "auto",
+            "GEMINI_API_KEY": "test-gemini-key",
+        }, clear=True), patch("recap_runtime.services.ai_service.genai.Client") as client:
+            service = AIService()
+        self.assertEqual(service.provider, "gemini")
+        client.assert_called_once()
 
 class PersistentDownloadQueueTests(unittest.TestCase):
     def test_queue_persists_status_and_resets_interrupted_download(self):

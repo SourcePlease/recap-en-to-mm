@@ -247,6 +247,18 @@ class AIServiceProviderRoutingTests(unittest.TestCase):
         self.assertEqual(service.provider, "gemini")
         client.assert_called_once()
 
+class RecapNarrationStyleTests(unittest.TestCase):
+    def test_all_supported_styles_have_distinct_guidance(self):
+        styles = ("storytelling", "documentary", "cinematic", "casual", "character_focus", "anime_recap", "educational")
+        guides = [recap_style_guide(style) for style in styles]
+        self.assertEqual(len(set(guides)), len(styles))
+        self.assertEqual(recap_style_guide("unknown-style"), recap_style_guide("storytelling"))
+
+    def test_character_focus_is_not_character_voice_dubbing(self):
+        guide = recap_style_guide("character_focus").lower()
+        self.assertIn("do not turn the narrator into a character voice actor", guide)
+
+
 class PersistentDownloadQueueTests(unittest.TestCase):
     def test_queue_persists_status_and_resets_interrupted_download(self):
         with tempfile.TemporaryDirectory() as temp:

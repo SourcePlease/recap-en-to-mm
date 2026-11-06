@@ -151,6 +151,34 @@ class StudioAIProviderTests(unittest.TestCase):
 
 
 class AIServiceProviderRoutingTests(unittest.TestCase):
+    def test_cloudflare_and_nvidia_are_supported_recap_providers(self):
+        providers = (
+            ("cloudflare", {
+                "CF_API_TOKEN": "test-token",
+                "CF_ACCOUNT_ID": "test-account",
+                "CF_MODEL": "@cf/google/gemma-4-26b-a4b-it",
+            }),
+            ("nvidia", {
+                "NVIDIA_API_KEY": "test-token",
+                "NVIDIA_MODEL": "openai/gpt-oss-120b",
+            }),
+        )
+        for provider, settings in providers:
+            with self.subTest(provider=provider), patch.dict(
+                os.environ, {"RECAP_AI_PROVIDER": provider, **settings}, clear=True
+            ):
+                service = AIService()
+                self.assertEqual(service.provider, provider)
+                with patch(
+                    "studio.ai_providers.chat_completion_with_fallback",
+                    return_value=("OK", provider, service.text_model, []),
+                ):
+                    response = service.client.models.generate_content(
+                        model=service.text_model, contents="return JSON"
+                    )
+                self.assertEqual(response.text, "OK")
+                self.assertEqual(service._last_provider, provider)
+
     def test_ollama_is_an_explicit_recaps_provider_without_gemini_key(self):
         with patch.dict(os.environ, {"RECAP_AI_PROVIDER": "ollama", "OLLAMA_MODEL": "test-model"}, clear=True):
             service = AIService()

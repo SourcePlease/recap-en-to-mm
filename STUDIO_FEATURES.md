@@ -101,21 +101,23 @@ This document describes the feature/studio-expansion branch of SourcePlease/reca
 
 | Provider / ဝန်ဆောင်မှု | အသုံးပြုပုံ / Usage |
 |---|---|
-| Gemini | Default translation/context/audit provider; Gemini TTS is optional. |
-| Groq | Optional text generation/translation provider; account/model quota applies. |
-| OpenRouter | Optional model gateway; model pricing and limits vary. |
-| Ollama | Optional local model endpoint; a suitable model must be installed locally. |
-| Microsoft Edge TTS | Online TTS; voice availability/service access may change. No separate API key is configured by this app. |
-| Azure Speech | Requires AZURE_SPEECH_KEY and AZURE_SPEECH_REGION. |
-| ElevenLabs | Requires ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID; account quota/plan applies. |
-| fal.ai | Optional AI thumbnail background; requires FAL_KEY and may use credits. |
+| Gemini | Default story-context, translation and audit provider. Free access is limited to selected models and account-specific quotas. |
+| Groq | OpenAI-compatible text provider. A free plan is available with per-model RPM/RPD/TPM/TPD limits. |
+| OpenRouter | OpenAI-compatible model gateway. Choose current `:free` models; free limits and model availability change. |
+| Cloudflare Workers AI | OpenAI-compatible Recap/Studio provider. Free Workers allocation: 10,000 Neurons/day; `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_MODEL` required. Some models require paid billing. |
+| NVIDIA NIM | OpenAI-compatible Recap/Studio provider via NVIDIA Developer Program API Catalog; requires `NVIDIA_API_KEY` and `NVIDIA_MODEL`. Model access/rate limits vary. |
+| Ollama | Local model endpoint; no hosted API fee, but a local model and sufficient CPU/GPU/RAM/storage are required. |
+| Microsoft Edge TTS | Online Myanmar TTS (Thiha/Nilar); no API key configured by this app. Service/network restrictions may apply. |
+| Azure Speech | Supports Myanmar `my-MM` standard voices. Requires `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION`; F0 has strict request limits. |
+| ElevenLabs | Requires `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID`. The app's default `eleven_multilingual_v2` model does not list Burmese among its 29 supported languages; verify another model before using for Myanmar. |
+| fal.ai | Optional AI thumbnail background; requires `FAL_KEY` and prepaid/account credits may be consumed. It is not a text-translation provider. |
 
 API key များကို Local .env ထဲတွင်သာ ထည့်ပါ။ .env, Personal glossary.json, pronunciation.json နဲ့ ကိုယ်ရေးကိုယ်တာ Path ပါသော Project ဖိုင်များကို GitHub ပေါ် မတင်ပါနှင့်။  
 **English:** Keep credentials in the local .env. Do not commit .env, personal glossary/pronunciation files, or project files containing private paths.
 
 ## 8. Testing Status / စမ်းသပ်မှုအခြေအနေ
 
-Feature branch GitHub Actions သည် Python compilation နှင့် automated regression tests ကို လုပ်ဆောင်သည်။ Latest verified run before this documentation update: **Run #45 — success**.  
+Feature branch GitHub Actions သည် Python compilation နှင့် automated regression tests ကို လုပ်ဆောင်သည်။ နောက်ဆုံး Commit အတွက် စစ်ဆေးမှုအခြေအနေကို [GitHub Actions](https://github.com/SourcePlease/recap-en-to-mm/actions) မှာ ကြည့်ပါ။  
 **မြန်မာ:** Automated Tests အောင်မြင်ထားခြင်းသည် Windows GUI, သင့် API Key/Quota, Website တစ်ခုချင်းစီ သို့မဟုတ် Video အရှည်ကြီး၏ အသံ/ရုပ် Sync အားလုံး အောင်မြင်ကြောင်း မဆိုလိုပါ။
 
 **အသုံးပြုသူ စမ်းသပ်ရန် အကြံပြုအစီအစဉ် / Suggested user test order**

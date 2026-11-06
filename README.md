@@ -48,7 +48,7 @@ Narrator only · Whisper + Gemini · Microsoft Edge TTS (Myanmar) · Smart Sync
 3. **`INSTALL_REQUIREMENTS.bat`** ကို double-click နှိပ်ပါ။ အောက်ပါတွေကို သွင်းပေးပါမယ်:
    - Python package တွေ
    - Title စာရေးဖို့ လိုတဲ့ Chromium
-   - **FFmpeg** — စက်ထဲမှာ မရှိရင် (~100 MB) download လုပ်ပြီး ဒီ folder ထဲက `ffmpeg\` ထဲ ထည့်ပေးပါမယ်။ PATH ထဲ (သို့) `C:\ffmpeg\bin\` မှာ ရှိပြီးသားဆိုရင် အဲ့ဒါကိုပဲ သုံးပါတယ်။
+   - **FFmpeg** — စက်ထဲမှာ မရှိရင် (~100 MB) download လုပ်ပြီး ဒီ folder ထဲက `ffmpeg` ထဲ ထည့်ပေးပါမယ်။ PATH ထဲ (သို့) `C:\ffmpeg\bin` မှာ ရှိပြီးသားဆိုရင် အဲ့ဒါကိုပဲ သုံးပါတယ်။
 4. **`.env.example`** ကို **`.env`** လို့ copy ကူးပါ။ ပြီးရင် ဖွင့်ပြီး key ထည့်ပါ:
    ```ini
    GEMINI_API_KEY=ကိုယ့်_key
@@ -88,7 +88,7 @@ Window ထိပ်က **Splitter** tab ကို နှိပ်ပါ။ ရ�
 | | |
 |---|---|
 | **+ Videos / + Folder** | Video တစ်ခု (သို့) အများကြီး ထည့်ပါ။ အားလုံးကို setting တူတူနဲ့ တစ်ခုပြီးတစ်ခု ခွဲပါတယ်။ |
-| **Save to** | ဗလာထားရင် video ဘေးက `<video နာမည်>_parts\` ထဲ သိမ်းပါတယ်။ Folder ရွေးထားရင် `<ရွေးထားတဲ့ folder>\<video နာမည်>_parts\` ထဲ။ ဖိုင်နာမည် `<video နာမည်>_part_01.mp4`, `_part_02.mp4` … |
+| **Save to** | ဗလာထားရင် video ဘေးက `<video နာမည်>_parts` ထဲ သိမ်းပါတယ်။ Folder ရွေးထားရင် `<ရွေးထားတဲ့ folder>\<video နာမည်>_parts` ထဲ။ ဖိုင်နာမည် `<video နာမည်>_part_01.mp4`, `_part_02.mp4` … |
 | **Each part** | အပိုင်းတစ်ပိုင်း ဘယ်နှမိနစ်လဲ (0.5 … 60)။ နောက်ဆုံး အပိုင်းက အရမ်းတိုရင် (အပိုင်းအရှည်ရဲ့ ¼ နဲ့ 20 s အောက်) ရှေ့အပိုင်းထဲ ပေါင်းပါတယ်။ |
 | **Smart cut** | ဖွင့်ထားရင် — အချိန်ပြည့်ချိန်မှာ စကားမဆုံးသေးရင် အများဆုံး **N စက္ကန့်** (default 20) အထိ စောင့်ပြီး စကားရပ်တဲ့နေရာ (စာကြောင်းဆုံး ဖြစ်နိုင်ခြေ အများဆုံး) မှာ ဖြတ်ပါတယ်။ ဥပမာ 3 မိနစ် ရွေးထားရင် 3:00 – 3:20 ကြားမှာ ဖြတ်ပါတယ်။ ပိတ်ထားရင် — 3:00 အတိ ဖြတ်ပါတယ်။ နောက်ခံ သီချင်း ရှိရင်လည်း စကားရပ်တာကို ရှာပါတယ်။ |
 | **Check cuts** | ရွေးထားတဲ့ video ကို ဘယ်မှာ ဖြတ်မလဲ Parts ဇယားမှာ ကြိုကြည့်ဖို့။ |
@@ -116,7 +116,7 @@ Window ထိပ်က **Splitter** tab ကို နှိပ်ပါ။ ရ�
 - Font (စက်ထဲမှာ ရှိတဲ့ မြန်မာ font တွေ)၊ အရွယ်၊ Bold၊ စာလုံးအရောင်၊ အနားကွပ် (Outline)၊ အရိပ်၊ နောက်ခံ box အရောင် / opacity၊ အကျယ်
   ရွေးလို့ရပါတယ်။ Preview ပေါ်မှာ ဆွဲရွှေ့ပြီး နေရာ ချထားပါ။
 - စာကြောင်းရှည်ရင် ၂ ကြောင်းစီ ကတ်တွေ ခွဲပြီး အသံနဲ့ အချိန်ကိုက် ပြပါတယ်။ ကွင်းထဲက English (ဥပမာ "(Zombie)") ကို မပြပါ။
-- SRT ဖိုင်ကိုလည်း ထုတ်ပေးပါတယ် — `SRT_for_upload\` folder ထဲမှာ (video ဘေးမှာ မထားပါ၊ နာမည်တူ .srt ရှိရင် VLC / PotPlayer က
+- SRT ဖိုင်ကိုလည်း ထုတ်ပေးပါတယ် — `SRT_for_upload` folder ထဲမှာ (video ဘေးမှာ မထားပါ၊ နာမည်တူ .srt ရှိရင် VLC / PotPlayer က
   စာတန်း ၂ ထပ် ပြလို့ပါ)။ Subtitle ပိတ်ထားလည်း SRT ထုတ်ပေးပါတယ် (upload လုပ်ဖို့)။
 
 **Quality** (Ratio အောက်) — စက်နိမ့်ရင် video ထုတ်တာ အရမ်းကြာတဲ့ ပြဿနာအတွက်:
@@ -205,7 +205,7 @@ English စာကို **စာကြောင်း (sentence) တစ်ကြ
 | Gemini `User location is not supported for the API use` | Gemini က ကိုယ့် internet (VPN server) ရဲ့ နိုင်ငံကို လက်မခံတာပါ။ VPN server (နိုင်ငံ) ပြောင်းပြီး **START / RESUME** ပြန်နှိပ်ပါ။ |
 | `Edge TTS FAILED at segment 123` | အဲ့စာကြောင်းမှာ အသံ မထွက်လို့ ရပ်တာပါ။ **Yes** နှိပ်ရင် Edit Text ပွင့်လာပါမယ် — မြန်မာလို ပြင်ပြီး Save → **START / RESUME**။ |
 | `Gemini JSON response failed after 3 attempts` | Gemini ရဲ့ အဖြေ ပျက်နေတာပါ။ **START / RESUME** ပြန်နှိပ်ရင် ဆက်လုပ်ပါတယ်။ (Story context အဆင့်မှာဆိုရင် အခု version က အဲ့အပိုင်းကို ချန်ပြီး ဆက်သွားလို့ မရပ်တော့ပါ။) |
-| `[WinError 2] The system cannot find the file specified` (သို့) `ffmpeg.exe မတွေ့ပါ` (Preview မှာ `00:00 / 00:00`) | FFmpeg မရှိလို့ပါ။ `INSTALL_REQUIREMENTS.bat` ကို ပြန် run ပါ (FFmpeg ကို `ffmpeg\` ထဲ ထည့်ပေးပါမယ်)။ (သို့) gyan.dev ကနေ download လုပ်ပြီး `ffmpeg.exe`၊ `ffprobe.exe` ကို `RUN.bat` ဘေးက `ffmpeg` folder ထဲ ထည့်ပါ။ |
+| `[WinError 2] The system cannot find the file specified` (သို့) `ffmpeg.exe မတွေ့ပါ` (Preview မှာ `00:00 / 00:00`) | FFmpeg မရှိလို့ပါ။ `INSTALL_REQUIREMENTS.bat` ကို ပြန် run ပါ (FFmpeg ကို `ffmpeg` ထဲ ထည့်ပေးပါမယ်)။ (သို့) gyan.dev ကနေ download လုပ်ပြီး `ffmpeg.exe`၊ `ffprobe.exe` ကို `RUN.bat` ဘေးက `ffmpeg` folder ထဲ ထည့်ပါ။ |
 | Title မြန်မာစာ မပေါ်ဘူး | `py -3.12 -m playwright install chromium` ကို run ပါ။ ဖောင့်ကို `RECAP_MM_FONT` (environment variable) (သို့) `title_font_path` နဲ့ ပြောင်းလို့ရပါတယ်။ |
 | Log မှာ `⚠️ ID 00012: removed letters of another script` | Gemini က မြန်မာစာထဲ တခြားဘာသာ စာလုံး ထည့်ခဲ့လို့ ဖယ်ထားတာပါ။ အဲ့စာကြောင်းကို `timestamp_translations.json` ထဲမှာ ကြည့်ပါ။ |
 
@@ -296,7 +296,7 @@ optional (without the CUDA 12 libraries Whisper falls back to the CPU by itself)
 ### Install
 1. Download the repo (Code → Download ZIP) and unzip it.
 2. Run **`INSTALL_REQUIREMENTS.bat`** (pip packages, Chromium for the Myanmar title renderer, and
-   FFmpeg: when it is not on PATH or in `C:\ffmpeg\bin`, about 100 MB is downloaded into `ffmpeg\`).
+   FFmpeg: when it is not on PATH or in `C:\ffmpeg\bin`, about 100 MB is downloaded into `ffmpeg`).
    `[WinError 2] The system cannot find the file specified` means FFmpeg is missing — run it again.
 3. Copy **`.env.example`** to **`.env`** and set `GEMINI_API_KEY=`. More keys
    (`GEMINI_IMAGE_PROJECT_1_KEY`, `GEMINI_IMAGE_PROJECT_2_KEY`, …) are used in turn when one is used
@@ -336,7 +336,7 @@ Double-click **`RUN.bat`**:
   VPN server — change the VPN server and START / RESUME.
 
 ### Splitter tab
-- **+ Videos / + Folder**, **Save to** (empty = `<video folder>\<name>_parts\`; files `<name>_part_01.mp4` …).
+- **+ Videos / + Folder**, **Save to** (empty = `<video folder>\<name>_parts`; files `<name>_part_01.mp4` …).
 - **Each part** N minutes. **Smart cut** on: when the time is up in the middle of speech, it waits up to
   20 s (adjustable) and cuts in the pause most likely to end a sentence (also under background music); off:
   exact cuts. A last piece shorter than a quarter part (and 20 s) joins the part before it.
@@ -365,7 +365,7 @@ Myanmar.
 **Narration Subtitle** (bottom of Production Tools): the spoken Burmese is burned in as subtitles — installed
 Myanmar font, size, bold, text / outline colour, outline width, shadow, box colour and opacity, width; drag it on
 the preview. Long lines become two-line cards timed on the voice; English glosses in ( ) are not shown. An SRT is
-always written to `SRT_for_upload\` (not next to the video, where players would show it twice).
+always written to `SRT_for_upload` (not next to the video, where players would show it twice).
 
 **Quality** (under Ratio): 1080p (as before) / 720p / 480p. Measured on 4 CPU threads without an NVIDIA card,
 20 s of video: 1080p 52 s, 720p 9 s, 480p 3.6 s. Title, logo, text and subtitle sizes are scaled so the look is
@@ -395,18 +395,18 @@ responsible for the rights to the videos you process.
 
 ဒီအပိုင်းမှာ **feature/studio-expansion branch** ထဲ ထည့်ထားတဲ့ Feature အသစ်တွေကို မြန်မာလို အသေးစိတ်ရှင်းပြထားပါတယ်။ အောက်မှာ English ရှင်းလင်းချက်ကိုလည်း တွဲဖော်ပြထားပါတယ်။
 
-**အရေးကြီး / Branch အခြေအနေ:** ဒီ Feature တွေဟာ \`feature/studio-expansion\` branch မှာပဲ ရှိပါသေးတယ်။ \`main\` branch ထဲကို မပေါင်းရသေးသလို မူရင်း upstream repository ကိုလည်း မပြောင်းထားပါဘူး။ စမ်းသပ်ပြီးမှ Merge လုပ်ဖို့ သီးခြားထားတာပါ။
+**အရေးကြီး / Branch အခြေအနေ:** ဒီ Feature တွေဟာ `feature/studio-expansion` branch မှာပဲ ရှိပါသေးတယ်။ `main` branch ထဲကို မပေါင်းရသေးသလို မူရင်း upstream repository ကိုလည်း မပြောင်းထားပါဘူး။ စမ်းသပ်ပြီးမှ Merge လုပ်ဖို့ သီးခြားထားတာပါ။
 
-**English:** The new Studio features described below are available on \`feature/studio-expansion\`. They have not been merged into this fork's \`main\` branch, and the original upstream repository remains separate.
+**English:** The new Studio features described below are available on `feature/studio-expansion`. They have not been merged into this fork's `main` branch, and the original upstream repository remains separate.
 
 ### Feature Branch ကို ဘယ်လိုရယူမလဲ / How to Get This Branch
 
 1. [ဒီ Repository ကိုဖွင့်ပါ](https://github.com/SourcePlease/recap-en-to-mm)။
-2. GitHub ရဲ့ **Branch** ရွေးတဲ့နေရာမှာ \`main\` အစား **\`feature/studio-expansion\`** ကို ရွေးပါ။
+2. GitHub ရဲ့ **Branch** ရွေးတဲ့နေရာမှာ `main` အစား **`feature/studio-expansion`** ကို ရွေးပါ။
 3. **Code → Download ZIP** ကိုနှိပ်ပြီး ZIP ဖိုင်ကို ဖြည်ပါ။
-4. အောက်က မူလ Install လုပ်နည်းအတိုင်း လိုအပ်တဲ့ Python, FFmpeg နဲ့ API Key တွေ ပြင်ဆင်ပြီး \`INSTALL_REQUIREMENTS.bat\` ကို အရင်ဖွင့်ပါ။ ပြီးရင် \`RUN.bat\` နဲ့ App ကို စတင်နိုင်ပါတယ်။
+4. အောက်က မူလ Install လုပ်နည်းအတိုင်း လိုအပ်တဲ့ Python, FFmpeg နဲ့ API Key တွေ ပြင်ဆင်ပြီး `INSTALL_REQUIREMENTS.bat` ကို အရင်ဖွင့်ပါ။ ပြီးရင် `RUN.bat` နဲ့ App ကို စတင်နိုင်ပါတယ်။
 
-**English:** Open the repository, switch the branch selector to \`feature/studio-expansion\`, then choose **Code → Download ZIP**. Extract it and follow the installation instructions above before launching \`RUN.bat\`.
+**English:** Open the repository, switch the branch selector to `feature/studio-expansion`, then choose **Code → Download ZIP**. Extract it and follow the installation instructions above before launching `RUN.bat`.
 
 ### App ထဲမှာ ပါဝင်တဲ့ Tab များ / Tabs Included
 
@@ -470,7 +470,7 @@ responsible for the rights to the videos you process.
 - **Local Variants:** Local Mode နဲ့ Thumbnail ပုံစံ ၃ မျိုး ထုတ်နိုင်ပါတယ်။ ဒီနည်းလမ်းမှာ AI Image Generation မလိုသလို fal.ai Credit လည်း မသုံးပါဘူး။
 - **Myanmar Title / Logo:** မြန်မာခေါင်းစဉ်၊ Title Style နဲ့ ကိုယ်ပိုင် Logo ကို Thumbnail ပေါ်မှာ ထည့်နိုင်ပါတယ်။ Title အကြံပြုချက်တချို့ကို Built-in Template ကနေဖြစ်စေ၊ ချိတ်ဆက်ထားတဲ့ AI Text Provider ကနေဖြစ်စေ ရယူနိုင်ပါတယ်။
 - **Aspect Ratio:** 16:9, 9:16 နဲ့ 1:1 အချိုးတွေကို ရွေးနိုင်ပါတယ်။
-- **fal.ai AI Background:** Frame-based Thumbnail အစား AI နဲ့ Background ပုံအသစ် ဖန်တီးချင်ရင် fal.ai ကို ရွေးနိုင်ပါတယ်။ ဒီနည်းလမ်းအတွက် \`FAL_KEY\` လိုပြီး Account ရဲ့ Credit/Plan အလိုက် ကုန်ကျစရိတ်ရှိနိုင်ပါတယ်။
+- **fal.ai AI Background:** Frame-based Thumbnail အစား AI နဲ့ Background ပုံအသစ် ဖန်တီးချင်ရင် fal.ai ကို ရွေးနိုင်ပါတယ်။ ဒီနည်းလမ်းအတွက် `FAL_KEY` လိုပြီး Account ရဲ့ Credit/Plan အလိုက် ကုန်ကျစရိတ်ရှိနိုင်ပါတယ်။
 - **Auto-thumbnail after Recap:** Default အားဖြင့် ဖွင့်ထားတဲ့ ဒီ Option က Recap ပြီးသွားတဲ့အခါ မူရင်း Source Video ထဲက Frame ကို အသုံးပြုပြီး JPG Thumbnail ကို Final Video ဘေးမှာ သိမ်းပေးပါတယ်။ ထွက်လာတဲ့ Recap Video ထဲက Frame ကိုသာ ယူတာမဟုတ်ပါဘူး။
 - **Download ပြီးနောက် Thumbnail:** Download လုပ်ပြီးတဲ့ Video အတွက်လည်း Auto-thumbnail Option သီးခြားရှိပါတယ်။
 
@@ -480,7 +480,7 @@ responsible for the rights to the videos you process.
 
 **မြန်မာ:** မူရင်း Video ကို Whisper နဲ့ ထပ်နားထောင်စရာမလိုဘဲ ရှိပြီးသား Subtitle ဖိုင်ကို တိုက်ရိုက် ဘာသာပြန်ချင်တဲ့အခါ ဒီ Tab ကို သုံးနိုင်ပါတယ်။
 
-1. **Import:** ကိုယ့်မှာရှိပြီးသား \`.srt\` သို့မဟုတ် \`.vtt\` ဖိုင်ကို ထည့်ပါ။
+1. **Import:** ကိုယ့်မှာရှိပြီးသား `.srt` သို့မဟုတ် `.vtt` ဖိုင်ကို ထည့်ပါ။
 2. **Source / Target Language:** မူရင်း Subtitle ရဲ့ ဘာသာစကားနဲ့ ပြောင်းချင်တဲ့ ဘာသာစကားကို ရွေးပါ။
 3. **Translate:** ရွေးထားတဲ့ AI Provider နဲ့ Subtitle စာသားကိုသာ ဘာသာပြန်ပါတယ်။ ဒီအဆင့်မှာ Whisper ကို မခေါ်ပါဘူး။
 4. **Glossary:** Recap မှာ သုံးထားတဲ့ Character Names, Terms, Places နဲ့ Style Notes တွေကို ဘာသာပြန်ရာမှာ ထည့်သုံးနိုင်ပါတယ်။ ဒါကြောင့် ဇာတ်ကောင်နာမည်တွေ မတူညီတဲ့ပုံစံနဲ့ ပြန်ဆိုမိတာကို လျှော့ချနိုင်ပါတယ်။
@@ -529,7 +529,7 @@ responsible for the rights to the videos you process.
 |---|---|---|---|
 | **Gemini API** | Google AI Studio မှာ Free Tier ရှိပါတယ်။ ဒါပေမဲ့ Free Tier မှာ Model အချို့ကိုသာ သုံးခွင့်ရှိပြီး Request/Token Limit က Model နဲ့ Account ပေါ်မူတည်ပါတယ်။ | Story Context, Translation, Audit အတွက် မူလ Default Provider ဖြစ်ပါတယ်။ | **ပါပြီးသား / Default** |
 | **Groq** | Free Plan ရှိပါတယ်။ Model တစ်ခုချင်းစီအလိုက် RPM, RPD, TPM, TPD ကွာပါတယ်။ အတိအကျကို ကိုယ့် Groq Console ရဲ့ Limits မှာ စစ်ပါ။ | တုံ့ပြန်မှုမြန်တဲ့ Text AI Provider တစ်ခုဖြစ်ပြီး Translation/Audit အတွက် စမ်းသုံးနိုင်ပါတယ်။ | **ပါပြီးသား** |
-| **OpenRouter** | Free Model တွေ အများအပြားရှိပေမဲ့ Model ID အချို့မှာသာ \`:free\` ပါပါတယ်။ ၂၀၂၆-၁၁-၀၆ စစ်ဆေးချိန်တွင် Free model အတွက် အများဆုံး 20 requests/minute နဲ့ 50 requests/day ကန့်သတ်ချက် ဖော်ပြထားပါတယ်။ Model/Limit တွေ ပြောင်းနိုင်ပါတယ်။ | Provider မျိုးစုံက Free Model တွေကို API တစ်ခုတည်းကနေ ရွေးသုံးနိုင်ပါတယ်။ Free Model ပြောင်းစမ်းဖို့ အဆင်ပြေပါတယ်။ | **ပါပြီးသား** |
+| **OpenRouter** | Free Model တွေ အများအပြားရှိပေမဲ့ Model ID အချို့မှာသာ `:free` ပါပါတယ်။ ၂၀၂၆-၁၁-၀၆ စစ်ဆေးချိန်တွင် Free model အတွက် အများဆုံး 20 requests/minute နဲ့ 50 requests/day ကန့်သတ်ချက် ဖော်ပြထားပါတယ်။ Model/Limit တွေ ပြောင်းနိုင်ပါတယ်။ | Provider မျိုးစုံက Free Model တွေကို API တစ်ခုတည်းကနေ ရွေးသုံးနိုင်ပါတယ်။ Free Model ပြောင်းစမ်းဖို့ အဆင်ပြေပါတယ်။ | **ပါပြီးသား** |
 | **Cloudflare Workers AI** | Free Workers Plan မှာ တစ်နေ့လျှင် 10,000 Neurons အထိ အခမဲ့အသုံးပြုနိုင်ပါတယ်။ နေ့စဉ် 00:00 UTC မှာ ပြန်စတင်တွက်ချက်ပါတယ်။ Model အချို့က Paid Plan / Billing လိုနိုင်ပါတယ်။ | OpenAI-compatible API ဖြစ်လို့ Recap ရဲ့ Story Context, Translation, Audit နဲ့ Studio ရဲ့ AI Title Suggestion မှာ သုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
 | **NVIDIA NIM** | NVIDIA Developer Program မှာ API Catalog ကို Prototype/Development အတွက် သုံးနိုင်ပါတယ်။ Model တစ်ခုချင်းစီရဲ့ Access နဲ့ Rate Limit ကို Account/Catalog ထဲမှာ စစ်ရပါမယ်။ | Open-weight Model များကို NVIDIA ရဲ့ Hosted API ကနေ စမ်းသုံးနိုင်ပါတယ်။ | **အသစ်ထည့်ထားပြီး** |
 | **Ollama (Local)** | Cloud API အသုံးခ မရှိပါ။ ဒါပေမဲ့ ကိုယ့် PC ထဲမှာ Model Download လုပ်ပြီး CPU/GPU/RAM/Storage ကို ကိုယ်တိုင် သုံးရပါတယ်။ | Internet မလိုဘဲ Local Model နဲ့ Translation/Context စမ်းချင်တဲ့အခါ အသုံးဝင်ပါတယ်။ စက်စွမ်းဆောင်ရည်ပေါ်မူတည်ပြီး နှေးနိုင်ပါတယ်။ | **ပါပြီးသား** |
@@ -537,7 +537,7 @@ responsible for the rights to the videos you process.
 **Free API နဲ့ပတ်သက်ပြီး သိထားရန်**
 
 - **အခမဲ့ဆိုတာ အကန့်အသတ်မရှိတာ မဟုတ်ပါ။** Quota ပြည့်သွားရင် 429/Rate Limit Error ရနိုင်ပြီး နောက်နေ့ပြန်စောင့်ရတာ၊ Model ပြောင်းရတာ ဖြစ်နိုင်ပါတယ်။
-- OpenRouter မှာ Model တစ်ခုရဲ့ Free Quota မပြည့်တော့ရင် အခြား \`:free\` Model ID ကို ရွေးနိုင်ပါတယ်။ \`openrouter/free\` က Free Model တစ်ခုကို အလိုအလျောက်ရွေးပေးတဲ့ Router ဖြစ်ပေမဲ့ ရလာတဲ့ Model/အရည်အသွေး မတူနိုင်ပါဘူး။
+- OpenRouter မှာ Model တစ်ခုရဲ့ Free Quota မပြည့်တော့ရင် အခြား `:free` Model ID ကို ရွေးနိုင်ပါတယ်။ `openrouter/free` က Free Model တစ်ခုကို အလိုအလျောက်ရွေးပေးတဲ့ Router ဖြစ်ပေမဲ့ ရလာတဲ့ Model/အရည်အသွေး မတူနိုင်ပါဘူး။
 - Cloudflare ကို သုံးမယ်ဆိုရင် Free Workers Plan မှာ ခွင့်ပြုထားတဲ့ Model ကို ရွေးပါ။ ဥပမာ Model Catalog မှာ Free Plan အတွက် ဖော်ပြထားတဲ့ Gemma/GLM/Nemotron Model များထဲက ကိုယ့်အကောင့်မှာ ရနိုင်တာကို ရွေးပါ။ Model တစ်ခုချင်းစီရဲ့ နောက်ဆုံးအခြေအနေကို Cloudflare Dashboard မှာ စစ်ပါ။
 - NVIDIA NIM မှာ Model ID ကို ခန့်မှန်းပြီး မထည့်ပါနဲ့။ NVIDIA API Catalog ထဲမှာ ကိုယ့် Key နဲ့ အသုံးပြုခွင့်ရတဲ့ Model ရဲ့ ID အတိအကျကို Copy ကူးထည့်ပါ။
 - Hugging Face Inference Providers မှာ Free User အတွက် လစဉ် $0.10 Credit ရှိတယ်လို့ Pricing စာတမ်းမှာ ဖော်ပြထားပါတယ် (ပြောင်းလဲနိုင်ပါတယ်)။ စမ်းသပ်ဖို့ကောင်းပေမဲ့ Video အရှည်ကြီးတစ်ခုလုံး Recap လုပ်ဖို့ များသောအားဖြင့် မလုံလောက်ပါ။ လက်ရှိ App မှာ သီးခြား Provider အဖြစ် မချိတ်ထားသေးပါ။
@@ -557,52 +557,52 @@ responsible for the rights to the videos you process.
 
 **Cloudflare သီးသန့်ပြင်ဆင်ရန်**
 
-- \`CF_API_TOKEN\` = Cloudflare Dashboard က API Token။
-- \`CF_ACCOUNT_ID\` = Cloudflare Account ID။ ဒီတန်ဖိုးကို Studio ထဲက Model/API Key အကွက်မှာ မထည့်ရပါ။ Local \`.env\` ထဲမှာ ကိုယ်တိုင် ထည့်ပါ။
-- \`CF_MODEL\` = Workers AI မှာ လက်ရှိရနိုင်တဲ့ Model ID။
-- ဥပမာ Model ID ပုံစံက \`@cf/google/gemma-4-26b-a4b-it\` လို ဖြစ်နိုင်ပေမဲ့ ကိုယ့် Free Plan မှာ ရ/မရ Dashboard မှာ စစ်ပါ။
+- `CF_API_TOKEN` = Cloudflare Dashboard က API Token။
+- `CF_ACCOUNT_ID` = Cloudflare Account ID။ ဒီတန်ဖိုးကို Studio ထဲက Model/API Key အကွက်မှာ မထည့်ရပါ။ Local `.env` ထဲမှာ ကိုယ်တိုင် ထည့်ပါ။
+- `CF_MODEL` = Workers AI မှာ လက်ရှိရနိုင်တဲ့ Model ID။
+- ဥပမာ Model ID ပုံစံက `@cf/google/gemma-4-26b-a4b-it` လို ဖြစ်နိုင်ပေမဲ့ ကိုယ့် Free Plan မှာ ရ/မရ Dashboard မှာ စစ်ပါ။
 
 **NVIDIA NIM သီးသန့်ပြင်ဆင်ရန်**
 
 - NVIDIA Developer Program ကို ဝင်ပြီး NVIDIA API Catalog ကနေ API Key ထုတ်ပါ။
-- Studio ထဲမှာ **NVIDIA NIM** ကိုရွေးပြီး ကိုယ့် Account မှာ Access ရတဲ့ Model ID ကိုထည့်ပါ။ ဥပမာ \`openai/gpt-oss-120b\` က NIM Catalog မှာရှိတဲ့ Model ID ပုံစံတစ်ခုဖြစ်ပါတယ်။ Catalog ပြောင်းလဲနိုင်တဲ့အတွက် ကိုယ့် Dashboard မှာ ပြန်စစ်ပါ။
+- Studio ထဲမှာ **NVIDIA NIM** ကိုရွေးပြီး ကိုယ့် Account မှာ Access ရတဲ့ Model ID ကိုထည့်ပါ။ ဥပမာ `openai/gpt-oss-120b` က NIM Catalog မှာရှိတဲ့ Model ID ပုံစံတစ်ခုဖြစ်ပါတယ်။ Catalog ပြောင်းလဲနိုင်တဲ့အတွက် ကိုယ့် Dashboard မှာ ပြန်စစ်ပါ။
 
 **Fallback Provider သုံးရန်**
 
-Provider တစ်ခု Quota ပြည့်တာ၊ 429 Error ဖြစ်တာမျိုးရှိရင် ကိုယ်တိုင်ပြင်ဆင်ထားတဲ့ အခြား Provider တွေကို အစဉ်လိုက် စမ်းနိုင်ပါတယ်။ Local \`.env\` ထဲမှာ ဥပမာ—
+Provider တစ်ခု Quota ပြည့်တာ၊ 429 Error ဖြစ်တာမျိုးရှိရင် ကိုယ်တိုင်ပြင်ဆင်ထားတဲ့ အခြား Provider တွေကို အစဉ်လိုက် စမ်းနိုင်ပါတယ်။ Local `.env` ထဲမှာ ဥပမာ—
 
-\`\`\`ini
+```ini
 RECAP_AI_PROVIDER=groq
 RECAP_AI_FALLBACKS=cloudflare,nvidia,openrouter
-\`\`\`
+```
 
 ဒီဥပမာမှာ Groq ကို အရင်သုံးပြီး မအောင်မြင်မှ Cloudflare၊ NVIDIA၊ OpenRouter တို့ကို အစဉ်လိုက် စမ်းပါမယ်။ Fallback ထဲမှာ ရေးထားတဲ့ Provider တွေကို အရင် Key/Model ပြင်ဆင်ထားဖို့ လိုပါတယ်။ Provider တစ်ခုက Error ပြန်ပေးတိုင်း နောက် Provider ကို အလိုအလျောက် စမ်းနိုင်ပေမဲ့ Paid Model သို့ အလိုအလျောက် ပြောင်းသုံးတာ မဟုတ်ပါ။ ရွေးထားတဲ့ Model ID တွေရဲ့ Pricing ကို ကိုယ်တိုင် စစ်ထားပါ။
 
-**English:** In Studio, select a provider, enter the exact model ID and API key, then press **Test AI**. When the test succeeds, press **Use for Recap**. The next Recap START/RESUME uses that provider for story context, translation and audit. Cloudflare also requires \`CF_ACCOUNT_ID\` in the local \`.env\`. Optional fallback providers are tried only when listed explicitly in \`RECAP_AI_FALLBACKS\`.
+**English:** In Studio, select a provider, enter the exact model ID and API key, then press **Test AI**. When the test succeeds, press **Use for Recap**. The next Recap START/RESUME uses that provider for story context, translation and audit. Cloudflare also requires `CF_ACCOUNT_ID` in the local `.env`. Optional fallback providers are tried only when listed explicitly in `RECAP_AI_FALLBACKS`.
 
 #### Thumbnail / Image API — fal.ai ကို ဘယ်လိုသဘောထားရမလဲ
 
-**မြန်မာ:** \`fal.ai\` ကို Groq လို Text Translation Provider နဲ့ မရောပါနဲ့။ ဒီ App မှာ fal.ai ကို **Thumbnail Background ပုံအသစ် ဖန်တီးဖို့** သုံးတာဖြစ်ပါတယ်။ မူရင်း Video ထဲက Frame ကို ရွေးပြီး မြန်မာခေါင်းစဉ်/Logo တင်တဲ့ Local Thumbnail Mode နဲ့တော့ API Key မလိုပါ။
+**မြန်မာ:** `fal.ai` ကို Groq လို Text Translation Provider နဲ့ မရောပါနဲ့။ ဒီ App မှာ fal.ai ကို **Thumbnail Background ပုံအသစ် ဖန်တီးဖို့** သုံးတာဖြစ်ပါတယ်။ မူရင်း Video ထဲက Frame ကို ရွေးပြီး မြန်မာခေါင်းစဉ်/Logo တင်တဲ့ Local Thumbnail Mode နဲ့တော့ API Key မလိုပါ။
 
 - **Local Frame Thumbnail:** FFmpeg က မူရင်း Video ထဲက Frame တွေကို ထုတ်ယူပြီး Thumbnail အဖြစ် ပြင်ဆင်ပေးပါတယ်။ AI Credit မလိုပါ။
-- **AI Background (fal.ai):** AI က Background ပုံအသစ် ဖန်တီးပေးပြီး App က မြန်မာ Title/Logo ကို Local မှာ ထပ်တင်ပေးပါတယ်။ \`FAL_KEY\` လိုပါတယ်။
-- fal.ai Model API တွေက အောင်မြင်စွာ ထုတ်ပေးတဲ့ Output အလိုက် Credit ကောက်ခံပါတယ်။ လက်ရှိ Pricing ကို စစ်ပြီးမှ သုံးပါ။ \`FAL_KEY\` ရှိတာနဲ့ Free ဖြစ်သွားတာ မဟုတ်ပါဘူး။
+- **AI Background (fal.ai):** AI က Background ပုံအသစ် ဖန်တီးပေးပြီး App က မြန်မာ Title/Logo ကို Local မှာ ထပ်တင်ပေးပါတယ်။ `FAL_KEY` လိုပါတယ်။
+- fal.ai Model API တွေက အောင်မြင်စွာ ထုတ်ပေးတဲ့ Output အလိုက် Credit ကောက်ခံပါတယ်။ လက်ရှိ Pricing ကို စစ်ပြီးမှ သုံးပါ။ `FAL_KEY` ရှိတာနဲ့ Free ဖြစ်သွားတာ မဟုတ်ပါဘူး။
 - Thumbnail ပုံ ၃ မျိုးလိုရင် **Create 3 Local Variants** ကို သုံးပါ။ ဒီ Feature က Local အနေနဲ့ ထုတ်ပေးတာဖြစ်လို့ fal.ai Credit မသုံးပါ။
 
-**English:** fal.ai is an image-generation service in this app, not a translation provider. Local frame-based thumbnails and local variants do not need API credits. AI-generated backgrounds require \`FAL_KEY\` and can consume prepaid fal credits per successful output.
+**English:** fal.ai is an image-generation service in this app, not a translation provider. Local frame-based thumbnails and local variants do not need API credits. AI-generated backgrounds require `FAL_KEY` and can consume prepaid fal credits per successful output.
 
 #### Narrator / TTS Voice Provider — ဘယ်အသံက မြန်မာအတွက် အဆင်ပြေလဲ
 
 | Voice Provider | မြန်မာအတွက် အသုံးပြုနိုင်မှု | အခမဲ့ / ကန့်သတ်ချက် | App ထဲက အသုံးပြုပုံ |
 |---|---|---|---|
-| **Microsoft Edge TTS** | \`my-MM-ThihaNeural\` (ယောက်ျား)၊ \`my-MM-NilarNeural\` (မိန်းမ) | သီးခြား API Key မလိုပါ။ Online Service ဖြစ်ပြီး Service/Network ကန့်သတ်ချက် ရှိနိုင်ပါတယ်။ | **အလွယ်ဆုံး Free Myanmar Voice**။ Narrator Voice မှာ ရွေးပါ။ |
-| **Azure Speech** | Myanmar Standard Voice နှစ်မျိုးအတွက် Azure ရဲ့ \`my-MM\` Voice Support ရှိပါတယ်။ | Free F0 Resource မှာ Request Limit ရှိပါတယ် (လက်ရှိ Docs အရ 20 transactions/60 seconds၊ Request တစ်ခုအတွက် Audio အများဆုံး 10 minutes)။ Region/Quota ကို စစ်ပါ။ | \`AZURE_SPEECH_KEY\` နဲ့ \`AZURE_SPEECH_REGION\` ထည့်ပြီး Narrator Voice မှာ Azure Voice ကို ရွေးပါ။ |
-| **ElevenLabs** | App ရဲ့ မူလ \`eleven_multilingual_v2\` Model က ပံ့ပိုးတဲ့ ဘာသာစကား 29 မျိုးစာရင်းထဲ Myanmar မပါပါ။ | Free Plan မှာ 10,000 Credits/Month ရှိပြီး API သုံးနိုင်သော်လည်း သုံးသမျှ Credit လျော့ပါတယ်။ | Myanmar Voice အတွက် မူလ Model ကို တိုက်ရိုက်မအကြံပြုပါ။ အခြားဘာသာစကားအတွက်သာ သုံးမယ်ဆိုရင် သက်ဆိုင်ရာ Model/Voice ကို အရင်စမ်းပါ။ |
+| **Microsoft Edge TTS** | `my-MM-ThihaNeural` (ယောက်ျား)၊ `my-MM-NilarNeural` (မိန်းမ) | သီးခြား API Key မလိုပါ။ Online Service ဖြစ်ပြီး Service/Network ကန့်သတ်ချက် ရှိနိုင်ပါတယ်။ | **အလွယ်ဆုံး Free Myanmar Voice**။ Narrator Voice မှာ ရွေးပါ။ |
+| **Azure Speech** | Myanmar Standard Voice နှစ်မျိုးအတွက် Azure ရဲ့ `my-MM` Voice Support ရှိပါတယ်။ | Free F0 Resource မှာ Request Limit ရှိပါတယ် (လက်ရှိ Docs အရ 20 transactions/60 seconds၊ Request တစ်ခုအတွက် Audio အများဆုံး 10 minutes)။ Region/Quota ကို စစ်ပါ။ | `AZURE_SPEECH_KEY` နဲ့ `AZURE_SPEECH_REGION` ထည့်ပြီး Narrator Voice မှာ Azure Voice ကို ရွေးပါ။ |
+| **ElevenLabs** | App ရဲ့ မူလ `eleven_multilingual_v2` Model က ပံ့ပိုးတဲ့ ဘာသာစကား 29 မျိုးစာရင်းထဲ Myanmar မပါပါ။ | Free Plan မှာ 10,000 Credits/Month ရှိပြီး API သုံးနိုင်သော်လည်း သုံးသမျှ Credit လျော့ပါတယ်။ | Myanmar Voice အတွက် မူလ Model ကို တိုက်ရိုက်မအကြံပြုပါ။ အခြားဘာသာစကားအတွက်သာ သုံးမယ်ဆိုရင် သက်ဆိုင်ရာ Model/Voice ကို အရင်စမ်းပါ။ |
 | **Gemini TTS** | Voice Style အမျိုးမျိုး ရှိပါတယ်။ ဒါတွေကို Native Myanmar Voice 30 မျိုးလို့ မယူဆရပါ။ | Google ရဲ့ TTS Pricing/Model အလိုက် အခမဲ့အသုံးပြုခွင့် မရှိနိုင်ပါ။ | Gemini TTS ကို ရွေးမယ်ဆိုရင် Voice Style ကို စမ်းပြီး Quota/Pricing ကို စစ်ပါ။ |
 
 **အရေးကြီး:** Myanmar Recap အတွက် ပထမဆုံး စမ်းသင့်တာက Edge TTS ဖြစ်ပါတယ်။ အသံအရည်အသွေး/သတ်မှတ်ချက် ပိုလိုရင် Azure F0 ကို စမ်းနိုင်ပါတယ်။ ElevenLabs Free Plan ရှိတာနဲ့ Myanmar ဘာသာကို လက်ရှိရွေးထားတဲ့ TTS Model က ပံ့ပိုးတယ်လို့ မဆိုလိုပါဘူး။
 
-**English:** Edge TTS is the simplest no-key Burmese narrator option. Azure Speech supports the \`my-MM\` Nilar and Thiha standard voices and has an F0 free resource with strict request limits. The app's current ElevenLabs default model, \`eleven_multilingual_v2\`, does not list Burmese among its 29 supported languages; verify a different model before using it for Myanmar narration.
+**English:** Edge TTS is the simplest no-key Burmese narrator option. Azure Speech supports the `my-MM` Nilar and Thiha standard voices and has an F0 free resource with strict request limits. The app's current ElevenLabs default model, `eleven_multilingual_v2`, does not list Burmese among its 29 supported languages; verify a different model before using it for Myanmar narration.
 
 #### Target Language များ / Supported Target Languages
 
@@ -615,19 +615,87 @@ Myanmar (Burmese), English, Chinese, Japanese, Korean, Hindi, Thai, Vietnamese, 
 
 ### API Key ထည့်သွင်းရမည့်နေရာ / API Keys and Environment Variables
 
-**မြန်မာ:** API Key တွေကို Repository ထဲက \`.env.example\` ကို မူတည်ပြီး ကိုယ့်စက်ထဲမှာရှိတဲ့ \`.env\` ဖိုင်ထဲမှာသာ ထည့်ပါ။ API Key, Cookie File နဲ့ ကိုယ်ပိုင် Project ဖိုင်တွေကို GitHub ပေါ် မတင်ပါနဲ့။ \`.env\` ကို အခြားသူထံ ပို့ပေးဖို့လည်း မလိုပါဘူး။
+**မြန်မာ:** API Key တွေကို Repository ထဲက `.env.example` ကို မူတည်ပြီး ကိုယ့်စက်ထဲမှာရှိတဲ့ `.env` ဖိုင်ထဲမှာသာ ထည့်ပါ။ API Key, Cookie File နဲ့ ကိုယ်ပိုင် Project ဖိုင်တွေကို GitHub ပေါ် မတင်ပါနဲ့။ `.env` ကို အခြားသူထံ ပို့ပေးဖို့လည်း မလိုပါဘူး။
 
 | Feature / ဝန်ဆောင်မှု | Environment Variable | ဘာအတွက်လဲ |
 |---|---|---|
-| Gemini | \`GEMINI_API_KEY\` | Story Context, Translation နဲ့ Audit အတွက် Google API Key။ |
-| Groq | \`GROQ_API_KEY\`, \`GROQ_MODEL\` | Groq Provider ရွေးသုံးတဲ့အခါ လိုအပ်တဲ့ Key နဲ့ Model။ |
-| OpenRouter | \`OPENROUTER_API_KEY\`, \`OPENROUTER_MODEL\` | OpenRouter မှတစ်ဆင့် Model သုံးဖို့။ |
-| Ollama | \`OLLAMA_BASE_URL\`, \`OLLAMA_MODEL\` | Local Ollama Server လိပ်စာနဲ့ Install လုပ်ထားတဲ့ Model အမည်။ |
-| Azure Speech | \`AZURE_SPEECH_KEY\`, \`AZURE_SPEECH_REGION\` | Azure Speech အသံထုတ်ဖို့ Key နဲ့ Region။ |
-| ElevenLabs | \`ELEVENLABS_API_KEY\`, \`ELEVENLABS_VOICE_ID\`, \`ELEVENLABS_MODEL_ID\` | ElevenLabs Voice နဲ့ Model သတ်မှတ်ဖို့။ |
-| fal.ai | \`FAL_KEY\`, \`FAL_IMAGE_MODEL\` | AI Thumbnail Background ဖန်တီးဖို့။ Credit ကုန်နိုင်ပါတယ်။ |
+| Gemini | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) က API Key။ Story Context, Translation နဲ့ Audit အတွက်။ |
+| Groq | `GROQ_API_KEY`, `GROQ_MODEL` | [Groq Console](https://console.groq.com/keys) က Key နဲ့ Model ID။ |
+| OpenRouter | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | [OpenRouter Keys](https://openrouter.ai/keys) က Key နဲ့ လက်ရှိ Free Model ID။ |
+| Cloudflare Workers AI | `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_MODEL` | [Cloudflare Dashboard](https://dash.cloudflare.com/) က Token, Account ID နဲ့ Free Plan မှာရနိုင်တဲ့ Model။ |
+| NVIDIA NIM | `NVIDIA_API_KEY`, `NVIDIA_MODEL` | [NVIDIA API Catalog](https://build.nvidia.com/) က Developer Key နဲ့ ကိုယ့် Account မှာရတဲ့ Model ID။ |
+| Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | [Ollama](https://ollama.com/download) ကို စက်ထဲ Install လုပ်ပြီး Local Model Download လုပ်ပါ။ API Key မလိုပါ။ |
+| Azure Speech | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Azure Speech Resource ရဲ့ Key နဲ့ Region။ Myanmar Voice အတွက် F0 Quota/Region ကို စစ်ပါ။ |
+| ElevenLabs | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | [ElevenLabs](https://elevenlabs.io/app/settings/api-keys) ရဲ့ Key နဲ့ Voice/Model ID။ Myanmar ကို လက်ရှိရွေးထားတဲ့ Model က ပံ့ပိုး/မပံ့ပိုး စစ်ပါ။ |
+| fal.ai | `FAL_KEY`, `FAL_IMAGE_MODEL` | [fal.ai](https://fal.ai/dashboard/keys) က Key။ AI Thumbnail Background အတွက်ဖြစ်ပြီး Credit ကုန်နိုင်ပါတယ်။ |
 
-**English:** Store credentials only in your local \`.env\` file. The table lists optional provider variables. Never commit API keys, cookies or private project files.
+**English:** Store credentials only in your local `.env` file. The table lists optional provider variables. Never commit API keys, cookies or private project files.
+
+### လုပ်ငန်းစဉ်အလိုက် အသုံးပြုပုံ / Practical Workflows
+
+#### Workflow A — မူရင်း Video ကို မြန်မာ Recap ထုတ်ခြင်း
+
+1. `RUN.bat` ကိုဖွင့်ပြီး **Source Video → Browse** မှ Video ရွေးပါ။
+2. **Source Language** ကို Auto-detect သို့မဟုတ် မူရင်းအသံရဲ့ ဘာသာစကားအတိုင်း ရွေးပါ။ Whisper က မူရင်းအသံကို Local မှာ စာသားပြောင်းပေးပါတယ်။ ပထမဆုံးအကြိမ်မှာ Whisper Model Download လုပ်ရနိုင်ပါတယ်။
+3. **Target Language** ကို Myanmar (Burmese) ရွေးပါ။
+4. Studio Tab မှာ AI Provider/Model ကို စမ်းပြီး **Use for Recap** လုပ်ထားပါ။ မပြောင်းထားရင် Gemini က Default ဖြစ်ပါတယ်။
+5. Narrator Voice မှာ မြန်မာအသံအတွက် **Microsoft Edge Thiha / Nilar** ကို ရွေးပါ။ Voice Speed နဲ့ Production Tools တွေကို လိုအပ်သလို ချိန်ပါ။
+6. **Preview** မှာ Title/Logo/Blur Box/Extra Text နေရာချပါ။ Video Ratio, Fill, Quality နဲ့ Narration Subtitle ကိုလည်း စစ်ပါ။
+7. **START / RESUME** နှိပ်ပြီး လုပ်ဆောင်ပါ။ မပြီးသေးရင် Safe Stop လုပ်ပြီး နောက်မှ Resume ပြန်လုပ်နိုင်ပါတယ်။
+8. ပြီးသွားရင် Output Video, SRT, Thumbnail နဲ့ Quality Report တွေကို Job Folder မှာ စစ်ပါ။ စာကြောင်းတချို့ မသဘာဝကျရင် **Edit Text** မှာ ပြင်ပြီး ပြင်ထားတဲ့ Line တွေကိုပဲ Voice အသစ်ထုတ်ပါ။
+
+**English:** Choose a source video and source language, set Myanmar as the target, select a text provider and Burmese narrator, configure overlays/subtitles/ratio/quality, then press START/RESUME. Review the final video, SRT, thumbnail and report. Use Edit Text to correct individual lines and re-voice only the edits.
+
+#### Workflow B — Video Download လုပ်ပြီး Recap Queue သို့ ပို့ခြင်း
+
+1. Studio Tab ထဲက URL အကွက်မှာ ကိုယ်ပိုင်ခွင့်ပြုချက်ရှိတဲ့ Public Video URL ထည့်ပါ။
+2. Video Quality, Audio-only/Video, Playlist နဲ့ Subtitle Download Option တွေကို လိုအပ်သလို ရွေးပါ။
+3. **Add to Queue** / Download ကိုနှိပ်ပြီး Queue Status ကို စောင့်ကြည့်ပါ။
+4. Download ပြီး Video ကို Recap Input သို့ တိုက်ရိုက်ပို့နိုင်ပါတယ်။ Auto Enqueue/Auto Start ဖွင့်ထားရင် Download ပြီးနောက် Recap Queue ကိုလည်း အလိုအလျောက် လွှဲပို့နိုင်ပါတယ်။
+5. Failed ဖြစ်ရင် Retry လုပ်ပါ။ Website/URL တိုင်း အလုပ်လုပ်မယ်လို့ အာမမခံနိုင်တာကို သတိပြုပါ။
+
+**English:** Add an authorized public URL in Studio, choose the download options, and add it to the persistent queue. Send completed downloads to Recap manually or enable the optional automatic enqueue/start settings. Retry failed downloads when appropriate.
+
+#### Workflow C — Thumbnail သီးသန့် ဖန်တီးခြင်း
+
+1. **Thumbnail Tab** ကိုဖွင့်ပြီး Local Video ရွေးပါ။
+2. Auto Best Frame သုံးမလား၊ **Choose Frame** နဲ့ ကိုယ်တိုင်ရွေးမလား ဆုံးဖြတ်ပါ။
+3. မြန်မာ Title, Title Style, Logo နဲ့ Aspect Ratio ကို သတ်မှတ်ပါ။
+4. **Generate Thumbnail** သို့မဟုတ် **Create 3 Local Variants** ကိုနှိပ်ပါ။ Local Mode မှာ API Credit မလိုပါ။
+5. Background အသစ်ကို AI နဲ့ဖန်တီးချင်မှသာ fal.ai ကို ရွေးပြီး `FAL_KEY` ထည့်ပါ။ အဲဒီ Mode က Credit ကုန်နိုင်ပါတယ်။
+
+**English:** Choose a local source video, select an automatic or manual frame, add a Burmese title/logo, choose the aspect ratio, and generate a local thumbnail or three variants. Use fal.ai only when you want a newly generated AI background and accept its credit cost.
+
+#### Workflow D — ရှိပြီးသား Subtitle ကိုပဲ ဘာသာပြန်ခြင်း
+
+1. **Subtitles Tab** မှာ SRT/VTT ဖိုင် Import လုပ်ပါ။
+2. Source/Target Language, AI Provider နဲ့ Model ကို ရွေးပါ။
+3. Translate လုပ်ပါ။ ဒီအလုပ်က Whisper ကို ပြန်မခေါ်ပါ။
+4. ဘာသာပြန်စာကို တစ်ကြောင်းချင်း Review/Edit လုပ်ပါ။
+5. Translated-only သို့မဟုတ် Bilingual SRT Export လုပ်ပါ။ မူရင်း Timestamp တွေကို ထိန်းထားပါတယ်။
+
+**English:** Import an existing SRT/VTT file, choose languages and a provider, translate without running Whisper, review/edit the cues, then export translated-only or bilingual SRT.
+
+#### Workflow E — Video အရှည်ကို Social Platform အတွက် အပိုင်းခွဲခြင်း
+
+1. **Splitter Tab** မှာ Video တစ်ခု သို့မဟုတ် Folder ရွေးပါ။
+2. Each Part ကြာချိန်၊ Smart Cut စောင့်ချိန်၊ Ratio/Fill နဲ့ Quality ကို သတ်မှတ်ပါ။
+3. လိုရင် Text Box နဲ့ Part Number ထည့်ပါ။
+4. **Check Cuts** နဲ့ ဖြတ်မယ့်နေရာတွေ ကြိုစစ်ပြီး **START SPLIT** နှိပ်ပါ။
+5. STOP လုပ်ထားရင် နောက်တစ်ကြိမ် START လုပ်တဲ့အခါ မပြီးသေးတဲ့ အပိုင်းကနေ ဆက်နိုင်ပါတယ်။
+
+**English:** Add one or more videos, set part duration and Smart Cut, choose layout/quality, add text and part numbers, preview cut positions, then start splitting. Interrupted jobs can resume from unfinished parts.
+
+#### Workflow F — Project Setting နဲ့ Batch Processing
+
+- **Project Tab** မှာ မကြာခဏသုံးတဲ့ Setting/Path တွေကို Project အဖြစ် Save/Load လုပ်ပါ။
+- **Pronunciation Editor** မှာ ဇာတ်ကောင်အမည်/စကားလုံးတွေကို TTS မှန်ကန်စွာ ဖတ်စေဖို့ အသံထွက် အစားထိုးစာလုံး သတ်မှတ်ပါ။
+- **Waveform** မှာ အသံရှိ/မရှိကို အကြမ်းဖျဉ်းကြည့်ပါ။
+- Intro/Outro, BGM, Smart Silence Removal ကို လိုအပ်မှသာ ဖွင့်ပါ။ Default ပိတ်ထားတာတွေကို Video အတိုနဲ့ အရင်စမ်းပါ။
+- Preflight/QC နဲ့ Disk/Storage ကို စစ်ပါ။
+- Video အများကြီး Recap လုပ်ဖို့ **Recap Queue** ထဲထည့်ပါ။ Queue က အလုပ်တွေကို တစ်ခုချင်းစီ လုပ်ဆောင်ပြီး Failed Job ကို Retry လုပ်နိုင်ပါတယ်။
+
+**English:** Save reusable settings in Project, adjust pronunciations, inspect the waveform, optionally add branding/music or reduce silence, run preflight/QC and monitor storage. Add multiple files to Recap Queue for sequential processing and retry failures as needed.
 
 ### စမ်းသပ်ရန် အကြံပြုအစီအစဉ် / Recommended Test Order
 
@@ -668,7 +736,7 @@ Feature အားလုံးကို Video အရှည်ကြီးနဲ�
 - **မြန်မာ:** Preflight နဲ့ Output QC က ဖိုင်/Tool/Metadata ရှိမရှိ စစ်ပေးတဲ့ ကိရိယာတွေဖြစ်ပြီး ဘာသာပြန်အဓိပ္ပာယ်မှန်ကန်မှု၊ အသံအရည်အသွေးနဲ့ လူနားထောင်တဲ့အခါ Sync ခံစားချက်ကို အပြည့်အဝ မဆုံးဖြတ်နိုင်ပါဘူး။  
   **English:** Preflight and output QC check prerequisites and media metadata. They cannot fully judge translation accuracy, listening quality or perceived synchronization.
 
-- **မြန်မာ:** Error ဖြစ်ရင် \`run.log\` နဲ့ Error Message ကို ပို့ပါ။ API Key, Cookie, Password နဲ့ ကိုယ်ရေးကိုယ်တာ အချက်အလက်တွေကို ဖျောက်ပြီးမှ မျှဝေပါ။  
+- **မြန်မာ:** Error ဖြစ်ရင် `run.log` နဲ့ Error Message ကို ပို့ပါ။ API Key, Cookie, Password နဲ့ ကိုယ်ရေးကိုယ်တာ အချက်အလက်တွေကို ဖျောက်ပြီးမှ မျှဝေပါ။  
   **English:** When reporting an issue, share the relevant log and error message after removing API keys, cookies, passwords and personal information.
 
 အပြည့်အစုံ Feature စာရင်းနဲ့ နည်းပညာပိုင်း အသေးစိတ်ကို [STUDIO_FEATURES.md](STUDIO_FEATURES.md) မှာလည်း ကြည့်နိုင်ပါတယ်။ ဒီ README ကတော့ အသုံးပြုသူအနေနဲ့ ဘယ် Tab က ဘာလုပ်ပေးလဲ၊ ဘယ်လိုသုံးရမလဲ၊ ဘာတွေသတိထားရမလဲဆိုတာ မြန်မာလို နားလည်လွယ်အောင် ရှင်းပြထားတာပါ။

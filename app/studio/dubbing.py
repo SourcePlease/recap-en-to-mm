@@ -86,6 +86,12 @@ def _duration(ffprobe: str, path: Path) -> float:
         raise RuntimeError(f"Could not read media duration: {path}") from exc
 
 
+def _has_audio(ffprobe: str, path: Path) -> bool:
+    result = _run([ffprobe, "-v", "error", "-select_streams", "a:0",
+                   "-show_entries", "stream=index", "-of", "csv=p=0", str(path)])
+    return bool(result.stdout.strip())
+
+
 def _edge_tts_save(text: str, voice: str, destination: Path) -> None:
     try:
         import edge_tts
@@ -141,8 +147,13 @@ def render_character_dubbing(
 
     source_bed: Path | None = None
     if source_audio_mode == "keep":
-        source_bed = source_video
+        if _has_audio(ffprobe, source_video):
+            source_bed = source_video
+        else:
+            log("ℹ️ Source video has no audio stream; rendering dialogue voices only.")
     elif source_audio_mode == "instrumental":
+        if not _has_audio(ffprobe, source_video):
+            raise RuntimeError("Source video has no audio stream to separate.")
         separation = work / "separation"
         no_vocals = separation / "htdemucs" / source_video.stem / "no_vocals.wav"
         if not no_vocals.is_file() or no_vocals.stat().st_size < 1000:
@@ -195,6 +206,9 @@ def render_character_dubbing(
         output_video.unlink(missing_ok=True)
         raise RuntimeError("Character dubbing render did not produce a valid output video.")
     log(f"✅ Character dubbing ready: {output_video}")
+    # Successful renders no longer need intermediate TTS clips or separation files.
+    import shutil
+    shutil.rmtree(work, ignore_errors=True)
     return output_video
 
 

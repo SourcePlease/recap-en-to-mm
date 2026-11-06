@@ -25,6 +25,8 @@ from studio.title_generator import TITLE_STYLES, ai_title_ideas, builtin_title_i
 PROVIDER_LABEL_TO_KEY = {
     "Groq": "groq",
     "OpenRouter": "openrouter",
+    "Cloudflare Workers AI": "cloudflare",
+    "NVIDIA NIM": "nvidia",
     "Ollama (local)": "ollama",
 }
 PROVIDER_KEY_TO_LABEL = {value: key for key, value in PROVIDER_LABEL_TO_KEY.items()}
@@ -281,8 +283,20 @@ class StudioTab(ttk.Frame):
         if self._current_provider:
             self._key_cache[self._current_provider] = self.key_var.get()
             self.cfg[f"studio_model_{self._current_provider}"] = self.model_var.get().strip()
-        api_env = {"groq": "GROQ_API_KEY", "openrouter": "OPENROUTER_API_KEY", "ollama": ""}[provider]
-        model_env = {"groq": "GROQ_MODEL", "openrouter": "OPENROUTER_MODEL", "ollama": "OLLAMA_MODEL"}[provider]
+        api_env = {
+            "groq": "GROQ_API_KEY",
+            "openrouter": "OPENROUTER_API_KEY",
+            "cloudflare": "CF_API_TOKEN",
+            "nvidia": "NVIDIA_API_KEY",
+            "ollama": "",
+        }[provider]
+        model_env = {
+            "groq": "GROQ_MODEL",
+            "openrouter": "OPENROUTER_MODEL",
+            "cloudflare": "CF_MODEL",
+            "nvidia": "NVIDIA_MODEL",
+            "ollama": "OLLAMA_MODEL",
+        }[provider]
         if provider != self._current_provider:
             stored_model = self.cfg.get(f"studio_model_{provider}") or os.getenv(model_env, "")
             self.model_var.set(str(stored_model or ""))
@@ -290,6 +304,8 @@ class StudioTab(ttk.Frame):
             self._current_provider = provider
         self.ai_status_var.set(
             "Uses the local Ollama endpoint; no API key is needed." if provider == "ollama"
+            else "Needs CF_ACCOUNT_ID in .env plus CF_API_TOKEN. Choose a Workers AI model available on the Free plan."
+            if provider == "cloudflare"
             else f"Key variable: {api_env}. The key is kept in memory only and is not saved in config.json."
         )
 
@@ -921,11 +937,30 @@ class StudioTab(ttk.Frame):
             parent=self,
         ):
             return
-        api_env = {"groq": "GROQ_API_KEY", "openrouter": "OPENROUTER_API_KEY", "ollama": ""}[provider]
-        model_env = {"groq": "GROQ_MODEL", "openrouter": "OPENROUTER_MODEL", "ollama": "OLLAMA_MODEL"}[provider]
+        api_env = {
+            "groq": "GROQ_API_KEY",
+            "openrouter": "OPENROUTER_API_KEY",
+            "cloudflare": "CF_API_TOKEN",
+            "nvidia": "NVIDIA_API_KEY",
+            "ollama": "",
+        }[provider]
+        model_env = {
+            "groq": "GROQ_MODEL",
+            "openrouter": "OPENROUTER_MODEL",
+            "cloudflare": "CF_MODEL",
+            "nvidia": "NVIDIA_MODEL",
+            "ollama": "OLLAMA_MODEL",
+        }[provider]
         key_value = self.key_var.get().strip()
-        if provider in {"groq", "openrouter"} and not (key_value or os.getenv(api_env, "").strip()):
+        if api_env and not (key_value or os.getenv(api_env, "").strip()):
             messagebox.showwarning("Studio", f"Enter {api_env} or configure it in the .env file first.", parent=self)
+            return
+        if provider == "cloudflare" and not os.getenv("CF_ACCOUNT_ID", "").strip():
+            messagebox.showwarning(
+                "Cloudflare Workers AI",
+                "Set CF_ACCOUNT_ID in the selected local .env file before applying this provider.",
+                parent=self,
+            )
             return
         values = {"RECAP_AI_PROVIDER": provider, model_env: model}
         if api_env and key_value:

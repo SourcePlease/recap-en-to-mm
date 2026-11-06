@@ -1649,8 +1649,9 @@ class EdgeSmartSync:
 
         self.log("🎬 Smart Sync video parts render စမယ်...")
         encoders = ffmpeg_encoders(self.ffmpeg)
-        preferred = "h264_nvenc" if "h264_nvenc" in encoders else "libx264"
-        nvenc_ready = preferred != "h264_nvenc" or ffmpeg_encoder_works(self.ffmpeg, "h264_nvenc")
+        nvenc_listed = "h264_nvenc" in encoders
+        nvenc_ready = nvenc_listed and ffmpeg_encoder_works(self.ffmpeg, "h264_nvenc")
+        preferred = "h264_nvenc" if nvenc_ready else "libx264"
         if not nvenc_ready:
             self.log("⚠️ FFmpeg lists NVENC but the driver/device smoke test failed — using libx264 CPU.")
             preferred = "libx264"

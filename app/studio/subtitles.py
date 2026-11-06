@@ -201,6 +201,18 @@ def translate_subtitles(
     return output
 
 
+def ffmpeg_subtitle_filter(path: str | Path, *, font_name: str = "Myanmar Text",
+                           font_size: int = 20) -> str:
+    """Build a libass subtitles filter with Windows-safe path escaping."""
+    escaped = str(Path(path).resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+    safe_font = str(font_name or "Arial").replace(",", "").replace("'", "")
+    size = max(10, min(72, int(font_size)))
+    return (
+        f"subtitles=filename='{escaped}':charenc=UTF-8:"
+        f"force_style='FontName={safe_font},FontSize={size},Outline=2,Shadow=1,MarginV=28'"
+    )
+
+
 def write_srt(path: str | Path, cues: list[SubtitleCue], translations: list[str] | None = None, *,
               bilingual: bool = False) -> Path:
     target = Path(path)

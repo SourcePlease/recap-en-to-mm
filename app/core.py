@@ -18,6 +18,7 @@ from typing import Any, Callable, Iterable
 
 
 from studio.pronunciation import apply_pronunciation_overrides
+from studio.compute import run_demucs
 
 
 LogFn = Callable[[str], None]
@@ -1434,11 +1435,11 @@ class EdgeSmartSync:
                             sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals",
                             "-o", str(separation_dir), str(source),
                         ]
-                        separated = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
-                        if separated.returncode != 0 or not vocals_path.is_file():
+                        separated = run_demucs(command, log=self.log)
+                        if not vocals_path.is_file():
                             raise RuntimeError(
-                                "Original BGM ကိုပိတ်ပြီး Dialogue ကိုထိန်းဖို့ Demucs လိုအပ်ပါတယ်။ "
-                                "Python environment ထဲမှာ 'pip install -U demucs' လုပ်ပြီး ပြန်စမ်းပါ။\n"
+                                "Demucs က vocals.wav ကို မထုတ်ပေးနိုင်ပါ။ "
+                                "Demucs installation နဲ့ source audio ကို စစ်ပါ။\n"
                                 + (separated.stderr or separated.stdout or "")[-2500:]
                             )
                     source_audio_input = vocals_path

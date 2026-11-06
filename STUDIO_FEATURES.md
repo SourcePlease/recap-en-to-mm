@@ -581,21 +581,25 @@ Current branch: `feature/studio-expansion`
 
 ## 13.6 Burmese Voice Kit + GPU/CPU Fallback
 
-### Burmese Voice Kit (ElevenLabs only)
-- MIT-licensed preparation logic adapted from [edotheDev/burmese-voice-kit](https://github.com/edotheDev/burmese-voice-kit).
-- Burmese-only ElevenLabs preprocessing: verified pronunciation lexicon + supported integer/percentage conversion.
-- API key and voice ID remain in the user's private .env. This toolkit does not generate audio by itself and ElevenLabs usage may consume paid credits.
-- Edge TTS remains the free default and is not modified. Disable preprocessing with `ELEVENLABS_BURMESE_VOICE_KIT=0`.
-- The bundled lexicon is deliberately small; only add pronunciations tested with the selected voice.
+### Burmese Voice Kit — မြန်မာအသံထွက် ပြင်ဆင်မှု (ElevenLabs only)
+- [edotheDev/burmese-voice-kit](https://github.com/edotheDev/burmese-voice-kit) ရဲ့ MIT License အောက်က အသုံးဝင်တဲ့ preprocessing logic ကို ထည့်သွင်းထားပါတယ်။
+- မြန်မာစာအတွက် Pronunciation Lexicon နဲ့ ပံ့ပိုးထားတဲ့ ကိန်းပြည့်/ရာခိုင်နှုန်းတွေကို အသံထွက်ဖတ်လို့ကောင်းအောင် ပြင်ပေးပါတယ်။
+- ဒီ Kit ကိုယ်တိုင် TTS မဟုတ်ပါ။ အသံကို ကိုယ့် ElevenLabs account က ထုတ်ပေးပြီး API Key / Voice ID ကို private `.env` ထဲမှာပဲ ထားရပါမယ်။ ElevenLabs မှာ credit/paid plan လိုနိုင်ပါတယ်။
+- Edge TTS က free default အဖြစ် မပြောင်းလဲဘဲ ဆက်ရှိနေပါတယ်။ Preprocessing ပိတ်ချင်ရင် `ELEVENLABS_BURMESE_VOICE_KIT=0` သုံးပါ။
+- Lexicon ထဲက စကားလုံးတွေကို ရွေးထားတဲ့ voice နဲ့ စမ်းပြီးမှသာ ထပ်ထည့်ပါ။
 
-### GPU-first local processing
-- Whisper: CUDA/float16 is attempted first; when CUDA libraries/runtime fail, faster-whisper retries on CPU/int8.
-- Video encoding: FFmpeg selects `h264_nvenc` when the installed FFmpeg exposes it; the first failed NVENC render falls back to `libx264`.
-- Demucs source separation: use PyTorch CUDA when available; on GPU failure (including VRAM errors), retry on CPU.
-- CPU fallback is automatic where implemented. GPU availability alone does not guarantee CUDA PyTorch, cuDNN/CUBLAS, or NVENC support.
-- FFmpeg filters, Tkinter/UI, subtitle editing, and cloud AI/TTS services do not all run on the GPU.
+**English:** The MIT-licensed Burmese Voice Kit preprocessing is integrated into ElevenLabs Burmese narration only. It applies pronunciation substitutions and supported number conversion before synthesis. It does not generate audio itself. Edge TTS remains free and unchanged; ElevenLabs still requires the user's own account and may consume credits.
 
-**Test status:** Unit tests for Voice Kit preprocessing and Demucs device fallback are included; final CI and real Windows GPU/CPU render verification are still required.
+### GPU-first local processing — GPU ကို ဦးစားပေး၊ မရရင် CPU
+- **Whisper:** CUDA/float16 ကို အရင်စမ်းပြီး CUDA library/runtime error ဖြစ်ရင် faster-whisper ကို CPU/int8 နဲ့ ပြန်စမ်းပါတယ်။
+- **Video encoding:** FFmpeg မှာ `h264_nvenc` ရှိရုံမက အလုပ်လုပ်ကြောင်း smoke test လုပ်ပြီးမှ သုံးပါတယ်။ NVENC မရရင် `libx264` CPU ကို ရွေးပါတယ်။
+- **Demucs:** PyTorch CUDA ရှိရင် GPU နဲ့ source separation လုပ်ပြီး GPU/VRAM error ဖြစ်ရင် CPU နဲ့ ပြန်လုပ်ပါတယ်။
+- GPU ရှိတာတစ်ခုတည်းနဲ့ မလုံလောက်ပါ။ NVIDIA driver, CUDA-enabled PyTorch, cuDNN/CUBLAS နဲ့ NVENC ပါတဲ့ FFmpeg လိုအပ်နိုင်ပါတယ်။
+- FFmpeg filter အားလုံး၊ UI, Subtitle editing နဲ့ Cloud AI/TTS request တွေဟာ GPU ပေါ်မှာ အလိုအလျောက် run တာ မဟုတ်ပါ။
+
+**English:** Whisper, Demucs and NVENC are GPU-first where supported, with CPU fallback for the implemented paths. Subtitle editing, UI, most FFmpeg filter graphs and hosted AI/TTS calls do not use the local GPU.
+
+**Test status / စမ်းသပ်မှုအခြေအနေ:** Voice Kit, Demucs fallback နဲ့ NVENC preflight အတွက် unit tests ထည့်ထားပါတယ်။ လက်ရှိ CI result နဲ့ Windows PC ပေါ်က GPU/CPU real-video test ကို အတည်မပြုရသေးတဲ့အတွက် လက်တွေ့အလုပ်လုပ်ကြောင်း Final Verified လို့ မသတ်မှတ်ရသေးပါ။
 
 ## 14. နောက်ထပ် ထည့်သင့်တဲ့ Feature အကြံပြုချက်များ
 

@@ -25,6 +25,7 @@ on:
       - "tests/test_burmese_voice_kit.py"
       - "tests/test_compute_fallback.py"
       - "tests/test_encoder_probe.py"
+      - "tests/test_elevenlabs_voice_kit.py"
       - "requirements.txt"
       - ".env.example"
       - ".gitignore"

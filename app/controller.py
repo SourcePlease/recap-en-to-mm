@@ -1592,6 +1592,7 @@ class App(tk.Tk):
         self.cfg["extra_text_opacity"] = settings["overlays"].get("extra_text_opacity", 0.65)
         self.cfg["preview_seek_seconds"] = float(self.preview_time.get())
         for name in ("background_music_enabled", "background_music_path", "background_music_volume_percent",
+                     "original_audio_enabled", "source_bgm_enabled", "original_audio_volume_percent",
                      "auto_thumbnail_after_recap", "platform_preset"):
             if name in settings:
                 self.cfg[name] = settings[name]
@@ -1677,6 +1678,9 @@ class App(tk.Tk):
             "background_music_enabled": bgm_enabled,
             "background_music_path": bgm_path,
             "background_music_volume_percent": max(0, min(50, int(self.cfg.get("background_music_volume_percent", 12) or 0))),
+            "original_audio_enabled": bool(self.cfg.get("original_audio_enabled", True)),
+            "source_bgm_enabled": bool(self.cfg.get("source_bgm_enabled", True)),
+            "original_audio_volume_percent": max(0, min(150, int(self.cfg.get("original_audio_volume_percent", 70) or 0))),
             "auto_thumbnail_after_recap": bool(self.cfg.get("auto_thumbnail_after_recap", True)),
             "platform_preset": str(self.platform_preset.get() if hasattr(self, "platform_preset") else self.cfg.get("platform_preset", "Custom")),
             "source_title": self.source_title.get().strip() or source.stem,
@@ -1973,6 +1977,9 @@ class App(tk.Tk):
             "background_music_enabled": bool(settings.get("background_music_enabled", False)),
             "background_music_path": settings.get("background_music_path", ""),
             "background_music_volume_percent": int(settings.get("background_music_volume_percent", 12) or 0),
+            "original_audio_enabled": bool(settings.get("original_audio_enabled", True)),
+            "source_bgm_enabled": bool(settings.get("source_bgm_enabled", True)),
+            "original_audio_volume_percent": int(settings.get("original_audio_volume_percent", 70) or 0),
             "stop_file": str(stop_file),
         })
         result = self._run_child("render_worker.py", render_cfg, "STEP 2 — Narrator TTS + Smart Sync").get("result") or {}

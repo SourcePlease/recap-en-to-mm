@@ -567,10 +567,10 @@ Current branch: `feature/studio-expansion`
 |---|---|---|
 | Recap vs Character Dubbing | recap_studio_mm + mmnext-movie-recap-pro | သီးခြား Processing Mode နှစ်ခု |
 | Original Audio Ducking | recap_studio_mm + recap-studio-streamlit | Smart Sync Timeline နဲ့ တွဲဖက် |
-| Script Approval / Review Gate | recap-studio-streamlit + mmnext-recap design ideas | Render မလုပ်ခင် Review |
+| Script Approval / Review Gate | recap-studio-streamlit + mmnext-movie-recap-pro design ideas | Render မလုပ်ခင် Review |
 | API Key Pool / Failover | recap-studio-streamlit | လက်ရှိ AI Provider Selector နဲ့ ချိတ် |
 | Speaker-to-Voice Mapping | mmnext-movie-recap-pro | Manual Mapping အရင်၊ Diarization ကို Optional ထား |
-| Subtitle Timing / Scene Mapping | mmnext-recap design ideas + လက်ရှိ Subtitle Tools | Cue / Scene Editor |
+| Subtitle Timing / Scene Mapping | mmnext-movie-recap-pro design ideas + လက်ရှိ Subtitle Tools | Cue / Scene Editor |
 | Proxy Preview / Project Metadata | mmnext-recap design ideas | ပေါ့ပါးတဲ့ Preview နဲ့ Local Project Save |
 | Output Validation | mmnext-movie-recap-pro + လက်ရှိ Render Pipeline | Final Output QC |
 | Existing Windows Features | လက်ရှိ recap-en-to-mm | မဖျက်၊ မပြောင်းလဲစေဘဲ တိုးချဲ့ |
@@ -588,14 +588,14 @@ Current branch: `feature/studio-expansion`
 1. **Subtitle Timing Editor** — Cue အချိန်ကို Preview နဲ့ တိုက်စစ်ပြီး ပြင်ခြင်း။
 2. **Scene Marker / Clip Mapping** — ဇာတ်ဝင်ခန်းအလိုက် Script နဲ့ Clip ချိတ်ခြင်း။
 3. **Proxy Preview** — Video အရှည်ကြီး Preview ကို ပေါ့ပါးစေခြင်း။
-4. **Manual Speaker / Character Voice Assignment** — Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်ခြင်း။
+4. <badge>Implemented</badge> **Manual Speaker / Character Voice Assignment** — Dubbing Tab မှာ Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်နိုင်ပြီ။
 5. **Project Library** — Project အများကြီးကို ရှာဖွေပြီး ပြန်ဖွင့်နိုင်ခြင်း။
 6. **Subbing auto-transcription** — Subtitle ဖိုင်မရှိရင် Whisper ကနေ တိုက်ရိုက် Subbing Workflow စတင်နိုင်ခြင်း။
 
 ### Priority 2 — Optional Local AI
 
 1. **Speaker Diarization** — Speaker တစ်ယောက်ချင်းစီကို ခွဲခြားခြင်း။
-2. **Demucs / UVR Source Separation** — Dialogue နဲ့ BGM ခွဲခြင်း။
+2. **Demucs / UVR Source Separation** — Demucs separation ကို Recap Audio နဲ့ Character Dubbing မှာ ထည့်ထားပြီး UVR Integration က Planned ဖြစ်တယ်။
 3. **Scene Detection** — Scene Change ကို အလိုအလျောက်ရှာခြင်း။
 4. **Face / Character Tracking** — Scene ထဲက Character ကို လိုက်ကြည့်ခြင်း။
 5. **Auto Reframe** — 16:9 ကနေ 9:16 ပြောင်းတဲ့အခါ Subject ကို အလယ်မှာ ထိန်းခြင်း။
@@ -603,7 +603,7 @@ Current branch: `feature/studio-expansion`
 ### Priority 3 — Optional Cloud / Paid
 
 1. Premium TTS Voice များ။
-2. AI Thumbnail Image Generation။
+2. <badge>Implemented</badge> AI Thumbnail Image Generation — fal.ai ကို Optional Provider အဖြစ် ထည့်ထားပြီး Credits လိုနိုင်တယ်။
 3. Premium Long-context Translation Model များ။
 4. Cloud Storage / Team Project Sync။
 5. Social Platform Upload Integration။
@@ -622,7 +622,7 @@ Current branch: `feature/studio-expansion`
 - yt-dlp Website Support က Website ပြောင်းလဲမှုအပေါ် မူတည်တယ်။
 - fal.ai Image Generation က Free Local Thumbnail နဲ့ မတူဘဲ Credits သုံးနိုင်တယ်။
 - Edge TTS က Network / VPN / Proxy ကြောင့် 403 ဖြစ်နိုင်တယ်။
-- Character Voice Dub အတွက် Speaker Diarization နဲ့ Audio Separation မရှိသေးရင် Gender အလိုက် အသံကို အလိုအလျောက် မှန်မှန်ခွဲမပေးနိုင်ဘူး။
+- Character Voice Dubbing မှာ Manual Speaker / Voice Mapping ရှိတယ်။ Automatic Speaker Diarization နဲ့ Character Identity Detection မပါသေးဘူး။ Demucs က Instrumental Separation အတွက် Optional ဖြစ်ပြီး UVR မပါသေးဘူး။
 - Original BGM ကို Dialogue ကနေ ခွဲထိန်းဖို့ Source Separation လိုတယ်။
 - mmnext-recap ထဲက Timeline / AI / Render UI ကို အလုပ်လုပ်ပြီးသား Code လို့ မယူဆရဘူး။
 

@@ -16,8 +16,8 @@ MAX_N = 9_999_999
 MY_TO_LATIN = {ord(c): str(i) for i, c in enumerate("၀၁၂၃၄၅၆၇၈၉")}
 _NUM_RE = re.compile(
     r"(?<![A-Za-z0-9၀-၉])"
-    r"(?P<num>[0-9၀-၉]+(?:,[0-9၀-၉]{3})*(?:\\.[0-9၀-၉]+)?)"
-    r"(?P<pct>\\s*%)?"
+    r"(?P<num>[0-9၀-၉]+(?:,[0-9၀-၉]{3})*(?:\.[0-9၀-၉]+)?)"
+    r"(?P<pct>\s*%)?"
     r"(?![A-Za-z0-9၀-၉])"
 )
 _GLUED_RE = re.compile(r"[A-Za-z][0-9၀-၉]+|[0-9၀-၉]+[A-Za-z]")
@@ -85,9 +85,9 @@ def load_lexicon(path: str | Path | None = None) -> list[tuple[str, str]]:
         return []
     rows: list[tuple[str, str]] = []
     for line in source.read_text(encoding="utf-8-sig").splitlines():
-        if not line.strip() or line.lstrip().startswith("#") or "\\t" not in line:
+        if not line.strip() or line.lstrip().startswith("#") or "\t" not in line:
             continue
-        written, spoken = line.split("\\t", 1)
+        written, spoken = line.split("\t", 1)
         if written.strip() and spoken.strip():
             rows.append((written.strip(), spoken.strip()))
     return sorted(rows, key=lambda pair: len(pair[0]), reverse=True)
@@ -99,4 +99,4 @@ def prepare_burmese_text(text: str, lexicon_path: str | Path | None = None) -> t
     for written, spoken in load_lexicon(lexicon_path):
         value = value.replace(written, spoken)
     value, flags = replace_numbers(value)
-    return re.sub(r"\\s+", " ", value).strip(), flags
+    return re.sub(r"\s+", " ", value).strip(), flags

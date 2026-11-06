@@ -579,6 +579,24 @@ Current branch: `feature/studio-expansion`
 
 ---
 
+## 13.6 Burmese Voice Kit + GPU/CPU Fallback
+
+### Burmese Voice Kit (ElevenLabs only)
+- MIT-licensed preparation logic adapted from [edotheDev/burmese-voice-kit](https://github.com/edotheDev/burmese-voice-kit).
+- Burmese-only ElevenLabs preprocessing: verified pronunciation lexicon + supported integer/percentage conversion.
+- API key and voice ID remain in the user's private .env. This toolkit does not generate audio by itself and ElevenLabs usage may consume paid credits.
+- Edge TTS remains the free default and is not modified. Disable preprocessing with `ELEVENLABS_BURMESE_VOICE_KIT=0`.
+- The bundled lexicon is deliberately small; only add pronunciations tested with the selected voice.
+
+### GPU-first local processing
+- Whisper: CUDA/float16 is attempted first; when CUDA libraries/runtime fail, faster-whisper retries on CPU/int8.
+- Video encoding: FFmpeg selects `h264_nvenc` when the installed FFmpeg exposes it; the first failed NVENC render falls back to `libx264`.
+- Demucs source separation: use PyTorch CUDA when available; on GPU failure (including VRAM errors), retry on CPU.
+- CPU fallback is automatic where implemented. GPU availability alone does not guarantee CUDA PyTorch, cuDNN/CUBLAS, or NVENC support.
+- FFmpeg filters, Tkinter/UI, subtitle editing, and cloud AI/TTS services do not all run on the GPU.
+
+**Test status:** Unit tests for Voice Kit preprocessing and Demucs device fallback are included; final CI and real Windows GPU/CPU render verification are still required.
+
 ## 14. နောက်ထပ် ထည့်သင့်တဲ့ Feature အကြံပြုချက်များ
 
 ဒီအပိုင်းက လက်ရှိ Feature လို့ မဆိုလိုပါဘူး။ အရင်ဆုံး Free / Local ကို ဦးစားပေးပြီး အောက်ပါအတိုင်း အဆင့်လိုက် တိုးချဲ့သင့်ပါတယ်။

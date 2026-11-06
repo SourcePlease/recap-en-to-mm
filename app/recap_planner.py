@@ -1991,11 +1991,11 @@ class RecapPlanBuilder:
             os.environ["GEMINI_API_KEY"] = key_pool[0][1]
             os.environ["GEMINI_TEXT_MODEL"] = self.gemini_text_model
             self.log(f"🔑 Gemini key pool ready — {len(key_pool)} key(s) | translation only ({language_name} source uses local Whisper {whisper_model})")
-        elif selected_provider in {"groq", "openrouter", "ollama"}:
+        elif selected_provider in {"groq", "openrouter", "ollama", "cloudflare", "nvidia"}:
             self.log(f"🤖 Recap AI provider selected: {selected_provider}. Gemini API keys are not required for this job.")
         else:
             raise RuntimeError(
-                f"Unknown RECAP_AI_PROVIDER={selected_provider!r}. Choose gemini, groq, openrouter, or ollama."
+                f"Unknown RECAP_AI_PROVIDER={selected_provider!r}. Choose gemini, groq, openrouter, ollama, cloudflare, or nvidia."
             )
 
         transcript = None

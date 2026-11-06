@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+from studio.burmese_voice_kit import prepare_burmese_text
+
 
 class TTSProviderError(RuntimeError):
     pass
@@ -98,11 +100,20 @@ class ElevenLabsTTSEngine:
         self.rate, self.pitch, self.log = _safe_rate(rate), _safe_pitch(pitch), log
         self.counter = 0
         self.target_language = target_language
+        self.use_burmese_voice_kit = (
+            str(target_language or "").lower() == "mm"
+            and os.getenv("ELEVENLABS_BURMESE_VOICE_KIT", "1").strip().lower() not in {"0", "false", "no", "off"}
+        )
 
     def generate_channel99_voice(self, text: str, voice: str = "elevenlabs:default") -> str:
         clean = re.sub(r"\s+", " ", str(text or "")).strip()
         if not clean:
             raise TTSProviderError("ElevenLabs TTS received empty narration text.")
+        if self.use_burmese_voice_kit:
+            clean, flags = prepare_burmese_text(clean)
+            if flags:
+                self.log("ℹ️ Burmese Voice Kit: " + "; ".join(flags[:4]))
+            self.log("🗣️ Burmese Voice Kit preprocessing applied (pronunciation lexicon + supported numbers).")
         selected = str(voice or "").removeprefix("elevenlabs:")
         if selected in {"", "default"}:
             selected = self.voice_id
@@ -134,4 +145,5 @@ class ElevenLabsTTSEngine:
         return str(wav)
 
     def fingerprint(self, voice: str) -> str:
-        return f"{voice}|elevenlabs-v1|{self.voice_id}|{os.getenv('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2')}|{self.target_language}"
+        kit = "burmese-voice-kit-v1" if self.use_burmese_voice_kit else "plain"
+        return f"{voice}|elevenlabs-v2|{self.voice_id}|{os.getenv('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2')}|{self.target_language}|{kit}"

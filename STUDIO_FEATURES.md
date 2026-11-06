@@ -509,31 +509,71 @@ Timestamp တွေကို ထိန်းထားပြီး Subtitle Text 
 
 ---
 
-## 13. mmnext-recap Repo မှာ အသုံးဝင်တဲ့ အယူအဆများ
+## 13. Reference Repositories — ကိုးကားစစ်ဆေးထားတဲ့ Repo ၃ ခု
 
-Reference Repo: https://github.com/thihakyaw-leo/mmnext-recap
+ဒီအပိုင်းက Feature အသစ်နံပါတ် 13 မဟုတ်ပါဘူး။ User ပေးထားတဲ့ Reference Repo ၃ ခုကနေ ဘယ် Feature တွေ အသုံးဝင်လဲ၊ ဘယ်အရာတွေကို တိုက်ရိုက်ကူးမသုံးသင့်လဲဆိုတာ နှိုင်းယှဉ်ထားတဲ့ စာတမ်းအပိုင်းပါ။ လက်ရှိ Project ဖြစ်တဲ့ `SourcePlease/recap-en-to-mm` ကိုလည်း အခြေခံ Repo အဖြစ် ထည့်တွက်ထားပါတယ်။
 
-ဒီ Repo ကို စစ်ကြည့်တဲ့အခါ React + TypeScript + Vite + Tauri Desktop UI အခြေခံကို တွေ့ရပါတယ်။ Product Design စာတမ်းမှာ အောက်ပါ Workflow တွေကို အကြံပြုထားပါတယ်။
+### 13.1 recap_studio_mm
 
-- Video နဲ့ Subtitle ကို အရင် Import လုပ်ခြင်း။
-- Proxy Preview ဖန်တီးပြီး Original Video အကြီးကြီးကို အမြဲမဖတ်ရအောင် လုပ်ခြင်း။
-- Glossary / Story Marker ကို လူကိုယ်တိုင် စစ်ခြင်း။
-- Narration Segment တစ်ခုချင်းစီကို Source Clip Range နဲ့ ချိတ်ခြင်း။
-- Clip-to-Script Mapping ကို Render မလုပ်ခင် Review လုပ်ခြင်း။
-- SQLite လို Local Database နဲ့ Project Metadata ကို ထိန်းသိမ်းခြင်း။
+Reference: https://github.com/htinkyawzaw2017-maker/recap_studio_mm
 
-**သို့သော် အရေးကြီးတဲ့အချက်:** ဒီ Repo ရဲ့ လက်ရှိ App.tsx မှာ Open Source ရွေးတာနဲ့ UI Status ပြတာကိုသာ ချိတ်ထားပြီး AI Script Generation, Subtitle Import, Timeline Editing နဲ့ FFmpeg Render Pipeline ကို မချိတ်ဆက်ရသေးကြောင်း UI မှာကိုယ်တိုင် ဖော်ပြထားပါတယ်။ ဒါကြောင့် အဲဒီ Repo ကို Ready-made Feature Code အဖြစ် တိုက်ရိုက်ကူးယူဖို့ မသင့်ပါဘူး။
+အသုံးဝင်တဲ့ အယူအဆများ —
+- Recap နဲ့ Dialogue Dubbing ကို Workflow သီးခြားထားခြင်း။
+- Original Audio ကို Narration အောက်ခံအဖြစ် Ducking လုပ်ခြင်း။
+- Subtitle Timing / Coverage ကို စစ်ဆေးခြင်း။
+- Thumbnail နဲ့ Branding ထည့်ခြင်း။
 
-### လက်ရှိ App ထဲ ထည့်သင့်တဲ့ အယူအဆများ
+သတိပြုရန် — ဒီ Repo ရဲ့ Dialogue Dubbing ရှိတာနဲ့ Character တစ်ယောက်ချင်းစီကို အလိုအလျောက် မှန်ကန်စွာ ခွဲခြားပေးတဲ့ Diarization အပြည့်အစုံ ရှိတယ်လို့ မယူဆရပါ။
 
-| Reference Idea | ဘာကြောင့် အသုံးဝင်လဲ | လုပ်ဆောင်ရန် |
+### 13.2 recap-studio-streamlit
+
+Reference: https://github.com/htinkyawzaw2017-maker/recap-studio-streamlit
+
+အသုံးဝင်တဲ့ အယူအဆများ —
+- Render မလုပ်ခင် Script ကို User က Approve လုပ်နိုင်ခြင်း။
+- API Key Pool / Failover နည်းလမ်း။
+- Progress ကို သိမ်းဆည်းပြီး ပြန်ဆက်လုပ်နိုင်ခြင်း။
+- Splitter ကနေ Recap Workflow သို့ ဆက်သွားနိုင်ခြင်း။
+
+သတိပြုရန် — `recap_studio_mm` နဲ့ Engine အစိတ်အပိုင်းများ ဆက်စပ်နေတဲ့အတွက် Feature တူတာတွေကို Code အပြည့်အစုံ ထပ်ကူးမထည့်ဘဲ လိုအပ်တဲ့ Logic ကို လက်ရှိ Architecture နဲ့ ပေါင်းစပ်ရပါမယ်။
+
+### 13.3 mmnext-movie-recap-pro
+
+Reference: https://github.com/thihakyaw-leo/mmnext-movie-recap-pro
+
+အသုံးဝင်တဲ့ အယူအဆများ —
+- Narrator Segment နဲ့ Exact Dialogue Row ကို Data Model သီးခြားထားခြင်း။
+- Speaker တစ်ယောက်ချင်းစီအတွက် Voice Mapping ပြုလုပ်ခြင်း။
+- Local Whisper / FFmpeg Splitter အသုံးပြုခြင်း။
+- Output Validation ထည့်သွင်းခြင်း။
+
+သတိပြုရန် — Repo ထဲမှာ License ဖိုင် မတွေ့ခဲ့တဲ့အတွက် Source Code ကို တိုက်ရိုက်ကူးယူမသုံးဘဲ Architecture Idea အဖြစ်သာ ကိုးကားရပါမယ်။ UI ထဲမှာ ဖော်ပြထားတဲ့ Feature တိုင်းကို အလုပ်လုပ်ပြီးသားလို့လည်း မယူဆရပါ။
+
+### 13.4 လက်ရှိ Project — recap-en-to-mm
+
+Current branch: `feature/studio-expansion`
+
+ဆက်လက်ထိန်းသိမ်းရမည့် အခြေခံများ —
+- လက်ရှိ Windows Desktop App နဲ့ ရှိပြီးသား Recap / Splitter / Editor Workflow များ။
+- Smart Sync, AI Provider, TTS Provider နဲ့ Queue။
+- Downloader, Thumbnail, Subtitle Tools နဲ့ Project Tools။
+- ရှိပြီးသား User Config နဲ့ Project Compatibility။
+
+### 13.5 Repo ၄ ခုလုံးမှ ယူမည့် Feature Mapping
+
+| Feature / အင်္ဂါရပ် | အဓိက Reference | လက်ရှိ Project ထဲ ပေါင်းစပ်မည့်ပုံ |
 |---|---|---|
-| Clip-to-Script Mapping | Narration ဘယ်စာကြောင်းက ဘယ် Scene ကို ပြောတာလဲ စစ်လို့ရမယ် | Timeline / Editor ထဲ ထည့်ရန် |
-| Proxy Preview | Video အရှည်ကြီးကို Preview ကြည့်တဲ့အခါ PC ပေါ့ပါးမယ် | Low-resolution proxy option |
-| Story Markers | အရေးကြီးတဲ့ Scene / Character / Twist ကို မှတ်ထားနိုင်မယ် | Manual Marker + AI Suggestion |
-| Subtitle + Scene Link | Subtitle Cue နဲ့ Scene အချိန်ကို တွဲကြည့်နိုင်မယ် | Cue-to-Clip review |
-| Project Database | Project အများကြီးကို ပြန်ဖွင့်၊ ရှာဖွေ၊ ဆက်လုပ်နိုင်မယ် | SQLite / local metadata |
-| Script Review Before Render | မှားနေတဲ့ စာသားကို Render မလုပ်ခင် ပြင်နိုင်မယ် | Final Review Gate |
+| Recap vs Character Dubbing | recap_studio_mm + mmnext-movie-recap-pro | သီးခြား Processing Mode နှစ်ခု |
+| Original Audio Ducking | recap_studio_mm + recap-studio-streamlit | Smart Sync Timeline နဲ့ တွဲဖက် |
+| Script Approval / Review Gate | recap-studio-streamlit + mmnext-recap design ideas | Render မလုပ်ခင် Review |
+| API Key Pool / Failover | recap-studio-streamlit | လက်ရှိ AI Provider Selector နဲ့ ချိတ် |
+| Speaker-to-Voice Mapping | mmnext-movie-recap-pro | Manual Mapping အရင်၊ Diarization ကို Optional ထား |
+| Subtitle Timing / Scene Mapping | mmnext-recap design ideas + လက်ရှိ Subtitle Tools | Cue / Scene Editor |
+| Proxy Preview / Project Metadata | mmnext-recap design ideas | ပေါ့ပါးတဲ့ Preview နဲ့ Local Project Save |
+| Output Validation | mmnext-movie-recap-pro + လက်ရှိ Render Pipeline | Final Output QC |
+| Existing Windows Features | လက်ရှိ recap-en-to-mm | မဖျက်၊ မပြောင်းလဲစေဘဲ တိုးချဲ့ |
+
+**အရေးကြီးချက်:** Reference Repo ၃ ခုလုံးရဲ့ Feature တွေကို အကုန်လုံး တစ်ပုံစံတည်း ကူးထည့်မှာ မဟုတ်ပါ။ အသုံးဝင်တဲ့ Workflow နဲ့ Logic ကို လက်ရှိ Project ထဲ ပေါင်းစပ်မယ်။ License မသေချာတဲ့ Repo က Code ကို တိုက်ရိုက်မကူးဘူး။ Feature တစ်ခုချင်းစီကို Implemented / Planned / Optional လို့ ခွဲပြီး Test ပြီးမှ Implemented လို့ ပြောင်းမယ်။
 
 ---
 

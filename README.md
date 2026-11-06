@@ -407,9 +407,11 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **Audio controls / မူရင်းအသံထိန်းချုပ်မှု:** Project Tools → Audio, Music & Intro / Outro ထဲမှာ Original Audio ON/OFF နဲ့ Source BGM ON/OFF ကို သီးခြားရွေးနိုင်ပါတယ်။ Original Audio ON က မူရင်း Dialogue + BGM ကို Smart Sync Timeline နဲ့ ချိန်ညှိပြီး Narration အောက်ခံအဖြစ် ထားပေးပါတယ်။ Source BGM OFF လုပ်ပြီး Dialogue ကိုသာ ထားချင်ရင် Demucs လိုအပ်ပြီး CPU အချိန် ပိုယူနိုင်ပါတယ်။ Demucs မရနိုင်တဲ့အခါ Dialogue ကိုပါ မှားပိတ်မယ့်အစား Error ပြပါမယ်။
 
-**Subbing Mode / စာတန်းထိုး Video:** Subtitle Import / Translate Tab မှာ SRT/VTT ကို Import လုပ်၊ Timestamp မပျက်အောင် ဘာသာပြန်၊ Cue တစ်ကြောင်းချင်း ပြင်ပြီး Translated သို့မဟုတ် Bilingual SRT ထုတ်နိုင်ပါတယ်။ Source Video ကို ရွေးပြီး TTS မသုံးဘဲ Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ မူရင်း Audio ကို မပြောင်းဘဲ Copy လုပ်ထားပါတယ်။
+**Subbing Mode / စာတန်းထိုး Video:** Subtitle Import / Translate Tab မှာ SRT/VTT ကို Import လုပ်၊ Timestamp မပျက်အောင် ဘာသာပြန်၊ Cue တစ်ကြောင်းချင်း ပြင်ပြီး Translated သို့မဟုတ် Bilingual SRT ထုတ်နိုင်ပါတယ်။ Source Video ကို ရွေးပြီး TTS မသုံးဘဲ Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ မူရင်း Audio Content ကို ထိန်းထားပြီး MP4 နဲ့ ကိုက်ညီဖို့ AAC အဖြစ် Encode ပြန်လုပ်နိုင်ပါတယ်။
 
-**Still planned / ဆက်လက်တည်ဆောက်ရန်:** Character Voice Dubbing (Speaker Diarization / Character Voice Casting / Per-line timing editor) ကို သီးခြား Processing Mode အဖြစ် ဆက်တည်ဆောက်ရပါမယ်။
+**Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း:** Dubbing Tab မှာ Translated SRT/VTT ကို Import လုပ်ပြီး Timestamped Dialogue Row တစ်ကြောင်းချင်းစီကို Speaker Label နဲ့ သတ်မှတ်နိုင်ပါတယ်။ Speaker တစ်ယောက်စီကို Edge TTS Voice တစ်မျိုးစီ ချိတ်ပြီး Project Save/Load လုပ်ကာ Dialogue ကို Cue အချိန်အတိုင်း Render လုပ်နိုင်ပါတယ်။ Source Audio ကို Mute / Original Mix / Demucs Instrumental ရွေးနိုင်ပါတယ်။ Automatic Speaker Diarization မပါသေးတဲ့အတွက် Speaker နဲ့ Voice ကို User ကိုယ်တိုင် သတ်မှတ်ရပါမယ်။
+
+**English:** Character Dubbing imports translated SRT/VTT, lets users edit timestamped dialogue rows, assign stable speaker-to-Edge-TTS voice mappings, save/load dubbing projects, and render timed dialogue. Source audio can be muted, retained as a full mix, or separated to an instrumental bed with optional Demucs. Automatic diarization is not included.
 
 အသေးစိတ်: [Audio Modes & Studio Integration / Audio Mode များ](STUDIO_AUDIO_MODES.md)။
 
@@ -503,7 +505,21 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **English:** Subtitle Tools imports SRT/VTT files and translates their text without running Whisper. It can reuse the Recap glossary, supports line-by-line review/editing, and exports translated-only or bilingual SRT while preserving cue timestamps.
 
-#### 6. Project — Project, Audio နဲ့ Storage ကိရိယာများ
+#### 6. Dubbing — Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း
+
+**မြန်မာ:** ဒီ Tab က Narrator တစ်ယောက်တည်းနဲ့ Recap ပြောတာမဟုတ်ဘဲ ဇာတ်ကောင်တစ်ယောက်ချင်းစီအတွက် အသံသီးခြားတပ်ဖို့ ဖြစ်ပါတယ်။ အရင်ဆုံး Subtitles Tab မှာ Translated SRT/VTT ပြင်ဆင်ပြီး Export လုပ်ပါ။ ပြီးရင် Dubbing Tab မှာ အဲဒီဖိုင်ကို Import လုပ်ပါ။
+
+- **Dialogue Rows:** Start / End Timestamp, Speaker Label နဲ့ ဘာသာပြန်ထားတဲ့ စာသားကို တစ်ကြောင်းချင်း ပြင်နိုင်ပါတယ်။ Row Format က Tab-separated ဖြစ်ပါတယ်။
+- **Speaker Voice Mapping:** ဥပမာ `Speaker A=my-MM-ThihaNeural` လို့ သတ်မှတ်ပါ။ Speaker တစ်ယောက် ပြန်ပေါ်လာတိုင်း အဲဒီ Voice ကိုပဲ အသုံးပြုပါတယ်။
+- **Project Save/Load:** Dialogue Row နဲ့ Voice Mapping ကို Dubbing Project JSON အဖြစ် သိမ်းပြီး ပြန်ဖွင့်နိုင်ပါတယ်။
+- **Source Audio:** Mute, Original Dialogue + BGM အပြည့်ထားခြင်း၊ သို့မဟုတ် Demucs နဲ့ Instrumental BGM ပဲထားခြင်း ရွေးနိုင်ပါတယ်။
+- **Render:** Dialogue တစ်ကြောင်းစီကို Cue Timestamp နဲ့ ချိန်ပြီး Edge TTS အသံထုတ်ကာ Video နဲ့ ပြန်ပေါင်းပါတယ်။ အချိန်မလောက်တဲ့ Dialogue ကို အများဆုံး 1.5x အထိ မြန်စေပြီး မလုံလောက်ရင် Trim ဖြစ်နိုင်ပါတယ်။
+
+**ကန့်သတ်ချက်:** Automatic Speaker Diarization နဲ့ Character Identity Detection မပါသေးပါ။ Translated Subtitle ကို အရင်ပြင်ဆင်ထားရပြီး Speaker Label နဲ့ Voice ကို User ကိုယ်တိုင် စစ်ဆေးသတ်မှတ်ရပါမယ်။ Instrumental BGM ရွေးထားရင် Demucs ကို သီးခြား Install လုပ်ရနိုင်ပြီး CPU/RAM ပိုသုံးနိုင်ပါတယ်။
+
+**English:** The Dubbing tab supports manually reviewed timestamped dialogue rows, stable Edge TTS voice assignment per speaker, project save/load, and final video rendering. It does not automatically diarize speakers or identify characters.
+
+#### 7. Project — Project, Audio နဲ့ Storage ကိရိယာများ
 
 **မြန်မာ:** မကြာခဏ သုံးနေတဲ့ Setting တွေကို ပြန်ရွေးစရာမလိုအောင် Project အဖြစ် သိမ်းထားနိုင်ပြီး အသံ၊ Video Quality နဲ့ ဖိုင်သိမ်းဆည်းမှုဆိုင်ရာ Tool တွေကိုလည်း ဒီ Tab မှာ စီမံနိုင်ပါတယ်။
 
@@ -521,7 +537,7 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **English:** Project Tools save and restore settings/paths without embedding API secrets, show a lightweight waveform overview, manage TTS pronunciation substitutions, optionally add intro/outro cards or background music, reduce narration silence, run preflight and media QC checks, estimate storage use, clean selected cache files safely and apply common platform presets. The waveform is not a full timeline editor, and QC does not judge translation quality.
 
-#### 7. Recap Queue — Video အများအပြားကို တစ်ခုပြီးတစ်ခု လုပ်ခြင်း
+#### 8. Recap Queue — Video အများအပြားကို တစ်ခုပြီးတစ်ခု လုပ်ခြင်း
 
 **မြန်မာ:** Recap လုပ်စရာ Video အများအပြားရှိတဲ့အခါ တစ်ခုချင်းစီကို လက်နဲ့ ထပ်ရွေးနေစရာမလိုဘဲ Queue ထဲ စုပေါင်းထည့်နိုင်ပါတယ်။
 

@@ -418,6 +418,16 @@ responsible for the rights to the videos you process.
 - **Recap Queue — Batch Processing:** Video အများအပြားကို Local Queue ထဲထည့်ပြီး တစ်ခုချင်း လုပ်ဆောင်နိုင်သည်။ App ပြန်ဖွင့်လည်း pending jobs များကို ပြန်ရယူပြီး Failed Job ကို Retry လုပ်နိုင်သည်။  
   **English:** A persistent local queue recovers interrupted jobs, retries failures and processes jobs sequentially.
 
+### မြန်မာဘာသာပြန် အသံထွက်ဖတ်ရသဘာဝကျမှု / Natural Burmese Narration
+
+**မြန်မာ:** Recap ဘာသာပြန် Prompt ကို မြန်မာလူတစ်ယောက်က ဇာတ်လမ်းပြောပြနေသလို သဘာဝကျတဲ့ စကားပြောမြန်မာစကား ဖြစ်စေရန် သီးသန့်ညွှန်ကြားချက် ထည့်ထားသည်။ စာပေ/ရုံးသုံးဆန်သော “သည်၊ ၏၊ ၌၊ ပြုလုပ်ခဲ့သည်” ပုံစံများကို မလိုအပ်ဘဲ ထပ်ခါတလဲလဲ မသုံးဘဲ၊ အခြေအနေနဲ့ ကိုက်ညီသည့် “တယ်၊ ခဲ့တယ်၊ နေတယ်” စသည့် ပြောစကားပုံစံများကို အသုံးပြုရန် သတ်မှတ်ထားသည်။ English ဝါကျအစီအစဉ်အတိုင်း တိုက်ရိုက်မပြန်ရန်၊ နာမ်စား/ဆက်စပ်စကားလုံးများ ထပ်ခါတလဲလဲ မသုံးရန်၊ စာကြောင်းတိုင်းကို အသံထွက်ဖတ်ကြည့်ပြီး မသဘာဝကျပါက ပြန်ပြင်ရန်လည်း ထည့်ထားသည်။
+
+**English:** Recap now has a dedicated Burmese style guide for clear, contemporary spoken narration—not stiff literary, official, or word-for-word translation. It encourages natural Burmese sentence order and context-appropriate spoken endings, avoids repetitive pronouns/fillers, and asks the model to mentally read each line aloud and rewrite awkward phrasing.
+
+**မြန်မာ:** Translation Audit က အဓိပ္ပာယ်မပျောက်ခြင်း၊ ID အစီအစဉ်မလွဲခြင်းတို့အပြင် မြန်မာစကားပြောပုံ သဘာဝကျ/မကျ ကိုပါ စစ်ပြီး မသဘာဝကျသည့် စာကြောင်းများကို ပြန်ပြင်နိုင်သည်။ Prompt ပြောင်းထားသောကြောင့် အရင် Version ဖြင့် ဘာသာပြန်ပြီးသား Myanmar Job များကို Resume လုပ်ပါက Whisper Transcript ကို ပြန်မလုပ်ဘဲ Translation/Context Plan ကို အသစ်ပြန်တည်ဆောက်မည်။ ထို့ကြောင့် Gemini API အသုံးပြုမှု ထပ်ရှိနိုင်သည်။ လူက ကိုယ်တိုင်ဖတ်ပြီး နောက်ဆုံးစစ်ဆေးခြင်းကို အစားမထိုးနိုင်သေးပါ။
+
+**English:** The translation audit now treats native Burmese naturalness as a required quality check and can repair awkward lines without changing their source ID. Resuming an older Myanmar job refreshes its translation/context plan while reusing the Whisper transcript; this may use additional Gemini quota. Human proofreading is still recommended.
+ 
 ### Thumbnail အလိုအလျောက်ထုတ်ခြင်း / Automatic Thumbnails
 
 **မြန်မာ:** Auto-thumbnail after Recap သည် Default အားဖြင့် ဖွင့်ထားသည်။ Recap ပြီးသွားလျှင် မူရင်း Video ထဲမှ Frame များကို ရွေးပြီး Final Output ဘေးမှာ JPG Thumbnail ထုတ်ပေးသည်။ Download ပြီးနောက် Auto-thumbnail Option လည်း သီးခြားရှိသည်။ Local Mode သည် AI Credits မလိုပါ။ fal.ai Mode သည် FAL_KEY နဲ့ Credits လိုနိုင်သည်။

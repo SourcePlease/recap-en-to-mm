@@ -1554,6 +1554,7 @@ def audit_and_repair_batch(
     previous_context = list(previous_context or [])
     next_context = list(next_context or [])
     target_name = target_language_name(target_language) + " narrator output"
+    target_style_guide = _target_narration_style_guide(target_language)
 
     def _audit_window(
         current_rows: list[dict[str, Any]],
@@ -1591,7 +1592,12 @@ For EVERY CURRENT ID check:
 - no event borrowed from previous/next IDs;
 - no shifted chain where a row translates another row;
 - no adjacent duplicate/near-duplicate outputs for different sources;
-- natural spoken narrator style, stable names/pronouns, and no invented information.
+- natural spoken narrator style, stable names/pronouns, and no invented information;
+- for Myanmar/Burmese, check whether each line truly sounds like natural spoken Burmese, not merely whether its meaning is correct.
+
+BURMESE NATURALNESS GATE:
+{target_style_guide}
+When the target is Myanmar/Burmese, mark a line as repair if it is technically understandable but sounds like a literal translation, stiff written prose, unnatural word order, repetitive pronouns/connectors, or wording a fluent Burmese narrator would not naturally say. Rewrite it into clear, contemporary spoken Burmese while preserving every source fact and the same ID. Do not change a line that is already natural just to impose a different personal style.
 
 Return JSON ONLY with every CURRENT ID once and in the exact sequence above.
 Example shape using ACTUAL IDs from this batch:

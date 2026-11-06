@@ -2,7 +2,7 @@
 
 Gemini remains the default provider and retains its existing model/key fallback
 behavior. Optional OpenAI-compatible providers are selected explicitly with
-RECAP_AI_PROVIDER=groq|openrouter|ollama. Optional provider fallbacks are only
+RECAP_AI_PROVIDER=groq|openrouter|ollama|cloudflare|nvidia. Optional provider fallbacks are only
 attempted when RECAP_AI_FALLBACKS explicitly lists them.
 """
 import os
@@ -13,7 +13,7 @@ from google import genai
 from google.genai import types  # noqa: F401  (the planner reads ai_service.types)
 
 _LOCAL_PROXY = "http://127.0.0.1:10808"
-_SUPPORTED_ALTERNATES = {"groq", "openrouter", "ollama"}
+_SUPPORTED_ALTERNATES = {"groq", "openrouter", "ollama", "cloudflare", "nvidia"}
 
 
 def gemini_proxy() -> str:

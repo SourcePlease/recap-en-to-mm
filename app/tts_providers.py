@@ -154,4 +154,4 @@ class ElevenLabsTTSEngine:
             lexicon_path = Path(__file__).resolve().parents[1] / "data" / "burmese_voice_kit" / "lexicon.tsv"
             digest = hashlib.sha256(lexicon_path.read_bytes()).hexdigest()[:12] if lexicon_path.is_file() else "no-lexicon"
             kit = f"burmese-voice-kit-v1:{digest}"
-        return f"{voice}|elevenlabs-v2|{self.voice_id}|{os.getenv('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2')}|{self.target_language}|{kit}"
+        return f"{voice}|elevenlabs-v2|{self.voice_id}|{os.getenv('ELEVENLABS_MODEL_ID', 'eleven_v4')}|{self.target_language}|{kit}"

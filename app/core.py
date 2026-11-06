@@ -709,6 +709,23 @@ def ffmpeg_encoders(ffmpeg: str) -> set[str]:
     return encoders
 
 
+def ffmpeg_encoder_works(ffmpeg: str, encoder: str) -> bool:
+    """Smoke-test NVENC before a long render; an advertised encoder may lack a working driver."""
+    if encoder != "h264_nvenc":
+        return True
+    command = [
+        ffmpeg, "-hide_banner", "-loglevel", "error",
+        "-f", "lavfi", "-i", "color=c=black:s=64x64:r=1:d=0.1",
+        "-frames:v", "1", "-an", "-c:v", "h264_nvenc", "-f", "null", "-",
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8",
+                                errors="replace", timeout=20)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
 def render_video_part(
     ffmpeg: str,
     source: Path,
@@ -1633,8 +1650,14 @@ class EdgeSmartSync:
         self.log("🎬 Smart Sync video parts render စမယ်...")
         encoders = ffmpeg_encoders(self.ffmpeg)
         preferred = "h264_nvenc" if "h264_nvenc" in encoders else "libx264"
+        nvenc_ready = preferred != "h264_nvenc" or ffmpeg_encoder_works(self.ffmpeg, "h264_nvenc")
+        if not nvenc_ready:
+            self.log("⚠️ FFmpeg lists NVENC but the driver/device smoke test failed — using libx264 CPU.")
+            preferred = "libx264"
         remembered = str(checkpoint.get("selected_encoder") or "")
         encoder = remembered if remembered in {"h264_nvenc", "libx264"} else preferred
+        if encoder == "h264_nvenc" and not nvenc_ready:
+            encoder = "libx264"
         video_parts: list[Path] = []
         source_audio_parts: list[Path] = []
         source_audio_dir = paths.work / "source_audio_parts"

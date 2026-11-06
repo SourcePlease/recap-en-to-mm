@@ -588,7 +588,7 @@ Current branch: `feature/studio-expansion`
 1. **Subtitle Timing Editor** — Cue အချိန်ကို Preview နဲ့ တိုက်စစ်ပြီး ပြင်ခြင်း။
 2. **Scene Marker / Clip Mapping** — ဇာတ်ဝင်ခန်းအလိုက် Script နဲ့ Clip ချိတ်ခြင်း။
 3. **Proxy Preview** — Video အရှည်ကြီး Preview ကို ပေါ့ပါးစေခြင်း။
-4. <badge>Implemented</badge> **Manual Speaker / Character Voice Assignment** — Dubbing Tab မှာ Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်နိုင်ပြီ။
+4. **Implemented** **Manual Speaker / Character Voice Assignment** — Dubbing Tab မှာ Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်နိုင်ပြီ။
 5. **Project Library** — Project အများကြီးကို ရှာဖွေပြီး ပြန်ဖွင့်နိုင်ခြင်း။
 6. **Subbing auto-transcription** — Subtitle ဖိုင်မရှိရင် Whisper ကနေ တိုက်ရိုက် Subbing Workflow စတင်နိုင်ခြင်း။
 

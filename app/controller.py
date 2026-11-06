@@ -80,6 +80,15 @@ TARGET_LANGUAGE_LABELS = {
     "it": "Italian", "ru": "Russian", "tr": "Turkish", "ar": "Arabic", "bn": "Bengali",
     "ta": "Tamil", "te": "Telugu", "ur": "Urdu",
 }
+RECAP_STYLE_LABELS = {
+    "storytelling": "Storytelling — သဘာဝကျ ဇာတ်ကြောင်းပြော",
+    "documentary": "Documentary — တည်ငြိမ်ရှင်းလင်း",
+    "cinematic": "Cinematic — ရုပ်ရှင်ဆန်ဆန်",
+    "casual": "Casual — ပေါ့ပေါ့ပါးပါး",
+    "character_focus": "Character Focus — ဇာတ်ကောင်အဓိက",
+    "anime_recap": "Anime Recap — Anime Recap ပုံစံ",
+    "educational": "Explainer — အကြောင်းရင်း/အကျိုးဆက်ရှင်းပြ",
+}
 
 
 def _tool_path(cfg: dict, name: str) -> str:
@@ -185,6 +194,8 @@ class App(tk.Tk):
         self.source_language = tk.StringVar(value=LANGUAGE_LABELS.get(saved_language, LANGUAGE_LABELS["auto"]))
         saved_target = str(self.cfg.get("target_language") or "mm")
         self.target_language = tk.StringVar(value=TARGET_LANGUAGE_LABELS.get(saved_target, TARGET_LANGUAGE_LABELS["mm"]))
+        saved_style = str(self.cfg.get("recap_style") or "storytelling")
+        self.recap_style = tk.StringVar(value=RECAP_STYLE_LABELS.get(saved_style, RECAP_STYLE_LABELS["storytelling"]))
         self.final_folder = tk.StringVar(value=str(self.cfg.get("final_output_folder") or ""))
         saved_voice = str(self.cfg.get("narrator_voice") or self.cfg.get("edge_tts_voice_mm")
                           or self.cfg.get("edge_tts_voice") or EDGE_VOICES[0])
@@ -669,6 +680,11 @@ class App(tk.Tk):
         self.target_language_combo.grid(row=2, column=1, sticky="ew", pady=3)
         self.target_language_combo.bind("<<ComboboxSelected>>", self._target_language_changed)
         hint(2, "Output narration + translation language; source language remains independent.")
+
+        ttk.Label(source_box, text="Narration style").grid(row=3, column=0, sticky="w", padx=(0, 8), pady=3)
+        ttk.Combobox(source_box, textvariable=self.recap_style, state="readonly",
+                     values=tuple(RECAP_STYLE_LABELS.values())).grid(row=3, column=1, sticky="ew", pady=3)
+        hint(3, "ဇာတ်ကြောင်းပြောပုံစံကို ရွေးပါ။ အချက်အလက်နဲ့ အဖြစ်အပျက်တွေကို မဖန်တီးဘဲ ထိန်းထားမယ်။")
 
         self.edge_voice_label = ttk.Label(source_box, text="Narrator Voice")
         self.edge_voice_label.grid(row=11, column=0, sticky="w", padx=(0, 8), pady=3)
@@ -1643,6 +1659,7 @@ class App(tk.Tk):
             "source": source,
             "source_language": self._source_language_code(),
             "target_language": self._target_language_code(),
+            "recap_style": next((key for key, label in RECAP_STYLE_LABELS.items() if label == self.recap_style.get()), "storytelling"),
             "final_output_folder": final_folder,
             "brand_intro_outro_enabled": bool(self.cfg.get("brand_intro_outro_enabled", False)),
             "brand_channel_name": str(self.cfg.get("brand_channel_name") or "My Channel"),
@@ -1887,6 +1904,7 @@ class App(tk.Tk):
             "stop_file": str(stop_file),
             "source_language": settings.get("source_language", "auto"),
             "target_language": settings.get("target_language", "mm"),
+            "recap_style": settings.get("recap_style", "storytelling"),
             "whisper_model_other": cfg_values.get("whisper_model_other", "medium"),
         }
         for key in (

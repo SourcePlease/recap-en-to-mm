@@ -581,6 +581,9 @@ Current branch: `feature/studio-expansion`
 
 ## 13.6 Burmese Voice Kit + GPU/CPU Fallback
 
+အသေးစိတ် GPU setup ကို [GPU_SETUP.md](GPU_SETUP.md) မှာ ကြည့်ပါ။ **English:** See [GPU_SETUP.md](GPU_SETUP.md) for the Windows GPU installation and verification steps.
+
+
 ### Burmese Voice Kit — မြန်မာအသံထွက် ပြင်ဆင်မှု (ElevenLabs only)
 - [edotheDev/burmese-voice-kit](https://github.com/edotheDev/burmese-voice-kit) ရဲ့ MIT License အောက်က အသုံးဝင်တဲ့ preprocessing logic ကို ထည့်သွင်းထားပါတယ်။
 - မြန်မာစာအတွက် Pronunciation Lexicon နဲ့ ပံ့ပိုးထားတဲ့ ကိန်းပြည့်/ရာခိုင်နှုန်းတွေကို အသံထွက်ဖတ်လို့ကောင်းအောင် ပြင်ပေးပါတယ်။

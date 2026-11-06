@@ -49,9 +49,9 @@ These are separate workflows and should not be implemented as one overloaded tog
 - Translate subtitle cues while preserving timestamps.
 - Review/edit each translated cue, use the shared glossary, and export translated or bilingual SRT.
 - Select the source video and render a subtitle-burned MP4.
-- Skip TTS generation entirely and copy the source audio stream unchanged.
+- Skip TTS generation entirely and retain the source audio content without TTS; MP4 output may re-encode it to AAC for container compatibility.
 
-**မြန်မာလို:** SRT/VTT ဖိုင်ကို Import လုပ်မယ်။ ဒီနည်းလမ်းမှာ Whisper ကို ထပ်မခေါ်ဘူး။ Timestamp မပျက်အောင် ဘာသာပြန်ပြီး စာကြောင်းတစ်ကြောင်းချင်း ပြင်နိုင်မယ်။ Glossary ကို အသုံးပြုနိုင်ပြီး Translated/Bilingual SRT ထုတ်နိုင်မယ်။ Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ TTS မလုပ်ဘဲ မူရင်း Audio ကို မပြောင်းလဲဘဲ Copy လုပ်ထားမယ်။
+**မြန်မာလို:** SRT/VTT ဖိုင်ကို Import လုပ်မယ်။ ဒီနည်းလမ်းမှာ Whisper ကို ထပ်မခေါ်ဘူး။ Timestamp မပျက်အောင် ဘာသာပြန်ပြီး စာကြောင်းတစ်ကြောင်းချင်း ပြင်နိုင်မယ်။ Glossary ကို အသုံးပြုနိုင်ပြီး Translated/Bilingual SRT ထုတ်နိုင်မယ်။ Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ TTS မလုပ်ဘဲ မူရင်း Audio Content ကို TTS မလုပ်ဘဲ ထိန်းထားမယ်။ MP4 နဲ့ ကိုက်ညီဖို့ AAC အဖြစ် Encode ပြန်လုပ်နိုင်တယ်။
 
 ### Narrated Dubbing / Recap narration
 
@@ -63,7 +63,7 @@ These are separate workflows and should not be implemented as one overloaded tog
 
 **မြန်မာလို:** ဇာတ်လမ်းကို Narration အဖြစ် ပြန်ရေးပြီး Narrator Voice တစ်မျိုးနဲ့ အသံထုတ်မယ်။ Smart Sync နဲ့ Video အချိန်ညှိမယ်။ လိုအပ်ရင် မူရင်းအသံကို အောက်ခံအဖြစ် ထားမယ်။ Narration Subtitle နဲ့ SRT ထုတ်မယ်။
 
-### Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း
+### Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း (Planned — not implemented yet)
 
 - Use timestamped dialogue rows rather than recap narration paragraphs.
 - Detect speakers where a supported diarization model is installed; otherwise allow manual speaker labels.
@@ -99,6 +99,6 @@ Subbing နဲ့ Dubbing နှစ်ခုလုံးက Project Save/Load, M
 - [ ] Narration active: source audio ducks but is not accidentally removed.
 - [ ] External BGM remains independently controllable.
 - [ ] Project Save/Load restores all audio controls.
-- [x] Imported-subtitle Subbing render skips TTS and preserves the original source audio stream.
-- [ ] Character Voice Dubbing keeps speaker rows and per-speaker voice mapping.
+- [x] Imported-subtitle Subbing render skips TTS and retains the source audio content (AAC re-encode for MP4 compatibility).
+- [ ] Character Voice Dubbing UI, speaker rows, per-speaker voice mapping, TTS generation and final audio mix are implemented and tested.
 - [ ] Output QC confirms expected audio/video streams and duration.

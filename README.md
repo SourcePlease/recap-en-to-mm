@@ -227,7 +227,7 @@ app/
   splitter_tab.py          Splitter tab UI
   subtitle_png.py          Narration subtitle: Chromium နဲ့ စာတန်းပုံ (PNG) ထုတ်၊ အချိန်ကိုက်၊ SRT
   subtitle_fonts.py        စက်ထဲက မြန်မာ font စာရင်း
-  recap_subtitles.py       Narration Subtitle UI (font / အရောင် / box …)
+  recap_subtitles.py       Narration Subtitle UI (font / အရောင် / box …)\n  subtitle_tools_tab.py    Imported SRT/VTT translation and Subbing render\n  dubbing_tab.py           Manual character dialogue / voice assignment UI\n  studio/dubbing.py       Timestamped Edge TTS character dubbing renderer
   gemini_tts.py            Gemini TTS narrator (တစ်ကားလုံး narrator တစ်ယောက်တည်း)
   launch.ps1               Python ရှာပြီး UI ဖွင့်တာ
 recap_runtime/services/

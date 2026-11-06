@@ -588,7 +588,7 @@ Current branch: `feature/studio-expansion`
 - Edge TTS က free default အဖြစ် မပြောင်းလဲဘဲ ဆက်ရှိနေပါတယ်။ Preprocessing ပိတ်ချင်ရင် `ELEVENLABS_BURMESE_VOICE_KIT=0` သုံးပါ။
 - Lexicon ထဲက စကားလုံးတွေကို ရွေးထားတဲ့ voice နဲ့ စမ်းပြီးမှသာ ထပ်ထည့်ပါ။
 
-**English:** The MIT-licensed Burmese Voice Kit preprocessing is integrated into ElevenLabs Burmese narration only. It applies pronunciation substitutions and supported number conversion before synthesis. It does not generate audio itself. Edge TTS remains free and unchanged; ElevenLabs still requires the user's own account and may consume credits.
+**English:** The MIT-licensed Burmese Voice Kit preprocessing is integrated into ElevenLabs Burmese narration only, using the `eleven_v4` model with `language_code=my` by default. It applies pronunciation substitutions and supported number conversion before synthesis. It does not generate audio itself. Edge TTS remains free and unchanged; ElevenLabs still requires the user's own account and may consume credits.
 
 ### GPU-first local processing — GPU ကို ဦးစားပေး၊ မရရင် CPU
 - **Whisper:** CUDA/float16 ကို အရင်စမ်းပြီး CUDA library/runtime error ဖြစ်ရင် faster-whisper ကို CPU/int8 နဲ့ ပြန်စမ်းပါတယ်။

@@ -405,7 +405,11 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **Free-first AI Auto:** .env ထဲမှာ RECAP_AI_PROVIDER=auto ထားရင် API Key နဲ့ Model ID ပြည့်စုံတဲ့ Free-first Provider ကို အစဉ်လိုက်ရွေးပါတယ်။ OpenRouter အတွက် OPENROUTER_MODEL=openrouter/free ထားနိုင်ပါတယ်။ Hosted Free Provider တစ်ခုမှ မပြည့်စုံရင် Gemini ကို သုံးပါတယ်။ Provider Rotation က Configured Provider တွေကြားမှာသာ လုပ်နိုင်ပြီး Quota မရှိတဲ့ အကန့်အသတ်မဲ့ Service မဟုတ်ပါဘူး။
 
-**Planned, not available yet:** Original Audio + Subtitle Only နဲ့ Character Voice Dub (ဇာတ်ကောင်အလိုက် Speaker Diarization / Voice Casting / BGM Separation) တို့ကို နောက်ထပ် သီးခြား Processing Mode အဖြစ် စီစဉ်ထားပါတယ်။ လက်ရှိ Narrator Style တွေနဲ့ မတူတဲ့ Feature ဖြစ်ပါတယ်။
+**Audio controls / မူရင်းအသံထိန်းချုပ်မှု:** Project Tools → Audio, Music & Intro / Outro ထဲမှာ Original Audio ON/OFF နဲ့ Source BGM ON/OFF ကို သီးခြားရွေးနိုင်ပါတယ်။ Original Audio ON က မူရင်း Dialogue + BGM ကို Smart Sync Timeline နဲ့ ချိန်ညှိပြီး Narration အောက်ခံအဖြစ် ထားပေးပါတယ်။ Source BGM OFF လုပ်ပြီး Dialogue ကိုသာ ထားချင်ရင် Demucs လိုအပ်ပြီး CPU အချိန် ပိုယူနိုင်ပါတယ်။ Demucs မရနိုင်တဲ့အခါ Dialogue ကိုပါ မှားပိတ်မယ့်အစား Error ပြပါမယ်။
+
+**Still planned / ဆက်လက်တည်ဆောက်ရန်:** Full Original Audio + Subtitle-only video render နဲ့ Character Voice Dubbing (Speaker Diarization / Character Voice Casting / Per-line timing editor) တို့ကို သီးခြား Processing Mode အဖြစ် ဆက်တည်ဆောက်ရပါမယ်။ လက်ရှိ Subtitle Import / Translate Tab က SRT/VTT ကို TTS မပြန်လုပ်ဘဲ ဘာသာပြန်ပြီး SRT ထုတ်ပေးနိုင်ပေမဲ့ source video ထဲ Burn-in လုပ်တဲ့ end-to-end Subbing Mode မဟုတ်သေးပါ။
+
+အသေးစိတ်: [Audio Modes & Studio Integration / Audio Mode များ](STUDIO_AUDIO_MODES.md)။
 
 ### Feature Branch ကို ဘယ်လိုရယူမလဲ / How to Get This Branch
 

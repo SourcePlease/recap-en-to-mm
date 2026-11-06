@@ -30,6 +30,7 @@ class SubtitleToolsTab(ttk.Frame):
         self.provider = tk.StringVar(value=str(cfg.get("subtitle_provider") or "gemini"))
         self.model = tk.StringVar(value=str(cfg.get("subtitle_model") or os.getenv("GEMINI_TEXT_MODEL") or "gemini-3.5-flash"))
         self.api_key = tk.StringVar(value="")
+        self.use_glossary = tk.BooleanVar(value=bool(cfg.get("subtitle_use_glossary", True)))
         self.status = tk.StringVar(value="Import an existing .srt or .vtt file. This tool does not run Whisper.")
         self.cues: list[SubtitleCue] = []
         self.translations: list[str] = []
@@ -67,6 +68,7 @@ class SubtitleToolsTab(ttk.Frame):
         actions = ttk.Frame(self)
         actions.grid(row=10, column=0, columnspan=3, sticky="ew", pady=5)
         ttk.Button(actions, text="Import / Preview", command=self._import).pack(side="left")
+        ttk.Checkbutton(actions, text="Use glossary", variable=self.use_glossary).pack(side="left", padx=(8, 0))
         self.translate_button = ttk.Button(actions, text="Translate", command=self._translate)
         self.translate_button.pack(side="left", padx=8)
         self.edit_button = ttk.Button(actions, text="Edit Translations…", command=self._edit_translations, state="disabled")
@@ -104,6 +106,22 @@ class SubtitleToolsTab(ttk.Frame):
         except Exception as exc:
             messagebox.showerror("Subtitles", str(exc), parent=self)
 
+    def _load_translation_glossary(self):
+        if not self.use_glossary.get():
+            return None
+        local_path = self.root_dir / "glossary.json"
+        example_path = self.root_dir / "glossary.example.json"
+        path = local_path if local_path.is_file() else example_path
+        if not path.is_file():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Could not read glossary file {path.name}: {exc}") from exc
+        if not isinstance(data, dict):
+            raise ValueError("Glossary must be a JSON object with characters, terms, places and notes.")
+        return data
+
     def _translate(self):
         if self.busy:
             return
@@ -128,6 +146,13 @@ class SubtitleToolsTab(ttk.Frame):
         if provider == "gemini" and not key:
             messagebox.showwarning("Subtitles", "Set GEMINI_API_KEY in .env or enter a key.", parent=self)
             return
+        try:
+            glossary = self._load_translation_glossary()
+        except ValueError as exc:
+            messagebox.showerror("Subtitles", str(exc), parent=self)
+            return
+        self.cfg["subtitle_use_glossary"] = bool(self.use_glossary.get())
+        self.save()
         target, source = self.target_lang.get(), self.source_lang.get().strip() or "Auto-detect"
         self.busy = True
         self.translate_button.configure(state="disabled")
@@ -136,7 +161,7 @@ class SubtitleToolsTab(ttk.Frame):
             try:
                 translated = translate_subtitles(
                     self.cues, provider=provider, model=model, target_language=target,
-                    source_language=source, api_key=key,
+                    source_language=source, api_key=key, glossary=glossary,
                     progress=lambda done, total: self.after(
                         0, lambda done=done, total=total: self.status.set(f"Translated {done}/{total} cues…")),
                 )

@@ -1432,7 +1432,7 @@ class EdgeSmartSync:
                         separation_dir.mkdir(parents=True, exist_ok=True)
                         self.log("🎚️ BGM OFF: separating dialogue/vocals with Demucs (first run can take a while).")
                         command = [
-                            sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals",
+                            sys.executable, "-m", "demucs", "-n", "htdemucs", "--two-stems", "vocals", "--force",
                             "-o", str(separation_dir), str(source),
                         ]
                         separated = run_demucs(command, log=self.log)

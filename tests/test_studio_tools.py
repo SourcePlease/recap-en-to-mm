@@ -29,7 +29,7 @@ from studio.download_queue import PersistentDownloadQueue
 from studio.recap_queue import PersistentRecapQueue
 from studio.quality import inspect_output_quality, preflight_check, write_quality_report
 from recap_runtime.services.ai_service import AIService
-from recap_planner import _user_glossary_context
+from recap_planner import _target_narration_style_guide, _user_glossary_context
 
 
 class StudioDownloaderTests(unittest.TestCase):
@@ -153,6 +153,13 @@ class PersistentDownloadQueueTests(unittest.TestCase):
 
 
 class TranslationGlossaryTests(unittest.TestCase):
+    def test_recap_uses_native_spoken_burmese_narration_guidance(self):
+        guide = _target_narration_style_guide("mm")
+        self.assertIn("Myanmar/Burmese person naturally telling a story", guide)
+        self.assertIn("Avoid unnecessarily formal written constructions", guide)
+        self.assertIn("read aloud", guide)
+        self.assertEqual(_target_narration_style_guide("en"), "")
+
     def test_glossary_adds_consistent_burmese_terms(self):
         with tempfile.TemporaryDirectory() as temp:
             glossary = Path(temp) / "glossary.json"
@@ -292,11 +299,17 @@ class StudioThumbnailTests(unittest.TestCase):
 
 from studio.pronunciation import apply_pronunciation_overrides
 from studio.subtitles import (
-    SubtitleCue, format_srt, format_subtitle_glossary, parse_subtitles, translate_subtitles,
+    SubtitleCue, _natural_language_style_guide, format_srt, format_subtitle_glossary,
+    parse_subtitles, translate_subtitles,
 )
 
 
 class ImportedSubtitleTests(unittest.TestCase):
+    def test_subtitle_style_guide_is_specific_to_myanmar(self):
+        self.assertIn("spoken Burmese", _natural_language_style_guide("Myanmar (Burmese)"))
+        self.assertIn("machine-translated", _natural_language_style_guide("mm"))
+        self.assertIn("fluent native speaker", _natural_language_style_guide("English"))
+
     def test_subtitle_glossary_flattens_recap_glossary(self):
         context = format_subtitle_glossary({
             "characters": {"Asta": "အက်စတာ"},
@@ -321,6 +334,8 @@ class ImportedSubtitleTests(unittest.TestCase):
         prompt = mocked.call_args.args[2][0]["content"]
         self.assertIn("Asta => အက်စတာ", prompt)
         self.assertIn("Magic Knight => မေဂျစ်နိုက်", prompt)
+        self.assertIn("NATIVE MYANMAR BURMESE QUALITY", prompt)
+        self.assertIn("machine-translated sentence", prompt)
 
     def test_srt_import_preserves_cue_times_and_text(self):
         source = "1\n00:00:01,250 --> 00:00:02,900\nHello there!\n\n2\n00:00:03,000 --> 00:00:04,250\nGoodbye.\n"

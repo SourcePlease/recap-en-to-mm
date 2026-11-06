@@ -63,16 +63,16 @@ These are separate workflows and should not be implemented as one overloaded tog
 
 **မြန်မာလို:** ဇာတ်လမ်းကို Narration အဖြစ် ပြန်ရေးပြီး Narrator Voice တစ်မျိုးနဲ့ အသံထုတ်မယ်။ Smart Sync နဲ့ Video အချိန်ညှိမယ်။ လိုအပ်ရင် မူရင်းအသံကို အောက်ခံအဖြစ် ထားမယ်။ Narration Subtitle နဲ့ SRT ထုတ်မယ်။
 
-### Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း (Planned — not implemented yet)
+### Character Voice Dubbing / ဇာတ်ကောင်အလိုက် အသံပြန်သွင်းခြင်း (Manual workflow implemented)
 
-- Use timestamped dialogue rows rather than recap narration paragraphs.
-- Detect speakers where a supported diarization model is installed; otherwise allow manual speaker labels.
-- Let users map Speaker A/B/etc. to character names and voice profiles.
-- Keep source dialogue separate from BGM where source separation is available.
-- Provide per-line preview, timing correction, voice selection, and manual override.
-- Do not automatically guess a character's identity or gender without user review.
+- Import translated SRT/VTT and convert it into timestamped dialogue rows.
+- Edit start/end, speaker label, and translated dialogue text in the Dubbing tab.
+- Map each speaker label to a stable Edge TTS voice; save/load the dialogue and voice map as a project.
+- Render each dialogue line at its cue timestamp and mix the generated voices into the final video.
+- Choose to mute source audio, retain the full original mix, or keep the Demucs instrumental stem.
+- Automatic speaker diarization and character identity detection are not included; the user reviews and assigns speakers/voices.
 
-**မြန်မာလို:** Recap Narration စာပိုဒ်တွေကို မသုံးဘဲ Dialogue တစ်ကြောင်းချင်းစီရဲ့ Timestamp ကို အသုံးပြုမယ်။ Diarization Model ရှိရင် Speaker ခွဲမယ်၊ မရှိရင် User ကိုယ်တိုင် Speaker Label သတ်မှတ်နိုင်မယ်။ Speaker တစ်ယောက်စီကို Character Name နဲ့ Voice Profile ချိတ်ပေးမယ်။ Character Name/Gender ကို အလိုအလျောက် ခန့်မှန်းပြီး အတည်မယူဘူး။ User ပြင်ဆင်နိုင်ရမယ်။
+**မြန်မာလို:** Translated SRT/VTT ကို Import လုပ်ပြီး Dialogue တစ်ကြောင်းချင်းစီရဲ့ Start/End Timestamp, Speaker Label နဲ့ ဘာသာပြန်စာသားကို ပြင်နိုင်တယ်။ Speaker တစ်ယောက်စီကို Edge TTS Voice တစ်မျိုးစီ ချိတ်ပြီး Project အဖြစ် Save/Load လုပ်နိုင်တယ်။ Cue အချိန်အတိုင်း အသံထုတ်ပြီး Video နဲ့ ပြန်ပေါင်းတယ်။ မူရင်းအသံကို Mute လုပ်မလား၊ Dialogue+BGM အပြည့်ထားမလား၊ Demucs နဲ့ Instrumental BGM ပဲထားမလား ရွေးနိုင်တယ်။ Automatic Diarization မပါသေးလို့ Speaker နဲ့ Voice ကို User ကိုယ်တိုင် စစ်ပြီး သတ်မှတ်ရမယ်။
 
 ## 4. Cross-tool Integration / Tool အချင်းချင်း ချိတ်ဆက်မှု
 

@@ -45,13 +45,13 @@ These are separate workflows and should not be implemented as one overloaded tog
 
 ### Subbing Mode / Subtitle-only
 
-- Transcribe or import source subtitles (SRT/VTT).
+- Import existing SRT/VTT; this path does not invoke Whisper.
 - Translate subtitle cues while preserving timestamps.
-- Allow cue editing, glossary/pronunciation rules, bilingual subtitle layout, and SRT/VTT export.
-- Skip TTS generation entirely.
-- Keep original source audio according to Original Audio / Source BGM settings.
+- Review/edit each translated cue, use the shared glossary, and export translated or bilingual SRT.
+- Select the source video and render a subtitle-burned MP4.
+- Skip TTS generation entirely and copy the source audio stream unchanged.
 
-**မြန်မာလို:** မူရင်းအသံကို Whisper နဲ့ စာသားပြောင်းတာ သို့မဟုတ် SRT/VTT Import လုပ်တာကနေ စမယ်။ Timestamp မပျက်အောင် စာတန်းကို ဘာသာပြန်၊ ပြင်ဆင်၊ Bilingual Subtitle ထုတ်နိုင်မယ်။ TTS မလုပ်ဘူး။ Original Audio နဲ့ Source BGM Setting အတိုင်း မူရင်းအသံကို ထိန်းမယ်။
+**မြန်မာလို:** SRT/VTT ဖိုင်ကို Import လုပ်မယ်။ ဒီနည်းလမ်းမှာ Whisper ကို ထပ်မခေါ်ဘူး။ Timestamp မပျက်အောင် ဘာသာပြန်ပြီး စာကြောင်းတစ်ကြောင်းချင်း ပြင်နိုင်မယ်။ Glossary ကို အသုံးပြုနိုင်ပြီး Translated/Bilingual SRT ထုတ်နိုင်မယ်။ Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ TTS မလုပ်ဘဲ မူရင်း Audio ကို မပြောင်းလဲဘဲ Copy လုပ်ထားမယ်။
 
 ### Narrated Dubbing / Recap narration
 
@@ -99,6 +99,6 @@ Subbing နဲ့ Dubbing နှစ်ခုလုံးက Project Save/Load, M
 - [ ] Narration active: source audio ducks but is not accidentally removed.
 - [ ] External BGM remains independently controllable.
 - [ ] Project Save/Load restores all audio controls.
-- [ ] Subbing Mode does not invoke TTS.
+- [x] Imported-subtitle Subbing render skips TTS and preserves the original source audio stream.
 - [ ] Character Voice Dubbing keeps speaker rows and per-speaker voice mapping.
 - [ ] Output QC confirms expected audio/video streams and duration.

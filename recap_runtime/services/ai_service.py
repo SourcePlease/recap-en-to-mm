@@ -1,9 +1,8 @@
 """Configurable AI client used by the recap planner.
 
-Gemini remains the default provider and retains its existing model/key fallback
-behavior. Optional OpenAI-compatible providers are selected explicitly with
-RECAP_AI_PROVIDER=groq|openrouter|ollama|cloudflare|nvidia|mistral|cohere. Optional provider fallbacks are only
-attempted when RECAP_AI_FALLBACKS explicitly lists them.
+RECAP_AI_PROVIDER=auto selects the first configured provider in the free-first
+RECAP_AI_AUTO_ORDER. Gemini is used when no hosted/local alternate is configured.
+OpenAI-compatible provider fallbacks are attempted in RECAP_AI_FALLBACKS order.
 """
 import os
 import socket

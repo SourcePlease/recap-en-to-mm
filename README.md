@@ -36,7 +36,7 @@ ElevenLabs ကို ရွေးထားပြီး Target Language က Myanm
 
 `.env` ထဲမှာ `ELEVENLABS_BURMESE_VOICE_KIT=0` ထည့်ရင် ပိတ်နိုင်ပါတယ်။ Default က `1` ဖြစ်ပါတယ်။ Bundled lexicon ကို `data/burmese_voice_kit/lexicon.tsv` မှာ ပြင်နိုင်ပြီး မိမိသုံးမယ့် voice နဲ့ စမ်းပြီးမှ စကားလုံးအသစ် ထည့်ပါ။
 
-**English:** When ElevenLabs is selected for Myanmar narration, the app applies a small pronunciation lexicon and converts supported integers/percentages before sending text to ElevenLabs. This does not create audio by itself and does not change the free Edge TTS path. Set `ELEVENLABS_BURMESE_VOICE_KIT=0` to disable it.
+**English:** When ElevenLabs is selected for Myanmar narration, the app applies a small pronunciation lexicon and converts supported integers/percentages before sending text to ElevenLabs Eleven v4 (`language_code=my`). This does not create audio by itself and does not change the free Edge TTS path. Set `ELEVENLABS_BURMESE_VOICE_KIT=0` to disable it.
 
 ## လိုအပ်တာ
 

@@ -64,7 +64,7 @@ class DubbingTab(ttk.Frame):
             row=9, column=0, columnspan=3, sticky="w", pady=(8, 0))
         ttk.Label(self, text=(
             "Voice profiles are user-selected; no gender or character identity is guessed. "
-            "Demucs is needed only for instrumental-only source audio and may use significant CPU/RAM."
+            "Demucs is needed only for instrumental-only source audio; it uses CUDA when available and falls back to CPU."
         ), wraplength=1050).grid(row=10, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
     def _browse_source(self):

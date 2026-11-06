@@ -20,7 +20,7 @@ class DubbingTab(ttk.Frame):
         self.tool = tool
         self.source = tk.StringVar()
         self.subtitle = tk.StringVar()
-        self.audio_mode = tk.StringVar(value="Keep instrumental BGM (Demucs)")
+        self.audio_mode = tk.StringVar(value="Mute source audio")
         self.status = tk.StringVar(value="Import a translated SRT/VTT, assign speakers and voices, then render.")
         self.busy = False
         self._build()

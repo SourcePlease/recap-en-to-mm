@@ -117,11 +117,15 @@ class ElevenLabsTTSEngine:
         selected = str(voice or "").removeprefix("elevenlabs:")
         if selected in {"", "default"}:
             selected = self.voice_id
-        model = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip()
+        model = os.getenv("ELEVENLABS_MODEL_ID", "eleven_v4").strip()
         response = self.requests.post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{selected}",
             headers={"xi-api-key": self.key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
-            json={"text": clean, "model_id": model},
+            json={
+                "text": clean,
+                "model_id": model,
+                **({"language_code": "my"} if str(self.target_language or "").lower() == "mm" and model == "eleven_v4" else {}),
+            },
             params={"output_format": "mp3_44100_128"}, timeout=120,
         )
         if response.status_code >= 400:

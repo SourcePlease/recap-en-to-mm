@@ -24,3 +24,6 @@ yt-dlp[default]>=2026.3.17
 
 # Optional AI-generated thumbnail backgrounds from fal.ai (requires FAL_KEY and account credits)
 fal-client>=0.5.6
+
+# Optional: source BGM removal / instrumental extraction for Audio Studio and Character Dubbing.
+# Install only when needed (large PyTorch dependency): py -3.12 -m pip install -U demucs

@@ -28,6 +28,7 @@ from subtitle_png import geometry as subtitle_geometry, sample as subtitle_sampl
 from studio_tab import StudioTab
 from thumbnail_tab import ThumbnailTab
 from subtitle_tools_tab import SubtitleToolsTab
+from dubbing_tab import DubbingTab
 from project_tools_tab import ProjectToolsTab
 from recap_queue_tab import RecapQueueTab
 from studio.recap_queue import PersistentRecapQueue
@@ -591,6 +592,10 @@ class App(tk.Tk):
             tool=lambda name: _tool_path(self.cfg, name),
         )
         self.tools_tabs.add(self.subtitle_tools_tab, text="Subtitles")
+        self.dubbing_tab = DubbingTab(
+            self.tools_tabs, root_dir=ROOT_DIR, tool=lambda name: _tool_path(self.cfg, name),
+        )
+        self.tools_tabs.add(self.dubbing_tab, text="Dubbing")
         self.project_tools_tab = ProjectToolsTab(
             self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),

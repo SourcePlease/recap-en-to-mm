@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import threading
 from pathlib import Path
 import tkinter as tk
@@ -19,11 +20,14 @@ TARGETS = {
 
 
 class SubtitleToolsTab(ttk.Frame):
-    def __init__(self, master, *, root_dir: Path, cfg: dict, save, env_path=None):
+    def __init__(self, master, *, root_dir: Path, cfg: dict, save, env_path=None, tool=None):
         super().__init__(master, padding=14)
         self.root_dir, self.cfg, self.save = Path(root_dir), cfg, save
         self.env_path = env_path or (lambda: self.root_dir / ".env")
+        self.tool = tool or (lambda name: name)
         self.input_path = tk.StringVar()
+        self.video_path = tk.StringVar()
+        self.burn_bilingual = tk.BooleanVar(value=True)
         self.output_dir = tk.StringVar(value=str(self.root_dir / "Downloads"))
         self.source_lang = tk.StringVar(value="Auto-detect")
         self.target_lang = tk.StringVar(value="Myanmar (Burmese)")
@@ -77,12 +81,70 @@ class SubtitleToolsTab(ttk.Frame):
         self.export_button.pack(side="left")
         ttk.Label(self, textvariable=self.status, wraplength=1050).grid(
             row=11, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        ttk.Label(self, text="Source video for Subtitle-only / Subbing Mode").grid(
+            row=12, column=0, sticky="w", pady=(12, 4))
+        ttk.Entry(self, textvariable=self.video_path).grid(row=12, column=1, sticky="ew", padx=8, pady=(12, 4))
+        ttk.Button(self, text="Browse Video", command=self._browse_video).grid(row=12, column=2, pady=(12, 4))
+        ttk.Checkbutton(self, text="Burn bilingual subtitles (source + translation)",
+                        variable=self.burn_bilingual).grid(row=13, column=0, columnspan=2, sticky="w")
+        ttk.Button(self, text="Render Subbing Video (no TTS; keep original audio)",
+                   command=self._render_subbing_video).grid(row=13, column=2, sticky="e", pady=4)
 
     def _browse_input(self):
         path = filedialog.askopenfilename(filetypes=(("Subtitle files", "*.srt *.vtt"), ("All files", "*.*")))
         if path:
             self.input_path.set(path)
             self._import()
+
+    def _browse_video(self):
+        path = filedialog.askopenfilename(
+            filetypes=(("Video files", "*.mp4 *.mkv *.mov *.webm *.avi *.m4v"), ("All files", "*.*"))
+        )
+        if path:
+            self.video_path.set(path)
+
+    def _render_subbing_video(self):
+        if not self.cues or len(self.translations) != len(self.cues):
+            messagebox.showwarning("Subbing Mode", "Import and translate subtitles first.", parent=self)
+            return
+        source = Path(self.video_path.get().strip())
+        if not source.is_file():
+            messagebox.showwarning("Subbing Mode", "Choose the source video first.", parent=self)
+            return
+        folder = Path(self.output_dir.get().strip() or source.parent)
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            target_code = next((code for code, label in TARGETS.items() if label == self.target_lang.get()), "mm")
+            suffix = "bilingual" if self.burn_bilingual.get() else "translated"
+            srt_path = write_srt(
+                folder / f"{source.stem}_{target_code}_{suffix}_burnin.srt",
+                self.cues, self.translations, bilingual=bool(self.burn_bilingual.get()),
+            )
+            ffmpeg = str(self.tool("ffmpeg"))
+            if not Path(ffmpeg).is_file():
+                raise FileNotFoundError("FFmpeg မတွေ့ပါ။ INSTALL_REQUIREMENTS.bat ကို run လုပ်ပါ။")
+            escaped = str(Path(srt_path).resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+            vf = (
+                f"subtitles=filename='{escaped}':charenc=UTF-8:"
+                "force_style='FontName=Myanmar Text,FontSize=20,Outline=2,Shadow=1,MarginV=28'"
+            )
+            output = folder / f"{source.stem}_{target_code}_subbed.mp4"
+            command = [
+                ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
+                "-vf", vf, "-map", "0:v:0", "-map", "0:a?",
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                "-c:a", "copy", "-map_metadata", "0", "-movflags", "+faststart", str(output),
+            ]
+            self.status.set("Rendering Subbing Mode video… TTS is skipped; source audio is retained.")
+            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if result.returncode != 0 or not output.is_file() or output.stat().st_size < 5000:
+                output.unlink(missing_ok=True)
+                raise RuntimeError((result.stderr or "FFmpeg subtitle render failed.")[-3000:])
+            self.status.set(f"Subbing Mode ready: {output.name} · original audio kept · TTS skipped.")
+            messagebox.showinfo("Subbing Mode", f"Created:\n{output}\n\nOriginal audio was kept; TTS was not used.", parent=self)
+        except Exception as exc:
+            self.status.set(f"Subbing Mode failed: {exc}")
+            messagebox.showerror("Subbing Mode", str(exc), parent=self)
 
     def _browse_output(self):
         path = filedialog.askdirectory(initialdir=self.output_dir.get() or str(self.root_dir))

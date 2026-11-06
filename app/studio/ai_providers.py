@@ -51,6 +51,26 @@ PROVIDERS: dict[str, ProviderSpec] = {
         requires_api_key=True,
         notes="Choose a currently listed free model; free-model quotas can change.",
     ),
+    "cloudflare": ProviderSpec(
+        key="cloudflare",
+        label="Cloudflare Workers AI",
+        endpoint="https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions",
+        api_key_env="CF_API_TOKEN",
+        model_env="CF_MODEL",
+        default_model="",
+        requires_api_key=True,
+        notes="OpenAI-compatible Workers AI endpoint; requires CF_ACCOUNT_ID and a model available on the Free plan.",
+    ),
+    "nvidia": ProviderSpec(
+        key="nvidia",
+        label="NVIDIA NIM",
+        endpoint="https://integrate.api.nvidia.com/v1/chat/completions",
+        api_key_env="NVIDIA_API_KEY",
+        model_env="NVIDIA_MODEL",
+        default_model="",
+        requires_api_key=True,
+        notes="NVIDIA Developer Program API catalog; model access and rate limits depend on the account.",
+    ),
     "ollama": ProviderSpec(
         key="ollama",
         label="Ollama (local)",
@@ -80,6 +100,11 @@ def provider_options() -> list[dict[str, str | bool]]:
 
 
 def _endpoint_for(provider: str, base_url: str | None = None) -> str:
+    if provider == "cloudflare":
+        account_id = os.getenv("CF_ACCOUNT_ID", "").strip()
+        if not account_id:
+            raise AIProviderError("Set CF_ACCOUNT_ID in .env to use Cloudflare Workers AI.")
+        return PROVIDERS[provider].endpoint.format(account_id=account_id)
     if provider == "ollama":
         base = (base_url or os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434/v1").strip().rstrip("/")
         if not base.startswith(("http://", "https://")):
@@ -121,6 +146,8 @@ def chat_completion(
     headers = {"Content-Type": "application/json"}
     if secret:
         headers["Authorization"] = f"Bearer {secret}"
+    if key == "cloudflare" and not os.getenv("CF_ACCOUNT_ID", "").strip():
+        raise AIProviderError("Set CF_ACCOUNT_ID in .env to use Cloudflare Workers AI.")
     endpoint = _endpoint_for(key, base_url)
     body = {"model": chosen_model, "messages": messages, "stream": False}
     sender = post or requests.post

@@ -82,13 +82,15 @@ Subbing နဲ့ Dubbing ကို Narration Style တစ်ခုတည်း�
 
 **သတိ:** Source BGM OFF အတွက် Demucs လိုအပ်တယ်။ Demucs မရှိရင် pip install -U demucs လုပ်ရမယ်။ Separation မအောင်မြင်ရင် Dialogue ကိုပါ ပိတ်မိမယ့်အစား Render ကို Error နဲ့ ရပ်မယ်။ Demucs က CPU/RAM နဲ့ ပထမဆုံး Model Download အချိန် ပိုယူနိုင်တယ်။
 
-#### C. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ် (Planned / မပြီးသေး)
+#### C. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ် (Manual Workflow Implemented)
 
-- လက်ရှိ Branch မှာ Character-by-character Dubbing UI / TTS render pipeline မပါသေးပါ။
-- အကောင်အထည်ဖော်ရမည့်အရာများမှာ Timestamped Dialogue Row, Manual Speaker Label, Character-to-Voice Mapping, Per-line Preview နှင့် Final Mix ဖြစ်တယ်။
-- Speaker Diarization ကို အလိုအလျောက်လုပ်နိုင်မယ်လို့ မယူဆရ။ Model မရှိရင် Manual Speaker Label ကို သုံးရမယ်။
-- Original Dialogue ကို ဖယ်ပြီး BGM ကိုသာ ထိန်းဖို့ Source Separation လိုတယ်။
-- ဒီ Mode ကို အောက်ပါ Feature တွေ အမှန်တကယ်ထည့်ပြီး စမ်းသပ်ပြီးမှ “Implemented” လို့ ပြောင်းမယ်။
+- Dubbing Tab မှာ Translated SRT/VTT ကို Import လုပ်ပြီး Timestamped Dialogue Row အဖြစ် ပြောင်းနိုင်တယ်။
+- Row တစ်ကြောင်းချင်းစီမှာ Start / End / Speaker / Translated Text ကို ကိုယ်တိုင်ပြင်နိုင်တယ်။
+- Speaker A/B စတဲ့ Label တစ်ခုစီကို Edge TTS Voice တစ်မျိုးစီနဲ့ ချိတ်နိုင်တယ်။ ဇာတ်ကောင်တစ်ယောက်က Scene အများကြီးမှာ ပြန်ပေါ်လာရင် သတ်မှတ်ထားတဲ့ Voice ကိုပဲ ပြန်သုံးတယ်။
+- Dialogue Row နဲ့ Speaker-to-Voice Mapping ကို Dubbing Project JSON အဖြစ် Save/Load လုပ်နိုင်တယ်။
+- Cue Timestamp အတိုင်း TTS အသံတွေကို ချိန်ပြီး Video ထဲ ပြန်ပေါင်းတယ်။ Dialogue ကြာချိန် မကိုက်ရင် သတ်မှတ်ထားတဲ့ အကန့်အသတ်အတွင်း အမြန်နှုန်းညှိတယ်။
+- Source Audio ကို Mute, Original Dialogue + BGM ထားခြင်း၊ သို့မဟုတ် Demucs နဲ့ Instrumental BGM သီးသန့်ထားခြင်း ရွေးနိုင်တယ်။
+- **ကန့်သတ်ချက်:** Automatic Speaker Diarization / Character Identity Detection မပါသေးပါ။ Translated Subtitle ကို အရင်ပြင်ဆင်ထားရမယ်။ Speaker Label နဲ့ Voice ကို User ကိုယ်တိုင် စစ်ပြီး သတ်မှတ်ရမယ်။
 
 **ဒီ Mode မှာ အရေးကြီးတာ:** AI က အသံကြားရုံနဲ့ Character ရဲ့ Gender ကို အမြဲမှန်မှန် မခန့်မှန်းနိုင်ပါဘူး။ Voice ကို AI က အလိုအလျောက် ခန့်မှန်းပေးနိုင်တဲ့အဆင့်ရှိလာရင်တောင် User က Character နဲ့ Voice ကို ပြန်စစ်ပြီး ပြင်နိုင်တဲ့ Manual Voice Casting စနစ် ထည့်သင့်ပါတယ်။ အသံအမျိုးအစားကို လူတစ်ယောက်ရဲ့ Gender နဲ့ တစ်ထပ်တည်း သတ်မှတ်မထားဘဲ Voice Profile အဖြစ်သာ သုံးမယ်။
 

@@ -38,6 +38,10 @@ ElevenLabs ကို ရွေးထားပြီး Target Language က Myanm
 
 **English:** When ElevenLabs is selected for Myanmar narration, the app applies a small pronunciation lexicon and converts supported integers/percentages before sending text to ElevenLabs Eleven v4 (`language_code=my`). This does not create audio by itself and does not change the free Edge TTS path. Set `ELEVENLABS_BURMESE_VOICE_KIT=0` to disable it.
 
+GPU acceleration လုပ်ချင်ရင် [GPU Setup Guide](GPU_SETUP.md) မှာ NVIDIA Driver, CUDA, cuDNN, PyTorch နဲ့ NVENC setup ကို ကြည့်ပါ။
+
+**English:** See [GPU Setup Guide](GPU_SETUP.md) for NVIDIA CUDA, cuDNN, PyTorch and NVENC configuration.
+
 ## လိုအပ်တာ
 
 | | |

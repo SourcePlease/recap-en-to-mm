@@ -76,7 +76,27 @@ class _OpenAICompatibleClient:
 
 class AIService:
     def __init__(self):
-        self.provider = str(os.getenv("RECAP_AI_PROVIDER") or "gemini").strip().lower()
+        requested_provider = str(os.getenv("RECAP_AI_PROVIDER") or "auto").strip().lower()
+        if requested_provider in {"", "auto"}:
+            from studio.ai_providers import PROVIDERS
+            order = str(os.getenv(
+                "RECAP_AI_AUTO_ORDER",
+                "groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama",
+            )).split(",")
+            selected = None
+            for candidate in order:
+                candidate = candidate.strip().lower()
+                if candidate not in _SUPPORTED_ALTERNATES:
+                    continue
+                spec = PROVIDERS[candidate]
+                model_id = str(os.getenv(spec.model_env) or "").strip()
+                api_key = str(os.getenv(spec.api_key_env) or "").strip() if spec.api_key_env else ""
+                if model_id and (not spec.requires_api_key or api_key):
+                    selected = candidate
+                    break
+            self.provider = selected or "gemini"
+        else:
+            self.provider = requested_provider
         self.proxy = ""
         self._last_provider = self.provider
         self._last_provider_model = ""

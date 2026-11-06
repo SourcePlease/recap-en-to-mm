@@ -54,22 +54,33 @@ Recap မှာ အဓိကအားဖြင့် “ဘာသာပြန်
 
 **သတိပြုရန်:** Style ပြောင်းလိုက်ရင် Translation Plan အသစ်တည်ဆောက်ရပါမယ်။ အရင် Style နဲ့ ရေးထားတဲ့ Translation ကို မမှားယွင်းစွာ ပြန်သုံးမိစေဖို့ Style ကို Job Checkpoint ထဲမှာပါ ထည့်သွင်းခွဲထားပါတယ်။ Whisper Transcript ကိုတော့ Source Video မပြောင်းလဲသရွေ့ ပြန်သုံးနိုင်ပါတယ်။
 
-### နောက်ထပ် Production Mode များ — ဒီဇိုင်းသတ်မှတ်ထားပြီး အကောင်အထည်ဖော်ရန် ကျန်သေးသည်
+### Production Modes / Production Mode များ
 
-အောက်ပါ Mode များကို Storytelling Style နဲ့ မရောထွေးစေဘဲ သီးခြား Processing Mode အဖြစ် ထည့်သွင်းဖို့ ရည်ရွယ်ထားပါတယ်။ လက်ရှိ UI မှာ ရွေးလို့ရတဲ့ Style မဟုတ်သေးပါ။
+Subbing နဲ့ Dubbing ကို Narration Style တစ်ခုတည်းအဖြစ် မရောဘဲ သီးခြား Workflow အဖြစ်ထားပါတယ်။
 
-#### A. Original Audio + Subtitle Only — မူရင်းအသံမပြောင်းဘဲ စာတန်းထိုးမယ်
+#### A. Subbing Mode — မူရင်းအသံမပြောင်းဘဲ စာတန်းထိုးမယ် (Implemented)
 
-ဒီ Mode က သင်ပြောထားတဲ့ပုံစံနဲ့ အနီးစပ်ဆုံးပါ။
+လက်ရှိ Subtitle Import / Translate Tab မှာ SRT/VTT ဖိုင်ရှိပြီးသားဆိုရင် အောက်ပါအတိုင်း အလုပ်လုပ်နိုင်ပါတယ်။
 
-- မူရင်းဇာတ်ကောင်တွေရဲ့ အသံကို မဖျက်ဘူး။
-- Narrator TTS မထုတ်ဘူး။
-- မူရင်းစကားပြောသံကို ထားပြီး Myanmar Subtitle သာ ထည့်မယ်။
-- Subtitle ကို SRT အဖြစ်လည်း သီးခြား Export လုပ်နိုင်ရမယ်။
-- Original Audio ကို Keep / Mute လုပ်နိုင်ရမယ်။
-- မူရင်း BGM နဲ့ Dialogue ကို သီးခြားခွဲထားတဲ့ Audio Track ရှိမှ BGM တစ်ခုတည်းကို သီးခြား On/Off လုပ်နိုင်မယ်။
+- SRT/VTT Import လုပ်ပြီး Timestamp မပျက်အောင် ဘာသာပြန်မယ်။
+- Cue တစ်ကြောင်းချင်း ပြင်ဆင်နိုင်မယ်။
+- Translated SRT သို့မဟုတ် Bilingual SRT ထုတ်နိုင်မယ်။
+- Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်မယ်။
+- TTS မခေါ်ဘူး။ မူရင်း Audio Stream ကို Copy လုပ်ပြီး ထိန်းထားမယ်။
+- ဒီ Import workflow က Whisper ကို အလိုအလျောက် မခေါ်သေးဘူး။ SRT/VTT မရှိရင် အရင် Transcript ထုတ်ရမယ်။
 
-**အရေးကြီးတဲ့ နည်းပညာကန့်သတ်ချက်:** Video တစ်ခုထဲမှာ Dialogue နဲ့ BGM ကို Track တစ်ခုတည်းအဖြစ် ရောထားရင် “BGM ပဲပိတ်ပြီး စကားသံကို ဆက်ထား” လို့ FFmpeg တစ်ခုတည်းနဲ့ သန့်သန့်ရှင်းရှင်း မလုပ်နိုင်ပါဘူး။ Demucs / UVR လို Source Separation နည်းပညာနဲ့ BGM နဲ့ Speech ကို ခွဲရပါမယ်။ Separation မအောင်မြင်ရင် မူရင်းစကားသံပါ ပျက်နိုင်လို့ Preview နဲ့ Quality Check လိုပါတယ်။
+**မြန်မာလို:** မူရင်းအသံကို မပြောင်းဘဲ Subtitle ပဲ ဘာသာပြန်ထည့်ချင်ရင် ဒီ Mode ကို သုံးပါ။ SRT/VTT ကို Import လုပ်၊ Translate/Edit လုပ်ပြီး Source Video ကို ရွေးကာ Render လုပ်နိုင်ပါတယ်။
+
+#### B. Original Audio + BGM Control — မူရင်းအသံနဲ့ BGM ကို ထိန်းမယ် (Implemented)
+
+- Original Audio ON — Source Dialogue + Original BGM နှစ်မျိုးလုံးကို Smart Sync Timeline နဲ့ ချိန်ညှိပြီး Narration အောက်ခံအဖြစ် ထားမယ်။
+- Original Audio OFF — မူရင်း Source Audio Track တစ်ခုလုံးကို ပိတ်မယ်။
+- Source BGM ON — မူရင်း Dialogue + BGM အပြည့်အစုံကို ထားမယ်။
+- Source BGM OFF — Demucs နဲ့ Dialogue/Vocals ကို ခွဲထုတ်ပြီး BGM ကို ဖယ်ရှားမယ်။
+- Narration ပြောနေချိန် Source Audio ကို Sidechain Ducking နဲ့ လျှော့ပေးမယ်။
+- External BGM File ကတော့ Source BGM နဲ့ သီးခြား Control ဖြစ်တယ်။
+
+**သတိ:** Source BGM OFF အတွက် Demucs လိုအပ်တယ်။ Demucs မရှိရင် pip install -U demucs လုပ်ရမယ်။ Separation မအောင်မြင်ရင် Dialogue ကိုပါ ပိတ်မိမယ့်အစား Render ကို Error နဲ့ ရပ်မယ်။ Demucs က CPU/RAM နဲ့ ပထမဆုံး Model Download အချိန် ပိုယူနိုင်တယ်။
 
 #### B. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ်
 
@@ -532,13 +543,12 @@ Reference Repo: https://github.com/thihakyaw-leo/mmnext-recap
 
 ### Priority 1 — Free / Local နဲ့ အကျိုးရှိဆုံး
 
-1. **Original Audio + Subtitle Only** — TTS မထုတ်ဘဲ Original Audio ကို ထားပြီး Subtitle သာထည့်ခြင်း။
-2. **Subtitle Timing Editor** — Cue အချိန်ကို Preview နဲ့ တိုက်စစ်ပြီး ပြင်ခြင်း။
-3. **Scene Marker / Clip Mapping** — ဇာတ်ဝင်ခန်းအလိုက် Script နဲ့ Clip ချိတ်ခြင်း။
-4. **Proxy Preview** — Video အရှည်ကြီး Preview ကို ပေါ့ပါးစေခြင်း။
-5. **Manual Speaker / Character Voice Assignment** — Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်ခြင်း။
-6. **BGM Track Control** — Original Audio, Separated BGM, Dub Voice ကို သီးခြား Track အဖြစ် ထိန်းခြင်း။
-7. **Project Library** — Project အများကြီးကို ရှာဖွေပြီး ပြန်ဖွင့်နိုင်ခြင်း။
+1. **Subtitle Timing Editor** — Cue အချိန်ကို Preview နဲ့ တိုက်စစ်ပြီး ပြင်ခြင်း။
+2. **Scene Marker / Clip Mapping** — ဇာတ်ဝင်ခန်းအလိုက် Script နဲ့ Clip ချိတ်ခြင်း။
+3. **Proxy Preview** — Video အရှည်ကြီး Preview ကို ပေါ့ပါးစေခြင်း။
+4. **Manual Speaker / Character Voice Assignment** — Character နဲ့ Voice ကို User က ကိုယ်တိုင်ချိတ်ခြင်း။
+5. **Project Library** — Project အများကြီးကို ရှာဖွေပြီး ပြန်ဖွင့်နိုင်ခြင်း။
+6. **Subbing auto-transcription** — Subtitle ဖိုင်မရှိရင် Whisper ကနေ တိုက်ရိုက် Subbing Workflow စတင်နိုင်ခြင်း။
 
 ### Priority 2 — Optional Local AI
 

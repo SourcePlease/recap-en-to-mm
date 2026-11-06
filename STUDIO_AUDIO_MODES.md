@@ -51,7 +51,7 @@ These are separate workflows and should not be implemented as one overloaded tog
 - Select the source video and render a subtitle-burned MP4.
 - Skip TTS generation entirely and retain the source audio content without TTS; MP4 output may re-encode it to AAC for container compatibility.
 
-**မြန်မာလို:** SRT/VTT ဖိုင်ကို Import လုပ်မယ်။ ဒီနည်းလမ်းမှာ Whisper ကို ထပ်မခေါ်ဘူး။ Timestamp မပျက်အောင် ဘာသာပြန်ပြီး စာကြောင်းတစ်ကြောင်းချင်း ပြင်နိုင်မယ်။ Glossary ကို အသုံးပြုနိုင်ပြီး Translated/Bilingual SRT ထုတ်နိုင်မယ်။ Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ TTS မလုပ်ဘဲ မူရင်း Audio Content ကို TTS မလုပ်ဘဲ ထိန်းထားမယ်။ MP4 နဲ့ ကိုက်ညီဖို့ AAC အဖြစ် Encode ပြန်လုပ်နိုင်တယ်။
+**မြန်မာလို:** SRT/VTT ဖိုင်ကို Import လုပ်မယ်။ ဒီနည်းလမ်းမှာ Whisper ကို ထပ်မခေါ်ဘူး။ Timestamp မပျက်အောင် ဘာသာပြန်ပြီး စာကြောင်းတစ်ကြောင်းချင်း ပြင်နိုင်မယ်။ Glossary ကို အသုံးပြုနိုင်ပြီး Translated/Bilingual SRT ထုတ်နိုင်မယ်။ Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ TTS မခေါ်ဘဲ မူရင်း Audio Content ကို ထိန်းထားမယ်။ MP4 နဲ့ ကိုက်ညီဖို့ AAC အဖြစ် Encode ပြန်လုပ်နိုင်တယ်။
 
 ### Narrated Dubbing / Recap narration
 

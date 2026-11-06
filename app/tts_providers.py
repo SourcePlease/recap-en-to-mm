@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from studio.burmese_voice_kit import load_lexicon, prepare_burmese_text
+from studio.burmese_voice_kit import prepare_burmese_text
 
 
 class TTSProviderError(RuntimeError):

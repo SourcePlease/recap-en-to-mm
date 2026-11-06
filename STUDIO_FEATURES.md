@@ -66,7 +66,7 @@ Subbing နဲ့ Dubbing ကို Narration Style တစ်ခုတည်း�
 - Cue တစ်ကြောင်းချင်း ပြင်ဆင်နိုင်မယ်။
 - Translated SRT သို့မဟုတ် Bilingual SRT ထုတ်နိုင်မယ်။
 - Source Video ရွေးပြီး Subtitle Burn-in MP4 ထုတ်နိုင်မယ်။
-- TTS မခေါ်ဘူး။ မူရင်း Audio Stream ကို Copy လုပ်ပြီး ထိန်းထားမယ်။
+- TTS မခေါ်ဘူး။ မူရင်း Audio Content ကို ထိန်းထားပြီး MP4 နဲ့ ကိုက်ညီအောင် AAC အဖြစ် Encode ပြန်လုပ်နိုင်တယ်။
 - ဒီ Import workflow က Whisper ကို အလိုအလျောက် မခေါ်သေးဘူး။ SRT/VTT မရှိရင် အရင် Transcript ထုတ်ရမယ်။
 
 **မြန်မာလို:** မူရင်းအသံကို မပြောင်းဘဲ Subtitle ပဲ ဘာသာပြန်ထည့်ချင်ရင် ဒီ Mode ကို သုံးပါ။ SRT/VTT ကို Import လုပ်၊ Translate/Edit လုပ်ပြီး Source Video ကို ရွေးကာ Render လုပ်နိုင်ပါတယ်။
@@ -82,18 +82,17 @@ Subbing နဲ့ Dubbing ကို Narration Style တစ်ခုတည်း�
 
 **သတိ:** Source BGM OFF အတွက် Demucs လိုအပ်တယ်။ Demucs မရှိရင် pip install -U demucs လုပ်ရမယ်။ Separation မအောင်မြင်ရင် Dialogue ကိုပါ ပိတ်မိမယ့်အစား Render ကို Error နဲ့ ရပ်မယ်။ Demucs က CPU/RAM နဲ့ ပထမဆုံး Model Download အချိန် ပိုယူနိုင်တယ်။
 
-#### B. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ်
+#### C. Character Voice Dub — ဇာတ်ကောင်အလိုက် အသံသီးခြားတပ်မယ် (Planned / မပြီးသေး)
 
-- မိန်းကလေးဇာတ်ကောင်၊ ယောကျာ်းလေးဇာတ်ကောင် စသည်ဖြင့် Character/Speaker ကို ခွဲမယ်။
-- Character တစ်ယောက်ချင်းစီအတွက် Voice ကို ကိုယ်တိုင်ရွေးသတ်မှတ်နိုင်မယ်။
-- ဥပမာ Female Character → Female Voice၊ Male Character → Male Voice။
-- Character တစ်ယောက်တည်းက Scene အများကြီးမှာ ပြန်ပေါ်လာရင် သတ်မှတ်ထားတဲ့ Voice တစ်မျိုးတည်းကို ဆက်သုံးမယ်။
-- Subtitle ကိုလည်း Character အမည်နဲ့ ချိတ်ထားနိုင်ရမယ်။
-- Original Dialogue ကို ဖယ်ပြီး Dub အသံကို ထည့်မယ်ဆိုရင် BGM ကို သီးခြားထိန်းဖို့ Source Separation လိုတယ်။
+- လက်ရှိ Branch မှာ Character-by-character Dubbing UI / TTS render pipeline မပါသေးပါ။
+- အကောင်အထည်ဖော်ရမည့်အရာများမှာ Timestamped Dialogue Row, Manual Speaker Label, Character-to-Voice Mapping, Per-line Preview နှင့် Final Mix ဖြစ်တယ်။
+- Speaker Diarization ကို အလိုအလျောက်လုပ်နိုင်မယ်လို့ မယူဆရ။ Model မရှိရင် Manual Speaker Label ကို သုံးရမယ်။
+- Original Dialogue ကို ဖယ်ပြီး BGM ကိုသာ ထိန်းဖို့ Source Separation လိုတယ်။
+- ဒီ Mode ကို အောက်ပါ Feature တွေ အမှန်တကယ်ထည့်ပြီး စမ်းသပ်ပြီးမှ “Implemented” လို့ ပြောင်းမယ်။
 
 **ဒီ Mode မှာ အရေးကြီးတာ:** AI က အသံကြားရုံနဲ့ Character ရဲ့ Gender ကို အမြဲမှန်မှန် မခန့်မှန်းနိုင်ပါဘူး။ Voice ကို AI က အလိုအလျောက် ခန့်မှန်းပေးနိုင်တဲ့အဆင့်ရှိလာရင်တောင် User က Character နဲ့ Voice ကို ပြန်စစ်ပြီး ပြင်နိုင်တဲ့ Manual Voice Casting စနစ် ထည့်သင့်ပါတယ်။ အသံအမျိုးအစားကို လူတစ်ယောက်ရဲ့ Gender နဲ့ တစ်ထပ်တည်း သတ်မှတ်မထားဘဲ Voice Profile အဖြစ်သာ သုံးမယ်။
 
-#### C. Original Dialogue + Translated Subtitle — မူရင်းစကားသံနဲ့ ဘာသာပြန်စာတန်း
+#### D. Original Dialogue + Translated Subtitle — မူရင်းစကားသံနဲ့ ဘာသာပြန်စာတန်း
 
 - မူရင်းဇာတ်ကောင်အသံကို ထားမယ်။
 - စကားသံကို မြန်မာလို Dub မလုပ်ဘူး။
@@ -101,14 +100,14 @@ Subbing နဲ့ Dubbing ကို Narration Style တစ်ခုတည်း�
 - မူရင်း Audio Track ကို မပျက်စီးစေဘဲ Video ထဲ Subtitle Burn-in လုပ်မယ်။
 - BGM ကို သီးခြားဖယ်/ထိန်းချင်ရင် Source Separation လိုမယ်။
 
-#### D. Scene-by-Scene Recap — ဇာတ်ဝင်ခန်းလိုက် Recap
+#### E. Scene-by-Scene Recap — ဇာတ်ဝင်ခန်းလိုက် Recap
 
 - Video ကို Scene အလိုက် ခွဲမယ်။
 - Scene တစ်ခုချင်းစီမှာ သက်ဆိုင်တဲ့ Subtitle Cue / Transcript ကို ချိတ်မယ်။
 - Scene အစ/အဆုံးကို Preview ကြည့်ပြီး ကိုယ်တိုင်ပြင်နိုင်မယ်။
 - Narration တစ်ပိုင်းချင်းစီနဲ့ Source Clip ကို တွဲစစ်နိုင်မယ်။
 
-#### E. Highlights / Trailer Mode — အဓိကအခန်းများကို ရွေးထုတ်မယ်
+#### F. Highlights / Trailer Mode — အဓိကအခန်းများကို ရွေးထုတ်မယ်
 
 - ဇာတ်လမ်းထဲက အရေးကြီးတဲ့ Scene တွေကို ရွေးထုတ်မယ်။
 - Spoiler Level နဲ့ Target Duration ကို User က သတ်မှတ်နိုင်ရမယ်။

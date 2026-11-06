@@ -100,9 +100,54 @@ class StudioAIProviderTests(unittest.TestCase):
         self.assertEqual(post.call_args.args[0], "http://127.0.0.1:11434/v1/chat/completions")
         self.assertNotIn("Authorization", post.call_args.kwargs["headers"])
 
-    def test_provider_catalog_includes_openrouter(self):
+    def test_provider_catalog_includes_cloudflare_and_nvidia(self):
         keys = {provider["key"] for provider in provider_options()}
-        self.assertTrue({"groq", "openrouter", "ollama"}.issubset(keys))
+        self.assertTrue({"groq", "openrouter", "ollama", "cloudflare", "nvidia"}.issubset(keys))
+
+    def test_cloudflare_uses_account_scoped_openai_compatible_endpoint(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+            def json(self):
+                return {"choices": [{"message": {"content": "OK"}}]}
+
+        post = Mock(return_value=Response())
+        with patch.dict(os.environ, {"CF_ACCOUNT_ID": "account-123"}):
+            answer = chat_completion(
+                "cloudflare", "@cf/google/gemma-4-26b-a4b-it",
+                [{"role": "user", "content": "hi"}], api_key="test-token", post=post,
+            )
+        self.assertEqual(answer, "OK")
+        self.assertEqual(
+            post.call_args.args[0],
+            "https://api.cloudflare.com/client/v4/accounts/account-123/ai/v1/chat/completions",
+        )
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer test-token")
+
+    def test_cloudflare_requires_account_id(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(AIProviderError, "CF_ACCOUNT_ID"):
+                chat_completion(
+                    "cloudflare", "@cf/google/gemma-4-26b-a4b-it",
+                    [{"role": "user", "content": "hi"}], api_key="test-token",
+                    post=Mock(),
+                )
+
+    def test_nvidia_uses_nim_openai_compatible_endpoint(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+            def json(self):
+                return {"choices": [{"message": {"content": "OK"}}]}
+
+        post = Mock(return_value=Response())
+        answer = chat_completion(
+            "nvidia", "openai/gpt-oss-120b",
+            [{"role": "user", "content": "hi"}], api_key="test-token", post=post,
+        )
+        self.assertEqual(answer, "OK")
+        self.assertEqual(post.call_args.args[0], "https://integrate.api.nvidia.com/v1/chat/completions")
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer test-token")
 
 
 class AIServiceProviderRoutingTests(unittest.TestCase):

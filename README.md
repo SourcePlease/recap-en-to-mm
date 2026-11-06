@@ -1,7 +1,7 @@
 # Recap → Myanmar (+ Splitter)
 
 **English၊ တရုတ်၊ ဟိန္ဒီ၊ ကိုရီးယား … ဘယ်ဘာသာနဲ့ ပြောထားတဲ့ recap / ဇာတ်လမ်းပြော video ကိုမဆို မြန်မာအသံနဲ့ ပြန်ထုတ်ပေးတဲ့ Windows tool**
-Narrator only · Whisper + Gemini · Microsoft Edge TTS (Myanmar) · Smart Sync
+Selectable narration styles · Free-first AI auto selection · Whisper + Gemini · Edge TTS · Smart Sync
 **Splitter** tab — ရှည်တဲ့ video ကို မိနစ်အလိုက် အပိုင်းခွဲ (Ratio + blur နောက်ခံ၊ စာ၊ Part နံပါတ်)
 
 > English: turns a recap/story video narrated in English, Chinese, Hindi, Korean … (detected by itself)
@@ -398,6 +398,14 @@ responsible for the rights to the videos you process.
 **အရေးကြီး / Branch အခြေအနေ:** ဒီ Feature တွေဟာ `feature/studio-expansion` branch မှာပဲ ရှိပါသေးတယ်။ `main` branch ထဲကို မပေါင်းရသေးသလို မူရင်း upstream repository ကိုလည်း မပြောင်းထားပါဘူး။ စမ်းသပ်ပြီးမှ Merge လုပ်ဖို့ သီးခြားထားတာပါ။
 
 **English:** The new Studio features described below are available on `feature/studio-expansion`. They have not been merged into this fork's `main` branch, and the original upstream repository remains separate.
+
+### Recap Narration Styles / ဇာတ်ကြောင်းပြောပုံစံများ
+
+Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ်တော့ပါဘူး။ လက်ရှိ UI မှာ Storytelling, Documentary, Cinematic, Casual, Character Focus, Anime Recap နဲ့ Explainer Style တွေကို ရွေးနိုင်ပါတယ်။ ဒီ Style တွေက Narration စကားပြောပုံကို ပြောင်းပေးတာဖြစ်ပြီး မူရင်းအချက်အလက်ကို မတီထွင်ပါဘူး။ Style တစ်ခု ပြောင်းလိုက်ရင် Translation Plan အသစ်တည်ဆောက်ပါတယ်။
+
+**Free-first AI Auto:** .env ထဲမှာ RECAP_AI_PROVIDER=auto ထားရင် API Key နဲ့ Model ID ပြည့်စုံတဲ့ Free-first Provider ကို အစဉ်လိုက်ရွေးပါတယ်။ OpenRouter အတွက် OPENROUTER_MODEL=openrouter/free ထားနိုင်ပါတယ်။ Hosted Free Provider တစ်ခုမှ မပြည့်စုံရင် Gemini ကို သုံးပါတယ်။ Provider Rotation က Configured Provider တွေကြားမှာသာ လုပ်နိုင်ပြီး Quota မရှိတဲ့ အကန့်အသတ်မဲ့ Service မဟုတ်ပါဘူး။
+
+**Planned, not available yet:** Original Audio + Subtitle Only နဲ့ Character Voice Dub (ဇာတ်ကောင်အလိုက် Speaker Diarization / Voice Casting / BGM Separation) တို့ကို နောက်ထပ် သီးခြား Processing Mode အဖြစ် စီစဉ်ထားပါတယ်။ လက်ရှိ Narrator Style တွေနဲ့ မတူတဲ့ Feature ဖြစ်ပါတယ်။
 
 ### Feature Branch ကို ဘယ်လိုရယူမလဲ / How to Get This Branch
 

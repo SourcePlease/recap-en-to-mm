@@ -64,6 +64,27 @@ def target_language_name(code: str) -> str:
     return TARGET_LANGUAGES.get(str(code or "mm").strip().lower(), str(code or "mm"))
 
 
+def _target_narration_style_guide(target_language: str) -> str:
+    """Return native, spoken-style guidance for the selected narration language."""
+    if str(target_language or "").strip().lower() != "mm":
+        return ""
+    return """BURMESE NATIVE-NARRATOR STYLE — THIS IS A CORE QUALITY REQUIREMENT:
+- Write as a real Myanmar/Burmese person naturally telling a story to an audience. The result must sound human when read aloud, not like a translated article, textbook, news report, legal document, or machine translation.
+- Use clear, contemporary, conversational Burmese narration. Keep it polished and easy to understand: natural spoken Burmese, not slang-heavy chatting and not stiff literary Burmese.
+- Prefer everyday spoken sentence patterns and endings such as “တယ်”, “ခဲ့တယ်”, “နေတယ်”, “သွားတယ်”, “လာတယ်”, “ဖြစ်လာတယ်” when they fit the meaning and timeline. Do not force one ending onto every line.
+- Avoid unnecessarily formal written constructions such as repeated “သည်”, “၏”, “၌”, “ဖြစ်သည်”, “ပြုလုပ်ခဲ့သည်”. Rephrase them into natural spoken Burmese whenever the source does not require a formal register.
+- Use natural Burmese word order and familiar word combinations. Do not copy English sentence structure, translate idioms literally, or choose a dictionary synonym that a Burmese speaker would not normally say.
+- Let context determine whether a subject or pronoun needs to be repeated. Do not mechanically begin every sentence with “သူက”; Burmese often sounds more natural when an obvious subject is omitted.
+- Connect ideas naturally with phrases such as “အဲဒီအချိန်မှာ”, “ဒါပေမဲ့”, “အဲဒါကြောင့်”, or “ဒီလိုနဲ့” only when the relationship is present in the source. Do not sprinkle connectors or filler words into every sentence.
+- Preserve each character’s attitude and level of politeness in dialogue. For narrator prose, use one consistent, friendly-neutral storyteller voice. Do not add audience-addressing words such as “နော်”, “ဗျာ”, or “ပေါ့” unless they genuinely belong to the source.
+- Prefer active, direct phrasing when it is clearer in Burmese. Keep sentences smooth and reasonably short for voice narration, but never drop facts to make them shorter.
+- Use correct Myanmar Unicode spelling, natural punctuation, and consistent character/place/technique name spellings. Render foreign names in readable Burmese letters as required by the Burmese voice rule.
+- Before returning, silently read every line as if speaking it to a Myanmar listener. Rewrite any line that is grammatically valid but sounds awkward, overly formal, literal, repetitive, or unnatural.
+- Style examples only: stiff “သူသည် အလွန်စိတ်ပျက်မှုကို ခံစားခဲ့ရသည်။” → more conversational “သူ အတော်လေး စိတ်ပျက်သွားတယ်။”; stiff “သူက ထိုနေရာသို့ ပြန်လည်သွားရောက်ခဲ့သည်။” → more conversational “သူ အဲဒီနေရာကို ပြန်သွားတယ်။”
+- Natural wording must NEVER change the source meaning, add plot details, exaggerate emotion, or move information into another ID.
+"""
+
+
 def whisper_choice(language: str, other_model: str = WHISPER_MODEL_OTHER) -> tuple[str, str]:
     """(Whisper model, language code) for a known source language."""
     code = str(language or "en").strip().lower()
@@ -1345,6 +1366,7 @@ def translate_batch(
     target_language = str(target_language or "mm").strip().lower()
     target_name = "Burmese" if target_language == "mm" else target_language_name(target_language)
     target_is_mm = target_language == "mm"
+    target_style_guide = _target_narration_style_guide(target_language)
     target_script_rule = (
         "Write EVERY word in Burmese script — no English/Latin words (the Burmese voice cannot read them). "
         "Translate titles and terms; write names of people, places and techniques in Burmese letters by sound, with one spelling per name."
@@ -1363,6 +1385,8 @@ NATIVE {target_name.upper()} NARRATOR STYLE:
 - Avoid stiff word-for-word translation; restructure wording and clause order INSIDE THE SAME ID when needed.
 - Keep target-language pronouns, kinship terms, honorifics, self-reference, names, and relationships contextually correct.
 - Keep dialogue intent and social register natural without turning ordinary speech into unnecessarily formal wording.
+
+{target_style_guide}
 
 HARD RULES:
 1. Do NOT remove, condense away, or omit meaningful source information. Every action, event, object, person, relationship, cause/effect, dialogue, and important visual detail must remain in the same ID.
@@ -1873,6 +1897,10 @@ class RecapPlanBuilder:
         whisper_model, whisper_language = self._pick_whisper(source, job_dir, transcript_file, reuse)
         language_name = source_language_name(whisper_language)
         direction = f"{whisper_language}_to_{self.target_language}"
+        # A changed Burmese style guide must not silently reuse narration translated by the older,
+        # more generic prompt. Keep the Whisper transcript reusable; only invalidate translation/context plans.
+        if str(self.target_language).strip().lower() == "mm":
+            direction += "|native_burmese_narrator_style_v2"
         transcript_text_file = job_dir / "whisper_transcript.txt"
         atomic_file = job_dir / "atomic_units.json"
         context_file = job_dir / "story_context.json"

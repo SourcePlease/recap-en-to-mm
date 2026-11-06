@@ -407,7 +407,9 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **Audio controls / မူရင်းအသံထိန်းချုပ်မှု:** Project Tools → Audio, Music & Intro / Outro ထဲမှာ Original Audio ON/OFF နဲ့ Source BGM ON/OFF ကို သီးခြားရွေးနိုင်ပါတယ်။ Original Audio ON က မူရင်း Dialogue + BGM ကို Smart Sync Timeline နဲ့ ချိန်ညှိပြီး Narration အောက်ခံအဖြစ် ထားပေးပါတယ်။ Source BGM OFF လုပ်ပြီး Dialogue ကိုသာ ထားချင်ရင် Demucs လိုအပ်ပြီး CPU အချိန် ပိုယူနိုင်ပါတယ်။ Demucs မရနိုင်တဲ့အခါ Dialogue ကိုပါ မှားပိတ်မယ့်အစား Error ပြပါမယ်။
 
-**Still planned / ဆက်လက်တည်ဆောက်ရန်:** Full Original Audio + Subtitle-only video render နဲ့ Character Voice Dubbing (Speaker Diarization / Character Voice Casting / Per-line timing editor) တို့ကို သီးခြား Processing Mode အဖြစ် ဆက်တည်ဆောက်ရပါမယ်။ လက်ရှိ Subtitle Import / Translate Tab က SRT/VTT ကို TTS မပြန်လုပ်ဘဲ ဘာသာပြန်ပြီး SRT ထုတ်ပေးနိုင်ပေမဲ့ source video ထဲ Burn-in လုပ်တဲ့ end-to-end Subbing Mode မဟုတ်သေးပါ။
+**Subbing Mode / စာတန်းထိုး Video:** Subtitle Import / Translate Tab မှာ SRT/VTT ကို Import လုပ်၊ Timestamp မပျက်အောင် ဘာသာပြန်၊ Cue တစ်ကြောင်းချင်း ပြင်ပြီး Translated သို့မဟုတ် Bilingual SRT ထုတ်နိုင်ပါတယ်။ Source Video ကို ရွေးပြီး TTS မသုံးဘဲ Subtitle Burn-in MP4 ထုတ်နိုင်တယ်။ မူရင်း Audio ကို မပြောင်းဘဲ Copy လုပ်ထားပါတယ်။
+
+**Still planned / ဆက်လက်တည်ဆောက်ရန်:** Character Voice Dubbing (Speaker Diarization / Character Voice Casting / Per-line timing editor) ကို သီးခြား Processing Mode အဖြစ် ဆက်တည်ဆောက်ရပါမယ်။
 
 အသေးစိတ်: [Audio Modes & Studio Integration / Audio Mode များ](STUDIO_AUDIO_MODES.md)။
 

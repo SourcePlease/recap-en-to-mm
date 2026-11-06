@@ -30,6 +30,12 @@ Selectable narration styles · Free-first AI auto selection · Whisper + Gemini 
 
 ထွက်လာတဲ့ video မှာ **မြန်မာအသံပဲ** ပါတယ်။ မူရင်း English အသံနဲ့ နောက်ခံသီချင်း မပါဘူး။
 
+### မြန်မာအသံ ပိုသဘာဝကျစေဖို့ — Burmese Voice Kit
+
+ElevenLabs ကို ရွေးထားပြီး Target Language က Myanmar ဖြစ်တဲ့အခါ pronunciation lexicon နဲ့ ၁ မှ ၉,၉၉၉,၉၉၉ အတွင်းရှိ ကိန်းပြည့်/ရာခိုင်နှုန်းတွေကို အသံထွက်ဖတ်လို့ကောင်းအောင် ကြိုပြင်ပေးပါတယ်။ ဒီ preprocessing က ElevenLabs အသံထုတ်မှုကိုပဲ သက်ရောက်ပြီး Edge TTS free mode ကို မပြောင်းလဲပါ။ ElevenLabs API key/Voice ID နဲ့ credit လိုအပ်ပါတယ်။
+
+`.env` ထဲမှာ `ELEVENLABS_BURMESE_VOICE_KIT=0` ထည့်ရင် ပိတ်နိုင်ပါတယ်။ Default က `1` ဖြစ်ပါတယ်။ Bundled lexicon ကို `data/burmese_voice_kit/lexicon.tsv` မှာ ပြင်နိုင်ပြီး မိမိသုံးမယ့် voice နဲ့ စမ်းပြီးမှ စကားလုံးအသစ် ထည့်ပါ။
+
 ## လိုအပ်တာ
 
 | | |

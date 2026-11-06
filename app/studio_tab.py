@@ -25,6 +25,8 @@ from studio.title_generator import TITLE_STYLES, ai_title_ideas, builtin_title_i
 PROVIDER_LABEL_TO_KEY = {
     "Groq": "groq",
     "OpenRouter": "openrouter",
+    "Mistral AI": "mistral",
+    "Cohere": "cohere",
     "Cloudflare Workers AI": "cloudflare",
     "NVIDIA NIM": "nvidia",
     "Ollama (local)": "ollama",
@@ -286,6 +288,8 @@ class StudioTab(ttk.Frame):
         api_env = {
             "groq": "GROQ_API_KEY",
             "openrouter": "OPENROUTER_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+            "cohere": "COHERE_API_KEY",
             "cloudflare": "CF_API_TOKEN",
             "nvidia": "NVIDIA_API_KEY",
             "ollama": "",
@@ -293,6 +297,8 @@ class StudioTab(ttk.Frame):
         model_env = {
             "groq": "GROQ_MODEL",
             "openrouter": "OPENROUTER_MODEL",
+            "mistral": "MISTRAL_MODEL",
+            "cohere": "COHERE_MODEL",
             "cloudflare": "CF_MODEL",
             "nvidia": "NVIDIA_MODEL",
             "ollama": "OLLAMA_MODEL",
@@ -940,6 +946,8 @@ class StudioTab(ttk.Frame):
         api_env = {
             "groq": "GROQ_API_KEY",
             "openrouter": "OPENROUTER_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+            "cohere": "COHERE_API_KEY",
             "cloudflare": "CF_API_TOKEN",
             "nvidia": "NVIDIA_API_KEY",
             "ollama": "",
@@ -947,6 +955,8 @@ class StudioTab(ttk.Frame):
         model_env = {
             "groq": "GROQ_MODEL",
             "openrouter": "OPENROUTER_MODEL",
+            "mistral": "MISTRAL_MODEL",
+            "cohere": "COHERE_MODEL",
             "cloudflare": "CF_MODEL",
             "nvidia": "NVIDIA_MODEL",
             "ollama": "OLLAMA_MODEL",

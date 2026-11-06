@@ -52,6 +52,7 @@ def main() -> int:
             gemini_text_model=str(cfg.get("gemini_text_model", "gemini-3.5-flash")),
             source_language=str(cfg.get("source_language", "auto")),
             target_language=str(cfg.get("target_language", "mm")),
+            recap_style=str(cfg.get("recap_style", "storytelling")),
             whisper_model_other=str(cfg.get("whisper_model_other", "medium")),
         )
         plan_path, plan = planner.build(

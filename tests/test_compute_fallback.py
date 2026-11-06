@@ -23,8 +23,8 @@ class ComputeFallbackTests(unittest.TestCase):
             result = run_demucs([sys.executable, "-m", "demucs", "-n", "htdemucs", "source.mp4"], messages.append)
         self.assertIs(result, passed)
         self.assertEqual(run.call_count, 2)
-        self.assertIn(["-d", "cuda"], run.call_args_list[0].args[0])
-        self.assertIn(["-d", "cpu"], run.call_args_list[1].args[0])
+        self.assertEqual(run.call_args_list[0].args[0][run.call_args_list[0].args[0].index("-d") + 1], "cuda")
+        self.assertEqual(run.call_args_list[1].args[0][run.call_args_list[1].args[0].index("-d") + 1], "cpu")
         self.assertTrue(any("retrying on CPU" in message for message in messages))
 
     def test_demucs_uses_cpu_when_cuda_is_unavailable(self):
@@ -34,7 +34,7 @@ class ComputeFallbackTests(unittest.TestCase):
         ) as run:
             run_demucs([sys.executable, "-m", "demucs", "source.mp4"])
         self.assertEqual(run.call_count, 1)
-        self.assertIn(["-d", "cpu"], run.call_args.args[0])
+        self.assertEqual(run.call_args.args[0][run.call_args.args[0].index("-d") + 1], "cpu")
 
 
 if __name__ == "__main__":

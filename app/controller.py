@@ -1655,11 +1655,17 @@ class App(tk.Tk):
                 Path(final_folder).mkdir(parents=True, exist_ok=True)
             except OSError as exc:
                 raise ValueError(f"Save final to: folder ကို မဖန်တီးနိုင်ပါ ({exc})")
+        selected_recap_style = next(
+            (key for key, label in RECAP_STYLE_LABELS.items() if label == self.recap_style.get()),
+            "storytelling",
+        )
+        self.cfg["recap_style"] = selected_recap_style
+        save_config(self.cfg)
         return {
             "source": source,
             "source_language": self._source_language_code(),
             "target_language": self._target_language_code(),
-            "recap_style": next((key for key, label in RECAP_STYLE_LABELS.items() if label == self.recap_style.get()), "storytelling"),
+            "recap_style": selected_recap_style,
             "final_output_folder": final_folder,
             "brand_intro_outro_enabled": bool(self.cfg.get("brand_intro_outro_enabled", False)),
             "brand_channel_name": str(self.cfg.get("brand_channel_name") or "My Channel"),

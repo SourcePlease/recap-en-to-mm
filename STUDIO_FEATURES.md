@@ -40,6 +40,16 @@ This document describes the feature/studio-expansion branch of SourcePlease/reca
 
 **English:** The Recap pipeline combines local Whisper transcription, context-aware translation and audit, selectable target language and TTS providers, cached narration segments, Smart Sync, safe Stop/Resume, folder batch processing, draggable preview overlays, blur boxes, video layout/quality controls and subtitle/SRT output.
 
+### Native Burmese Narration Quality / သဘာဝကျတဲ့ မြန်မာဇာတ်ကြောင်းပြောပုံ
+
+**မြန်မာ:** Recap ၏ Myanmar Target Language အတွက် သီးသန့် Native Burmese Style Guide ထည့်ထားသည်။ မြန်မာလူတစ်ယောက်က ပရိသတ်ကို ဇာတ်လမ်းပြောပြနေသလို ရှင်းလင်းပြီး သဘာဝကျသော စကားပြောပုံစံကို ဦးစားပေးသည်။ English ဝါကျအစီအစဉ်ကို တိုက်ရိုက်မကူးရန်၊ အဓိပ္ပာယ်တူသည့် မြန်မာစကားအသုံးအနှုန်းဖြင့် ပြန်ရေးရန်၊ မလိုအပ်သော “သူက” ထပ်သုံးခြင်းနှင့် “နော်/ဗျာ/ပေါ့” ကဲ့သို့ ဖြည့်စွက်စကားများကို မထည့်ရန် ညွှန်ကြားထားသည်။ “သည်/၏/၌/ပြုလုပ်ခဲ့သည်” စသည့် စာပေ/ရုံးသုံးပုံစံများကို လိုအပ်မှသာ သုံးပြီး စကားပြောသံနဲ့ ကိုက်ညီသည့် အသုံးအနှုန်းကို ရွေးရန် သတ်မှတ်ထားသည်။
+
+**English:** Myanmar output uses a dedicated native-style guide: clear contemporary spoken Burmese, natural Burmese word order, meaning-based idiom translation, varied sentence rhythm, and restrained pronoun/connector use. It avoids stiff literary/official phrasing and unnecessary filler while preserving all story facts.
+
+**မြန်မာ:** Translation Audit က မူရင်းအချက်အလက် ပြည့်စုံမှု၊ စာကြောင်းပိုင်ဆိုင်ရာ ID၊ ထပ်နေမှုတို့နဲ့အတူ မြန်မာစကားပြောသံ သဘာဝကျမှုကိုပါ စစ်ဆေးပြီး မသဘာဝကျသော စာကြောင်းကို လိုအပ်လျှင် ပြန်ရေးသည်။ အရင် Version ဘာသာပြန်ထားသော Myanmar Job ကို Resume လုပ်သောအခါ Whisper Transcript ကို ပြန်မလုပ်ဘဲ Translation/Context Plan ကို ပြန်တည်ဆောက်မည်။ Gemini quota ပိုသုံးနိုင်ပြီး လူကိုယ်တိုင် စာဖတ်စစ်ဆေးမှုကို အစားမထိုးနိုင်ပါ။
+
+**English:** The audit also checks whether Burmese lines sound natural when spoken and repairs awkward wording when necessary. Older Myanmar jobs refresh their translation/context plan on resume but reuse the Whisper transcript. This can consume additional Gemini quota; native human review is still recommended.
+
 ## 3. Downloader & Automated Workflow / Downloader နှင့် အလိုအလျောက် Workflow
 
 - Quality ရွေးချယ်မှု၊ MP3-only, Playlist Download, ရနိုင်သော Subtitle Download, Progress နှင့် Authorized Cookie File ပံ့ပိုးမှု။

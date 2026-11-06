@@ -8,7 +8,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from studio.subtitles import SubtitleCue, parse_subtitles, translate_subtitles, write_srt
+from studio.subtitles import SubtitleCue, ffmpeg_subtitle_filter, parse_subtitles, translate_subtitles, write_srt
 
 TARGETS = {
     "mm": "Myanmar (Burmese)", "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
@@ -123,11 +123,7 @@ class SubtitleToolsTab(ttk.Frame):
             ffmpeg = str(self.tool("ffmpeg"))
             if not Path(ffmpeg).is_file():
                 raise FileNotFoundError("FFmpeg မတွေ့ပါ။ INSTALL_REQUIREMENTS.bat ကို run လုပ်ပါ။")
-            escaped = str(Path(srt_path).resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
-            vf = (
-                f"subtitles=filename='{escaped}':charenc=UTF-8:"
-                "force_style='FontName=Myanmar Text,FontSize=20,Outline=2,Shadow=1,MarginV=28'"
-            )
+            vf = ffmpeg_subtitle_filter(srt_path, font_name="Myanmar Text", font_size=20)
             output = folder / f"{source.stem}_{target_code}_subbed.mp4"
             command = [
                 ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),

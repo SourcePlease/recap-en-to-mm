@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+from datetime import date
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable
@@ -107,13 +108,72 @@ def whisper_choice(language: str, other_model: str = WHISPER_MODEL_OTHER) -> tup
     return (WHISPER_MODEL, WHISPER_LANGUAGE) if code == "en" else (str(other_model or WHISPER_MODEL_OTHER), code)
 
 
+# Stable Gemini text-generation models currently offered with a Free Tier.
+# Daily rotation changes the FIRST model on each new local calendar day.
+# Quota/service errors then continue down the same day's ordered fallback chain.
 GEMINI_MODEL_FALLBACK_CHAIN = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-3.7-flash",
     "gemini-3.1-flash-lite",
 ]
+GEMINI_MODEL_ROTATION_START_DATE = "2026-11-07"
+
+
+def rotate_gemini_model_chain(
+    models: list[str],
+    *,
+    rotation: str = "daily",
+    start_date: str = GEMINI_MODEL_ROTATION_START_DATE,
+    today: date | None = None,
+) -> list[str]:
+    """Return a de-duplicated Gemini model chain, rotated once per calendar day."""
+    ordered = list(dict.fromkeys(str(model).strip() for model in models if str(model).strip()))
+    mode = str(rotation or "daily").strip().lower()
+    if len(ordered) < 2 or mode in {"off", "none", "false", "0", "disabled"}:
+        return ordered
+    if mode not in {"daily", "day", "true", "1", "on", "enabled"}:
+        return ordered
+
+    try:
+        anchor = date.fromisoformat(str(start_date).strip())
+    except (TypeError, ValueError):
+        anchor = date.fromisoformat(GEMINI_MODEL_ROTATION_START_DATE)
+    current_day = today if isinstance(today, date) else date.today()
+    day_index = max(0, (current_day - anchor).days) % len(ordered)
+    return ordered[day_index:] + ordered[:day_index]
+
+
+def configured_gemini_model_chain(
+    default_model: str | None = None,
+    *,
+    today: date | None = None,
+) -> list[str]:
+    """Read the .env model list and apply the configured daily rotation."""
+    raw_models = str(os.getenv("GEMINI_TEXT_MODELS") or "").strip()
+    if raw_models:
+        configured = [item.strip() for item in raw_models.split(",") if item.strip()]
+    else:
+        primary = str(
+            os.getenv("GEMINI_TEXT_MODEL")
+            or default_model
+            or GEMINI_MODEL_FALLBACK_CHAIN[0]
+        ).strip()
+        configured = [primary] + [
+            model for model in GEMINI_MODEL_FALLBACK_CHAIN if model != primary
+        ]
+
+    return rotate_gemini_model_chain(
+        configured,
+        rotation=os.getenv("GEMINI_MODEL_ROTATION", "daily"),
+        start_date=os.getenv(
+            "GEMINI_MODEL_ROTATION_START_DATE",
+            GEMINI_MODEL_ROTATION_START_DATE,
+        ),
+        today=today,
+    )
 
 
 GEMINI_BUSY_ROUNDS = 5                    # every model 503: wait and start the chain again this many times
@@ -188,9 +248,13 @@ def _configure_gemini_key_pool(
     if not key_pool:
         return
 
-    models = [str(x).strip() for x in (model_chain or GEMINI_MODEL_FALLBACK_CHAIN) if str(x).strip()]
+    selected_chain = (
+        configured_gemini_model_chain(getattr(ai, "text_model", None))
+        if model_chain is None else model_chain
+    )
+    models = list(dict.fromkeys(str(x).strip() for x in selected_chain if str(x).strip()))
     if not models:
-        models = [str(getattr(ai, "text_model", "gemini-3.5-flash") or "gemini-3.5-flash")]
+        models = [str(getattr(ai, "text_model", "gemini-3.8-flash") or "gemini-3.8-flash")]
 
     model_index = 0
     key_index = 0
@@ -1807,7 +1871,7 @@ class RecapPlanBuilder:
         atomic_max_duration: float = 5.6,
         atomic_target_duration: float = 4.2,
         gemini_request_timeout_seconds: int = 120,
-        gemini_text_model: str = "gemini-3.5-flash",
+        gemini_text_model: str = "gemini-3.8-flash",
         source_language: str = "auto",
         target_language: str = "mm",
         recap_style: str = "storytelling",
@@ -1838,7 +1902,7 @@ class RecapPlanBuilder:
         self.atomic_max_duration = max(4.0, float(atomic_max_duration))
         self.atomic_target_duration = max(2.5, min(float(atomic_target_duration), self.atomic_max_duration))
         self.gemini_request_timeout_seconds = max(30, min(int(gemini_request_timeout_seconds), 600))
-        self.gemini_text_model = _clean(gemini_text_model) or "gemini-3.5-flash"
+        self.gemini_text_model = _clean(gemini_text_model) or "gemini-3.8-flash"
 
     def _validate_runtime(self) -> None:
         required = [

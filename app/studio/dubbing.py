@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Callable
 
 from .compute import run_demucs
+from .encoding import run_video_encode, video_encoder_args
 
 
 @dataclass(frozen=True)
@@ -198,14 +199,17 @@ def render_character_dubbing(
         mix_labels.append("[srcbed]")
     graph.append("".join(mix_labels) + f"amix=inputs={len(mix_labels)}:duration=longest:normalize=0,"
                  "alimiter=limit=0.95:level=disabled[mixed]")
-    command += [
-        "-filter_complex", ";".join(graph), "-map", "0:v:0", "-map", "[mixed]",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-        "-c:a", "aac", "-b:a", "192k", "-t", f"{duration:.3f}",
-        "-movflags", "+faststart", str(output_video),
-    ]
+    def command_for_encoder(encoder: str) -> list[str]:
+        return command + [
+            "-filter_complex", ";".join(graph), "-map", "0:v:0", "-map", "[mixed]",
+            *video_encoder_args(encoder),
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "192k", "-t", f"{duration:.3f}",
+            "-movflags", "+faststart", str(output_video),
+        ]
+
     log("🎬 Rendering character-dubbed video…")
-    _run(command)
+    run_video_encode(ffmpeg, command_for_encoder, output_video, log=log)
     if not output_video.is_file() or output_video.stat().st_size < 5000:
         output_video.unlink(missing_ok=True)
         raise RuntimeError("Character dubbing render did not produce a valid output video.")

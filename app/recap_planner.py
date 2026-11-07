@@ -2007,7 +2007,7 @@ class RecapPlanBuilder:
             inherited_key = str(os.getenv("GEMINI_API_KEY") or "").strip()
             if inherited_key:
                 key_pool.append(("GEMINI_API_KEY", inherited_key))
-        selected_provider = str(os.getenv("RECAP_AI_PROVIDER") or "gemini").strip().lower()
+        selected_provider = ai_mod.resolve_requested_provider(os.getenv("RECAP_AI_PROVIDER"))
         if selected_provider == "gemini":
             if not key_pool:
                 raise RuntimeError(

@@ -28,7 +28,7 @@ import gemini_tts
 from studio.download_queue import PersistentDownloadQueue
 from studio.recap_queue import PersistentRecapQueue
 from studio.quality import inspect_output_quality, preflight_check, write_quality_report
-from recap_runtime.services.ai_service import AIService
+from recap_runtime.services.ai_service import AIService, resolve_requested_provider
 from recap_planner import _target_narration_style_guide, _user_glossary_context, recap_style_guide
 
 
@@ -174,6 +174,27 @@ class StudioAIProviderTests(unittest.TestCase):
 
 
 class AIServiceProviderRoutingTests(unittest.TestCase):
+    def test_auto_provider_resolver_matches_the_free_first_selection_rules(self):
+        settings = {
+            "RECAP_AI_PROVIDER": "auto",
+            "RECAP_AI_AUTO_ORDER": "groq,openrouter,ollama",
+            "GROQ_API_KEY": "",
+            "GROQ_MODEL": "",
+            "OPENROUTER_API_KEY": "test-token",
+            "OPENROUTER_MODEL": "openrouter/free",
+            "OLLAMA_MODEL": "local-test-model",
+        }
+        with patch.dict(os.environ, settings, clear=True):
+            self.assertEqual(resolve_requested_provider(), "openrouter")
+        with patch.dict(os.environ, {
+            "RECAP_AI_PROVIDER": "auto",
+            "RECAP_AI_AUTO_ORDER": "groq,openrouter,ollama",
+            "OLLAMA_MODEL": "local-test-model",
+        }, clear=True):
+            self.assertEqual(resolve_requested_provider(), "ollama")
+        with patch.dict(os.environ, {"RECAP_AI_PROVIDER": "auto"}, clear=True):
+            self.assertEqual(resolve_requested_provider(), "gemini")
+
     def test_cloudflare_nvidia_mistral_and_cohere_are_supported_recap_providers(self):
         providers = (
             ("mistral", {

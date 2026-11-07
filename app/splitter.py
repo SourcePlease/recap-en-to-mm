@@ -17,8 +17,8 @@ from typing import Any, Callable
 
 import numpy as np
 
-from core import _visual_filters, ffmpeg_encoders, frame_layout, output_canvas, probe_video_size, quality_scale, \
-    video_quality
+from core import _visual_filters, frame_layout, output_canvas, probe_video_size, quality_scale, video_quality
+from studio.encoding import choose_video_encoder
 
 LogFn = Callable[[str], None]
 
@@ -308,8 +308,7 @@ def split_video(source: str | Path, settings: dict[str, Any], *, ffmpeg: str, ff
     k = quality_scale(quality)              # text sizes are set on the 1080 frame (the preview's)
     layout = frame_layout(ratio, fill, sw, sh, canvas=output_canvas(ratio, sw, sh, quality))
     cw = int(layout["cw"])
-    encoders = ffmpeg_encoders(ffmpeg)
-    encoder = "h264_nvenc" if "h264_nvenc" in encoders else "libx264"
+    encoder = choose_video_encoder(ffmpeg, log)
     log(f"🎬 Frame {ratio} ({layout['cw']}x{layout['ch']}){' · ' + fill if ratio != 'Original' else ''} · encoder {encoder}"
         f" · quality {quality}p")
 

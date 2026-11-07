@@ -60,19 +60,22 @@ class CharacterDubbingRenderTests(unittest.TestCase):
             def fake_tts(text, voice, destination):
                 destination.write_bytes(b"mp3" * 500)
 
-            def fake_run(command):
-                Path(command[-1]).write_bytes(b"final-video" * 100)
-                return None
+            captured = {}
+
+            def fake_encode(ffmpeg, command_for_encoder, destination, *, log=None, min_output_bytes=5000):
+                captured["command"] = command_for_encoder("libx264")
+                Path(destination).write_bytes(b"final-video" * 100)
+                return "libx264"
 
             with patch("studio.dubbing._edge_tts_save", side_effect=fake_tts), \
                  patch("studio.dubbing._duration", side_effect=[30.0, 2.5]), \
-                 patch("studio.dubbing._run", side_effect=fake_run) as run:
+                 patch("studio.dubbing.run_video_encode", side_effect=fake_encode):
                 result = render_character_dubbing(
                     ffmpeg="ffmpeg", ffprobe="ffprobe", source_video=source, rows=rows,
                     speaker_voices=voices, output_video=output, source_audio_mode="mute",
                 )
             self.assertEqual(result, output.resolve())
-            command = run.call_args.args[0]
+            command = captured["command"]
             graph = command[command.index("-filter_complex") + 1]
             self.assertIn("adelay=2000|2000", graph)
             self.assertIn("amix=inputs=1", graph)

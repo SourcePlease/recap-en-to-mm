@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
 import threading
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from studio.subtitles import SubtitleCue, ffmpeg_subtitle_filter, parse_subtitles, translate_subtitles, write_srt
+from studio.encoding import run_video_encode, video_encoder_args
 
 TARGETS = {
     "mm": "Myanmar (Burmese)", "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
@@ -88,8 +88,11 @@ class SubtitleToolsTab(ttk.Frame):
         ttk.Button(self, text="Browse Video", command=self._browse_video).grid(row=12, column=2, pady=(12, 4))
         ttk.Checkbutton(self, text="Burn bilingual subtitles (source + translation)",
                         variable=self.burn_bilingual).grid(row=13, column=0, columnspan=2, sticky="w")
-        ttk.Button(self, text="Render Subbing Video (no TTS; keep original audio)",
-                   command=self._render_subbing_video).grid(row=13, column=2, sticky="e", pady=4)
+        self.render_button = ttk.Button(
+            self, text="Render Subbing Video (no TTS; keep original audio)",
+            command=self._render_subbing_video,
+        )
+        self.render_button.grid(row=13, column=2, sticky="e", pady=4)
 
     def _browse_input(self):
         path = filedialog.askopenfilename(filetypes=(("Subtitle files", "*.srt *.vtt"), ("All files", "*.*")))
@@ -105,6 +108,8 @@ class SubtitleToolsTab(ttk.Frame):
             self.video_path.set(path)
 
     def _render_subbing_video(self):
+        if self.busy:
+            return
         if not self.cues or len(self.translations) != len(self.cues):
             messagebox.showwarning("Subbing Mode", "Import and translate subtitles first.", parent=self)
             return
@@ -128,24 +133,50 @@ class SubtitleToolsTab(ttk.Frame):
                 ffmpeg = shutil.which(ffmpeg) or ffmpeg
             vf = ffmpeg_subtitle_filter(srt_path, font_name="Myanmar Text", font_size=20)
             output = folder / f"{source.stem}_{target_code}_subbed.mp4"
-            command = [
-                ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
-                "-vf", vf, "-map", "0:v:0", "-map", "0:a?",
-                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                # Re-encode audio to AAC for MP4 compatibility (e.g. Opus source tracks).
-                # The source audio content is retained; only the container codec changes.
-                "-c:a", "aac", "-b:a", "192k", "-map_metadata", "0", "-movflags", "+faststart", str(output),
-            ]
-            self.status.set("Rendering Subbing Mode video… TTS is skipped; source audio is retained.")
-            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace")
-            if result.returncode != 0 or not output.is_file() or output.stat().st_size < 5000:
-                output.unlink(missing_ok=True)
-                raise RuntimeError((result.stderr or "FFmpeg subtitle render failed.")[-3000:])
-            self.status.set(f"Subbing Mode ready: {output.name} · original audio kept · TTS skipped.")
-            messagebox.showinfo("Subbing Mode", f"Created:\n{output}\n\nOriginal audio was kept; TTS was not used.", parent=self)
         except Exception as exc:
             self.status.set(f"Subbing Mode failed: {exc}")
             messagebox.showerror("Subbing Mode", str(exc), parent=self)
+            return
+
+        self.busy = True
+        self.render_button.configure(state="disabled")
+        self.translate_button.configure(state="disabled")
+        self.status.set("Subbing Mode is rendering in the background… TTS is skipped; source audio is retained.")
+
+        def command_for_encoder(encoder: str) -> list[str]:
+            return [
+                ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(source),
+                "-vf", vf, "-map", "0:v:0", "-map", "0:a?",
+                *video_encoder_args(encoder), "-pix_fmt", "yuv420p",
+                # Keep source audio content; only re-encode it to AAC for MP4 compatibility.
+                "-c:a", "aac", "-b:a", "192k", "-map_metadata", "0",
+                "-movflags", "+faststart", str(output),
+            ]
+
+        def work():
+            try:
+                encoder = run_video_encode(ffmpeg, command_for_encoder, output, log=lambda msg: self.after(
+                    0, lambda value=msg: self.status.set(value)
+                ))
+                self.after(0, lambda: self._subbing_finished(output, None, encoder))
+            except Exception as exc:
+                message = str(exc)
+                self.after(0, lambda value=message: self._subbing_finished(output, value, None))
+
+        threading.Thread(target=work, name="subbing-render", daemon=True).start()
+
+    def _subbing_finished(self, output: Path, error: str | None, encoder: str | None):
+        self.busy = False
+        self.render_button.configure(state="normal")
+        self.translate_button.configure(state="normal")
+        if error:
+            self.status.set(f"Subbing Mode failed: {error}")
+            messagebox.showerror("Subbing Mode", error, parent=self)
+            return
+        self.status.set(f"Subbing Mode ready: {output.name} · original audio kept · TTS skipped · {encoder}.")
+        messagebox.showinfo(
+            "Subbing Mode", f"Created:\n{output}\n\nOriginal audio was kept; TTS was not used.", parent=self
+        )
 
     def _browse_output(self):
         path = filedialog.askdirectory(initialdir=self.output_dir.get() or str(self.root_dir))

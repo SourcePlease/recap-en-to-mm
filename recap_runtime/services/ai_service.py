@@ -73,29 +73,38 @@ class _OpenAICompatibleClient:
         self.models = _OpenAICompatibleModels(service)
 
 
+def resolve_requested_provider(requested_provider: str | None = None) -> str:
+    """Resolve auto/free-first routing without constructing a client or making a request.
+
+    The planner uses this before Whisper so missing Gemini credentials are reported
+    early only when Gemini is actually selected as the fallback.
+    """
+    requested = str(
+        requested_provider if requested_provider is not None
+        else os.getenv("RECAP_AI_PROVIDER", "auto")
+    ).strip().lower()
+    if requested in {"", "auto"}:
+        from studio.ai_providers import PROVIDERS
+        order = str(os.getenv(
+            "RECAP_AI_AUTO_ORDER",
+            "groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama",
+        )).split(",")
+        for candidate in order:
+            candidate = candidate.strip().lower()
+            if candidate not in _SUPPORTED_ALTERNATES:
+                continue
+            spec = PROVIDERS[candidate]
+            model_id = str(os.getenv(spec.model_env) or "").strip()
+            api_key = str(os.getenv(spec.api_key_env) or "").strip() if spec.api_key_env else ""
+            if model_id and (not spec.requires_api_key or api_key):
+                return candidate
+        return "gemini"
+    return requested
+
+
 class AIService:
     def __init__(self):
-        requested_provider = str(os.getenv("RECAP_AI_PROVIDER") or "auto").strip().lower()
-        if requested_provider in {"", "auto"}:
-            from studio.ai_providers import PROVIDERS
-            order = str(os.getenv(
-                "RECAP_AI_AUTO_ORDER",
-                "groq,openrouter,cloudflare,nvidia,mistral,cohere,ollama",
-            )).split(",")
-            selected = None
-            for candidate in order:
-                candidate = candidate.strip().lower()
-                if candidate not in _SUPPORTED_ALTERNATES:
-                    continue
-                spec = PROVIDERS[candidate]
-                model_id = str(os.getenv(spec.model_env) or "").strip()
-                api_key = str(os.getenv(spec.api_key_env) or "").strip() if spec.api_key_env else ""
-                if model_id and (not spec.requires_api_key or api_key):
-                    selected = candidate
-                    break
-            self.provider = selected or "gemini"
-        else:
-            self.provider = requested_provider
+        self.provider = resolve_requested_provider(os.getenv("RECAP_AI_PROVIDER"))
         self.proxy = ""
         self._last_provider = self.provider
         self._last_provider_model = ""

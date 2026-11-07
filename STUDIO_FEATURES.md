@@ -204,7 +204,7 @@ TTS ဆိုတာ Text-to-Speech ဖြစ်ပြီး ဘာသာပြ�
 | Microsoft Edge TTS | Myanmar Thiha / Nilar အသံထုတ်နိုင်တယ် | API Key မလိုဘဲ သုံးနိုင်ပေမဲ့ Network / Service ကန့်သတ်ချက်ရှိတယ်။ |
 | Gemini TTS | Voice Style / Natural Speech | Account / Model / Billing အလိုက် ကွာတယ်။ |
 | Azure Speech | my-MM-ThihaNeural / my-MM-NilarNeural | F0 Free Quota ကန့်သတ်ချက်ရှိတယ်။ |
-| ElevenLabs | Premium Multilingual Voice | Free Credit ရှိပေမဲ့ Default Multilingual v2 မှာ Burmese ပါမပါကို အရင်စစ်ရမယ်။ |
+| ElevenLabs | Premium Multilingual Voice | Free Credit ကန့်သတ်ချက်ရှိတယ်။ App ရဲ့ default model ID သည် eleven_v4 ဖြစ်ပြီး Burmese voice/model support နဲ့ quota ကို ကိုယ့် account မှာ စမ်းသပ်အတည်ပြုရမယ်။ |
 
 **အကြံပြုချက်:** မြန်မာအသံကို အဓိကသုံးမယ်ဆိုရင် Edge TTS ရဲ့ Thiha / Nilar ကို ပထမဆုံးစမ်းပါ။ Voice ရွေးချယ်မှုက Output Language နဲ့ ကိုက်ညီရပါမယ်။
 

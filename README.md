@@ -2,11 +2,11 @@
 
 **English၊ တရုတ်၊ ဟိန္ဒီ၊ ကိုရီးယား … ဘယ်ဘာသာနဲ့ ပြောထားတဲ့ recap / ဇာတ်လမ်းပြော video ကိုမဆို မြန်မာအသံနဲ့ ပြန်ထုတ်ပေးတဲ့ Windows tool**
 Selectable narration styles · Free-first AI auto selection · Whisper + Gemini · Edge TTS · Smart Sync
-**Splitter** tab — ရှည်တဲ့ video ကို မိနစ်အလိုက် အပိုင်းခွဲ (Ratio + blur နောက်ခံ၊ စာ၊ Part နံပါတ်)
+**Recap Workspace** — အပေါ်ဆုံးမှာ Recap တစ်ခုပဲရှိပြီး Production, Downloader, Thumbnail, Subtitles, Dubbing, Project/Audio, Queue နဲ့ Splitter တို့ကို အဲဒီ Recap ထဲမှာပဲ သုံးနိုင်ပါတယ်။
 
 > English: turns a recap/story video narrated in English, Chinese, Hindi, Korean … (detected by itself)
-> into the same video narrated in Myanmar (Burmese). The Myanmar voice leads, and the picture of every
-> line is re-timed to it ("Smart Sync"). A second tab, **Splitter**, cuts long videos into parts.
+> into the same video narrated in Myanmar (Burmese). The Recap workspace also groups the downloader,
+> thumbnail, subtitle, dubbing, project/audio, queue and splitter tools in one place.
 > See the [English section](#english) below.
 
 ---
@@ -95,7 +95,7 @@ Job folder ထဲမှာ ကြည့်လို့ရတဲ့ ဖိုင�
 
 ## Splitter (ဗီဒီယို အပိုင်းခွဲ)
 
-Window ထိပ်က **Splitter** tab ကို နှိပ်ပါ။ ရှည်တဲ့ video ကို မိနစ်အလိုက် အပိုင်းတွေ ခွဲပေးပါတယ် (TikTok / Reels / Facebook အတွက်)။
+အပေါ်ဆုံးက **Recap** ကိုဖွင့်ပြီး အတွင်းက **Splitter** page ကို ရွေးပါ။ ရှည်တဲ့ video ကို မိနစ်အလိုက် အပိုင်းတွေ ခွဲပေးပါတယ် (TikTok / Reels / Facebook အတွက်)။
 
 | | |
 |---|---|
@@ -439,7 +439,22 @@ Recap မှာ Storytelling တစ်မျိုးတည်း မဟုတ�
 
 **English:** Open the repository, switch the branch selector to `feature/studio-expansion`, then choose **Code → Download ZIP**. Extract it and follow the installation instructions above before launching `RUN.bat`.
 
-### App ထဲမှာ ပါဝင်တဲ့ Tab များ / Tabs Included
+### Recap Workspace ထဲမှာ ပါဝင်တဲ့ Feature များ / Features inside Recap
+
+App အပေါ်ဆုံးမှာ **Recap** တစ်ခုပဲ မြင်ရပါမယ်။ Recap ကိုဖွင့်လိုက်ရင် အတွင်းမှာ အောက်ပါ Page တွေရှိပါတယ်။ ဒီလိုစီထားတာကြောင့် Tool တစ်ခုသုံးဖို့ Main Recap tab ကနေ အခြား Top-level tab တွေဆီ သွားစရာမလိုတော့ပါဘူး။
+
+- **Production:** မူရင်း Video ကို Recap လုပ်ခြင်း၊ Voice/Language ရွေးခြင်း၊ Preview Editor နဲ့ Output ပြင်ဆင်ခြင်း။
+- **Downloader / Studio:** Public URL က Video Download လုပ်ပြီး Recap Input/Queue ထဲ ပို့ခြင်း၊ AI Provider စမ်းခြင်း။
+- **Thumbnail:** မူရင်း Video Frame ရွေးခြင်း၊ မြန်မာ Title/Logo ထည့်ခြင်း၊ Local Variant နဲ့ Optional AI Background ထုတ်ခြင်း။
+- **Subtitles / Subbing:** SRT/VTT Import၊ Whisper မသုံးဘဲ ဘာသာပြန်၊ Bilingual Subtitle ထုတ်ခြင်း၊ အသံမပြောင်းဘဲ Subbing Video Render လုပ်ခြင်း။
+- **Character Dubbing:** Speaker/Voice Mapping ပြင်ဆင်ပြီး Dialogue အလိုက် အသံသီးခြားထုတ်ခြင်း။
+- **Project / Audio:** Project Save/Load, Waveform, Pronunciation, Music, Intro/Outro, Smart Silence Removal နဲ့ QC။
+- **Recap Queue:** Video အများအပြားကို တစ်ခုပြီးတစ်ခု Queue နဲ့ လုပ်ခြင်း။
+- **Splitter:** ရှည်တဲ့ Video ကို မိနစ်အလိုက် အပိုင်းခွဲခြင်း။
+
+Recap မှာ ရွေးထားတဲ့ Source Video ကို Thumbnail, Subbing, Dubbing နဲ့ Splitter Page တွေကို ဖွင့်တဲ့အခါ အလိုအလျောက် ဖြည့်ပေးပါတယ်။ အဲဒီ Tool ထဲမှာ ကိုယ်တိုင်ရွေးထားတဲ့ Video ရှိပြီးသားဆိုရင်တော့ မအစားထိုးပါဘူး။
+
+**English:** The app now has one top-level **Recap** tab. Its inner workspace pages contain Production, Downloader/Studio, Thumbnail, Subtitles/Subbing, Character Dubbing, Project/Audio, Recap Queue and Splitter. The current Recap source is passed into the relevant pages when opened, while manually selected tool-specific sources are preserved.
 
 #### 1. Recap — ဘာသာပြန်အသံဖြင့် Video ပြန်ထုတ်ခြင်း
 

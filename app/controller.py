@@ -316,7 +316,10 @@ class App(tk.Tk):
             self._clear_batch()
             self.source.set(str(path))
             self.source_title.set(path.stem)
-            self.tools_tabs.select(self.tools_tabs.tabs()[0])
+            # Downloaded media returns to the main Recap Production page inside
+            # the single Recap workspace; all other production tools stay beside it.
+            self.workspace_tabs.select(self.recap_workspace_tab)
+            self._sync_recap_source_to_tools()
             self.status.set("READY")
             self.stage.set("Downloaded video selected for Recap")
             self.logbox.insert("end", f"Studio download selected for Recap: {path}\n")
@@ -426,13 +429,16 @@ class App(tk.Tk):
             self._stop()
 
     def _remember_tool_tab(self, _event=None) -> None:
+        """Remember the selected page inside the Recap workspace, not the outer shell."""
         try:
-            selected = self.tools_tabs.select()
+            selected = self.workspace_tabs.select()
             tabs = {
+                str(self.recap_workspace_tab): "recap",
                 str(self.splitter_tab): "splitter",
                 str(self.studio_tab): "studio",
                 str(self.thumbnail_tab): "thumbnail",
                 str(self.subtitle_tools_tab): "subtitles",
+                str(self.dubbing_tab): "dubbing",
                 str(self.project_tools_tab): "project",
                 str(self.recap_queue_tab): "recap_queue",
             }
@@ -440,6 +446,49 @@ class App(tk.Tk):
             save_config(self.cfg)
         except Exception:
             pass
+
+    def _sync_recap_source_to_tools(self, _event=None) -> None:
+        """Share the current Recap source with tool pages unless the user chose another file."""
+        try:
+            raw = str(self.source.get() or "").strip()
+            source = Path(raw).expanduser().resolve() if raw else None
+            if source is None or not source.is_file():
+                return
+            source_text = str(source)
+            previous = str(getattr(self, "_last_recap_source_synced", "") or "")
+
+            def follow_recap_source(variable) -> None:
+                current = str(variable.get() or "").strip()
+                # Keep a manually chosen tool-specific video. Only refresh empty fields
+                # or fields that were filled automatically from the previous Recap source.
+                if not current or current == previous:
+                    variable.set(source_text)
+
+            if hasattr(self, "thumbnail_tab"):
+                old_thumb_default = (
+                    str(Path(previous).with_name(Path(previous).stem + "_thumbnail.jpg"))
+                    if previous else ""
+                )
+                current_output = str(self.thumbnail_tab.output.get() or "").strip()
+                default_output = str(self.thumbnail_tab.root_dir / "Downloads" / "thumbnail.jpg")
+                if not current_output or current_output in {default_output, old_thumb_default}:
+                    self.thumbnail_tab.output.set(
+                        str(source.with_name(source.stem + "_thumbnail.jpg"))
+                    )
+                follow_recap_source(self.thumbnail_tab.video)
+
+            if hasattr(self, "subtitle_tools_tab"):
+                follow_recap_source(self.subtitle_tools_tab.video_path)
+
+            if hasattr(self, "dubbing_tab"):
+                follow_recap_source(self.dubbing_tab.source)
+
+            if hasattr(self, "splitter_tab"):
+                self.splitter_tab.add_source_video(source)
+
+            self._last_recap_source_synced = source_text
+        except Exception as exc:
+            self._log(f"⚠️ Recap source hand-off to tools was skipped: {str(exc)[:180]}")
 
     def _project_state(self) -> dict:
         # Capture current unsaved editor values as well as persisted configuration.
@@ -562,60 +611,78 @@ class App(tk.Tk):
         # Layout V33: one-line header, compact source bar, then three resizable panes
         # (Settings+Logs | Preview | Tools). The preview follows its pane size and always
         # shows the whole 16:9 frame; the long settings list scrolls inside its own pane.
-        # Tools as tabs (2026-10-17): Recap, Splitter; more tools get their own tab.
+        # One top-level Recap tab contains the complete production workspace.
+        # Every related feature is kept in one place instead of being split across
+        # separate top-level tabs.
         self.tools_tabs = ttk.Notebook(self, style="Tools.TNotebook")
         self.tools_tabs.pack(fill="both", expand=True)
         recap_tab = ttk.Frame(self.tools_tabs)
         self.tools_tabs.add(recap_tab, text="Recap")
-        self.splitter_tab = SplitterTab(self.tools_tabs, cfg=self.cfg, save=lambda: save_config(self.cfg),
-                                        tool=lambda name: _tool_path(self.cfg, name), logs_dir=LOGS_DIR)
-        self.tools_tabs.add(self.splitter_tab, text="Splitter")
+
+        self.workspace_tabs = ttk.Notebook(recap_tab, style="Tools.TNotebook")
+        self.workspace_tabs.pack(fill="both", expand=True)
+        self.recap_workspace_tab = ttk.Frame(self.workspace_tabs)
+        self.workspace_tabs.add(self.recap_workspace_tab, text="Production")
+
         self.studio_tab = StudioTab(
-            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            self.workspace_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             on_video_ready=self._studio_use_video,
             on_auto_recap_enqueue=self._studio_enqueue_recap,
             on_auto_recap_start=self._start_recap_queue,
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
-        self.tools_tabs.add(self.studio_tab, text="Studio")
+        self.workspace_tabs.add(self.studio_tab, text="Downloader / Studio")
         self.thumbnail_tab = ThumbnailTab(
-            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            self.workspace_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
-        self.tools_tabs.add(self.thumbnail_tab, text="Thumbnail")
+        self.workspace_tabs.add(self.thumbnail_tab, text="Thumbnail")
         self.subtitle_tools_tab = SubtitleToolsTab(
-            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            self.workspace_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg),
             env_path=lambda: Path(self.gemini_env.get()).expanduser(),
             tool=lambda name: _tool_path(self.cfg, name),
         )
-        self.tools_tabs.add(self.subtitle_tools_tab, text="Subtitles")
+        self.workspace_tabs.add(self.subtitle_tools_tab, text="Subtitles / Subbing")
         self.dubbing_tab = DubbingTab(
-            self.tools_tabs, root_dir=ROOT_DIR, tool=lambda name: _tool_path(self.cfg, name),
+            self.workspace_tabs, root_dir=ROOT_DIR, tool=lambda name: _tool_path(self.cfg, name),
         )
-        self.tools_tabs.add(self.dubbing_tab, text="Dubbing")
+        self.workspace_tabs.add(self.dubbing_tab, text="Character Dubbing")
         self.project_tools_tab = ProjectToolsTab(
-            self.tools_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
+            self.workspace_tabs, root_dir=ROOT_DIR, cfg=self.cfg,
             save=lambda: save_config(self.cfg), tool=lambda name: _tool_path(self.cfg, name),
             get_state=self._project_state, apply_state=self._apply_project_state,
             get_source=lambda: self.source.get(), env_path=lambda: Path(self.gemini_env.get()).expanduser(),
         )
-        self.tools_tabs.add(self.project_tools_tab, text="Project")
+        self.workspace_tabs.add(self.project_tools_tab, text="Project / Audio")
         self.recap_queue_tab = RecapQueueTab(
-            self.tools_tabs, root_dir=ROOT_DIR, queue_model=self.recap_queue_model,
+            self.workspace_tabs, root_dir=ROOT_DIR, queue_model=self.recap_queue_model,
             on_start=self._start_recap_queue, on_stop=self._stop_recap_queue,
         )
-        self.tools_tabs.add(self.recap_queue_tab, text="Recap Queue")
-        last_tool_tab = self.cfg.get("last_tool_tab")
-        tab_attr = {"splitter": "splitter_tab", "studio": "studio_tab", "thumbnail": "thumbnail_tab",
-                    "subtitles": "subtitle_tools_tab", "project": "project_tools_tab",
-                    "recap_queue": "recap_queue_tab"}.get(last_tool_tab)
-        if tab_attr:
-            self.tools_tabs.select(getattr(self, tab_attr))
-        self.tools_tabs.bind("<<NotebookTabChanged>>", self._remember_tool_tab, add="+")
-        outer = ttk.Frame(recap_tab, padding=(12, 8, 12, 8))
+        self.workspace_tabs.add(self.recap_queue_tab, text="Recap Queue")
+        self.splitter_tab = SplitterTab(
+            self.workspace_tabs, cfg=self.cfg, save=lambda: save_config(self.cfg),
+            tool=lambda name: _tool_path(self.cfg, name), logs_dir=LOGS_DIR,
+        )
+        self.workspace_tabs.add(self.splitter_tab, text="Splitter")
+
+        last_tool_tab = str(self.cfg.get("last_tool_tab") or "recap")
+        tab_attr = {
+            "recap": "recap_workspace_tab",
+            "splitter": "splitter_tab",
+            "studio": "studio_tab",
+            "thumbnail": "thumbnail_tab",
+            "subtitles": "subtitle_tools_tab",
+            "dubbing": "dubbing_tab",
+            "project": "project_tools_tab",
+            "recap_queue": "recap_queue_tab",
+        }.get(last_tool_tab, "recap_workspace_tab")
+        self.workspace_tabs.select(getattr(self, tab_attr))
+        self.workspace_tabs.bind("<<NotebookTabChanged>>", self._remember_tool_tab, add="+")
+        self.workspace_tabs.bind("<<NotebookTabChanged>>", self._sync_recap_source_to_tools, add="+")
+        outer = ttk.Frame(self.recap_workspace_tab, padding=(12, 8, 12, 8))
         outer.pack(fill="both", expand=True)
         outer.columnconfigure(0, weight=1)
         outer.rowconfigure(2, weight=1)
@@ -971,11 +1038,7 @@ class App(tk.Tk):
     def _on_close(self) -> None:
         self._save_pane_layout()
         self.splitter_tab.shutdown()
-        try:
-            self.cfg["last_tool_tab"] = "splitter" if self.tools_tabs.select() == str(self.splitter_tab) else "recap"
-            save_config(self.cfg)
-        except Exception:
-            pass
+        self._remember_tool_tab()
         self.destroy()
 
     def _voice_volume_changed(self, value) -> None:

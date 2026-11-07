@@ -370,6 +370,20 @@ class SplitterTab(ttk.Frame):
             self._load_selected()
         self.stage.set(f"{len(self.files)} video(s)")
 
+    def add_source_video(self, path: str | Path) -> bool:
+        """Add the current Recap source to this Splitter page without removing other videos."""
+        try:
+            candidate = Path(path).expanduser().resolve()
+            if not candidate.is_file():
+                return False
+            before = len(self.files)
+            self._add([candidate])
+            return len(self.files) > before or any(
+                str(existing).casefold() == str(candidate).casefold() for existing in self.files
+            )
+        except (OSError, TypeError, ValueError):
+            return False
+
     def _add_files(self) -> None:
         self._add([Path(p) for p in filedialog.askopenfilenames(title="Select videos", filetypes=VIDEO_TYPES)])
 

@@ -64,7 +64,7 @@ class CharacterDubbingRenderTests(unittest.TestCase):
 
             def fake_encode(ffmpeg, command_for_encoder, destination, *, log=None, min_output_bytes=5000):
                 captured["command"] = command_for_encoder("libx264")
-                Path(destination).write_bytes(b"final-video" * 100)
+                Path(destination).write_bytes(b"final-video" * 1000)
                 return "libx264"
 
             with patch("studio.dubbing._edge_tts_save", side_effect=fake_tts), \

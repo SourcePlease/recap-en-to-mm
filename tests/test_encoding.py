@@ -27,7 +27,7 @@ class VideoEncodingTests(unittest.TestCase):
                 calls.append(command)
                 if "-encoders" in command:
                     return Mock(returncode=0, stdout=" V.... h264_nvenc", stderr="")
-                if "color=c=black" in command:
+                if any(str(arg).startswith("color=c=black") for arg in command):
                     return Mock(returncode=0, stdout="", stderr="")
                 if "h264_nvenc" in command:
                     output.write_bytes(b"partial")
